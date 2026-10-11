@@ -1,0 +1,117 @@
+
+:host {
+  display: block;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #edf6f1;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 36px;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 8px 30px #173d3018;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #d9f1e3;
+  color: #218456;
+  font-size: 32px;
+  font-weight: bold;
+}
+
+h1 {
+  margin: 24px 0 6px;
+  color: #204b38;
+  font-size: 30px;
+}
+
+.subtitle {
+  margin-top: 0;
+  color: #218456;
+  font-weight: bold;
+}
+
+.welcome {
+  margin: 24px 0;
+  color: #687a70;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label {
+  margin-top: 8px;
+  color: #304c3d;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #d4e0d8;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+input:focus {
+  outline: 2px solid #218456;
+}
+
+button {
+  margin-top: 16px;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background: #218456;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #176a43;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.message {
+  min-height: 20px;
+  color: #b42318;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  margin-top: 24px;
+  color: #849189;
+  text-align: center;
+  font-size: 12px;
+}
