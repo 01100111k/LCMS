@@ -1,8 +1,7 @@
 import { Component, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-interface Benefit { title: string; text: string; icon: 'calendar' | 'records' | 'shield' | 'heart'; }
-interface Feature { title: string; text: string; icon: 'user' | 'calendar' | 'folderheart' | 'users' | 'chart'; tone: 'green' | 'lavender' | 'peach'; }
+interface Service { title: string; text: string; icon: 'user' | 'calendar' | 'folderheart' | 'users' | 'chart'; tone: 'green' | 'lavender' | 'peach'; }
 
 @Component({
   selector: 'app-landing',
@@ -22,14 +21,8 @@ export class Landing implements OnInit, OnDestroy {
     { id: 'contact', label: 'Contact' },
   ];
 
-  readonly benefits: Benefit[] = [
-    { title: 'Easy Appointments', text: 'Schedule and manage visits with just a few clicks.', icon: 'calendar' },
-    { title: 'Secure Records', text: 'Keep maternal care records organized and accessible.', icon: 'records' },
-    { title: 'Role-Based Access', text: 'Separate access for midwives and patients.', icon: 'shield' },
-    { title: 'Better Care', text: 'Support healthier mothers and babies.', icon: 'heart' },
-  ];
 
-  readonly features: Feature[] = [
+  readonly services: Service[] = [
     { title: 'Patient registration', text: 'A simple start to your care journey, with organized patient profiles.', icon: 'user', tone: 'green' },
     { title: 'Appointment scheduling', text: 'Book, reschedule, and keep track of upcoming appointments.', icon: 'calendar', tone: 'lavender' },
     { title: 'Maternal care records', text: 'Connected records from prenatal visits to postpartum care.', icon: 'folderheart', tone: 'peach' },
@@ -37,11 +30,13 @@ export class Landing implements OnInit, OnDestroy {
     { title: 'Reports & insights', text: 'Meaningful summaries that support informed care coordination.', icon: 'chart', tone: 'green' },
   ];
 
+  // Replace these with your facility's real details.
   readonly contact = {
     email: 'lyingincare@system.com',
     phone: '+63 912 345 6789',
     address: 'Lying-In Care Center, Philippines',
   };
+
 
   private observer?: IntersectionObserver;
 
