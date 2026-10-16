@@ -1,0 +1,84 @@
+<div class="backdrop" (click)="onBackdrop($event)">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+
+    <button type="button" class="close" (click)="close()" aria-label="Close">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+
+    <div class="brand">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M24 42S5 30.5 5 17.5A9.5 9.5 0 0 1 24 12.5 9.5 9.5 0 0 1 43 17.5C43 30.5 24 42 24 42z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M17 22c0-3.5 3-5.5 6-4.5 3 1 3.5 4.5 1.5 7s-5.5 3.5-7.5 1.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="26.5" cy="26" r="2" fill="currentColor"/>
+      </svg>
+      <strong>Lying-In Care</strong>
+    </div>
+
+    @switch (view()) {
+
+      <!-- ============ LOG IN ============ -->
+      @case ('login') {
+        <h2 id="auth-title">Welcome back</h2>
+        <p class="sub">Log in to your account to continue.</p>
+
+        <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" novalidate>
+          <label for="l-email">Email address</label>
+          <input id="l-email" type="email" formControlName="email" autocomplete="email" placeholder="you@example.com"
+                 data-autofocus [class.bad]="bad(loginForm.controls.email)">
+          @if (bad(loginForm.controls.email)) { <p class="field-error">Enter a valid email address.</p> }
+
+          <label for="l-pw">Password</label>
+          <div class="pw">
+            <input id="l-pw" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
+                   autocomplete="current-password" placeholder="Your password" [class.bad]="bad(loginForm.controls.password)">
+            <button type="button" class="eye" (click)="showPassword.set(!showPassword())"
+                    [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showPassword()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                @if (showPassword()) { <path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/> }
+              </svg>
+            </button>
+          </div>
+          <div class="row-end"><button type="button" class="link" (click)="forgot()">Forgot password?</button></div>
+
+          @if (error()) { <p class="msg msg--error" role="alert">{{ error() }}</p> }
+          @if (info()) { <p class="msg msg--info" role="status">{{ info() }}</p> }
+
+          <button type="submit" class="submit" [disabled]="loading()">{{ loading() ? 'Logging in…' : 'Log In' }}</button>
+        </form>
+
+        <p class="switch">New here? <button type="button" class="link" (click)="go('start')">See how to get started</button></p>
+      }
+
+      <!-- ============ GETTING STARTED ============ -->
+      @case ('start') {
+        <h2 id="auth-title">Getting started</h2>
+        <p class="sub">Accounts are created by your midwife. Here is how it works.</p>
+
+        <ol class="steps">
+          <li>
+            <span class="step__num" aria-hidden="true">1</span>
+            <div><strong>Your midwife registers you</strong><span class="step__text">Your information is recorded when you visit the facility.</span></div>
+          </li>
+          <li>
+            <span class="step__num" aria-hidden="true">2</span>
+            <div><strong>You receive an email invitation</strong><span class="step__text">A secure link to set up your account is sent to your email.</span></div>
+          </li>
+          <li>
+            <span class="step__num" aria-hidden="true">3</span>
+            <div><strong>You set your own password</strong><span class="step__text">Only you will know it.</span></div>
+          </li>
+          <li>
+            <span class="step__num" aria-hidden="true">4</span>
+            <div><strong>You log in</strong><span class="step__text">See your profile, appointments, and the records you are allowed to view.</span></div>
+          </li>
+        </ol>
+
+        <p class="note">Midwives log in with the account provided by the facility. If your link has expired, use "Forgot password?" on the Log In screen to get a new one.</p>
+
+        <button type="button" class="submit" data-autofocus (click)="go('login')">Go to Log In</button>
+      }
+    }
+  </div>
+</div>

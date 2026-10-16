@@ -25,7 +25,7 @@
   <div class="container nav__inner">
     <a class="brand" href="#home" (click)="scrollTo('home', $event)" aria-label="Lying-In Care Management System, home">
       <svg class="brand__logo"><use href="#i-logo"/></svg>
-      <span class="brand__text"><strong>Lying-In Care</strong><small>Management System</small></span>
+      <span class="brand__text"><strong>Lying-In Care</strong></span>
     </a>
 
     <nav id="main-nav" class="nav__links" [class.open]="menuOpen()" aria-label="Main">
@@ -33,14 +33,14 @@
         <a [href]="'#' + l.id" [class.active]="active() === l.id" [attr.aria-current]="active() === l.id ? 'true' : null" (click)="scrollTo(l.id, $event)">{{ l.label }}</a>
       }
       <div class="nav__actions nav__actions--mobile">
-        <a routerLink="/login" class="btn btn--outline"><svg><use href="#i-login"/></svg>Login</a>
-        <a routerLink="/login" class="btn btn--solid">Get Started<svg><use href="#i-arrow"/></svg></a>
+        <button type="button" class="btn btn--outline" (click)="openAuth('login')"><svg><use href="#i-login"/></svg>Login</button>
+        <button type="button" class="btn btn--solid" (click)="openAuth('start')">Get Started<svg class="arrow"><use href="#i-arrow"/></svg></button>
       </div>
     </nav>
 
     <div class="nav__actions">
-      <a routerLink="/login" class="btn btn--outline"><svg><use href="#i-login"/></svg>Login</a>
-      <a routerLink="/login" class="btn btn--solid">Get Started<svg><use href="#i-arrow"/></svg></a>
+      <button type="button" class="btn btn--outline" (click)="openAuth('login')"><svg><use href="#i-login"/></svg>Login</button>
+      <button type="button" class="btn btn--solid" (click)="openAuth('start')">Get Started<svg class="arrow"><use href="#i-arrow"/></svg></button>
     </div>
 
     <button class="burger" type="button" [class.is-open]="menuOpen()" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-controls="main-nav" aria-label="Toggle menu">
@@ -57,9 +57,9 @@
       <div class="hero__copy">
         <p class="eyebrow">Maternal care, simplified</p>
         <h1>Compassionate Care for Every Stage of Motherhood.</h1>
-        <p class="hero__lead">Compassionate care for every stage of motherhood. Connecting midwives and patients through simple appointments, organized records, and a more personal care journey.</p>
+        <p class="hero__lead">The Lying-In Care Management System helps midwives and patients stay connected through secure access to appointments, records, and personalized maternal care.</p>
         <div class="hero__cta">
-          <a routerLink="/login" class="btn btn--solid btn--lg">Get Started<svg><use href="#i-arrow"/></svg></a>
+          <button type="button" class="btn btn--solid btn--lg" (click)="openAuth('start')">Get Started<svg class="arrow"><use href="#i-arrow"/></svg></button>
           <a href="#about" class="btn btn--outline btn--lg" (click)="scrollTo('about', $event)">Learn More</a>
         </div>
       </div>
@@ -109,7 +109,7 @@
           <h3>Ready to get started?</h3>
           <p>Join our system today and experience a more organized and connected maternal care journey.</p>
         </div>
-        <a routerLink="/login" class="btn btn--white">Login Now<svg><use href="#i-arrow"/></svg></a>
+        <button type="button" class="btn btn--white" (click)="openAuth('login')">Login Now<svg class="arrow"><use href="#i-arrow"/></svg></button>
       </aside>
     </div>
   </section>
@@ -120,7 +120,7 @@
   <div class="container footer__grid">
     <div class="footer__brand">
       <svg class="brand__logo"><use href="#i-logo"/></svg>
-      <span class="brand__text"><strong>Lying-In Care</strong><small>Management System</small></span>
+      <span class="brand__text"><strong>Lying-In Care</strong></span>
     </div>
 
     <nav class="footer__col" aria-label="Quick links">
@@ -146,5 +146,8 @@
       <p>© {{ year }} Lying-In Care Management System.<br>All rights reserved.</p>
     </div>
   </div>
-  <p class="container footer__note">This system supports recordkeeping and care coordination. It does not replace professional medical assessment, diagnosis, or emergency services.</p>
 </footer>
+
+@if (authView(); as v) {
+  <app-login [start]="v" (closed)="closeAuth()" />
+}

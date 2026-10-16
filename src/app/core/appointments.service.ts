@@ -1,0 +1,223 @@
+import { Injectable } from '@angular/core';
+import {
+  collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, updateDoc, where,
+} from 'firebase/firestore';
+import { auth, db } from './firebase';
+
+export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled';
+
+export const APPOINTMENT_TYPES = [
+  'Prenatal checkup',
+  'Postpartum follow-up',
+  'Delivery consultation',
+  'Newborn check',
+  'Other',
+];
+
+/** Clinic hours. Change these to match your facility. Days: 0 = Sunday ... 6 = Saturday. */
+export const CLINIC = {
+  openDays: [1, 2, 3, 4, 5, 6],
+  start: '08:00',
+  end: '17:00',
+  slotMinutes: 30,
+  breakStart: '12:00',
+  breakEnd: '13:00',
+};
+
+export interface Appointment {
+  id: string;
+  patientId: string;
+  patientName: string;
+  date: string; // YYYY-MM-DD
+  time: string; // HH:mm
+  type: string;
+  notes: string;
+  status: AppointmentStatus;
+}
+
+export interface Booking {
+  patientId: string;
+  patientName: string;
+  date: string;
+  time: string;
+  type: string;
+  notes: string;
+}
+
+// ---------- small date/time helpers (all in local time) ----------
+const pad = (n: number) => String(n).padStart(2, '0');
+const toMinutes = (t: string) => {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+};
+const fromMinutes = (m: number) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+
+export function toIso(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function todayIso(): string {
+  return toIso(new Date());
+}
+
+export function parseIso(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/** "14:30" -> "2:30 PM" */
+export function formatTime(t: string): string {
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${pad(m)} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+/** Every bookable time on a date (empty when the clinic is closed that day). */
+export function slotsFor(date: string): string[] {
+  if (!CLINIC.openDays.includes(parseIso(date).getDay())) return [];
+  const out: string[] = [];
+  const end = toMinutes(CLINIC.end);
+  for (let t = toMinutes(CLINIC.start); t + CLINIC.slotMinutes <= end; t += CLINIC.slotMinutes) {
+    if (t >= toMinutes(CLINIC.breakStart) && t < toMinutes(CLINIC.breakEnd)) continue;
+    out.push(fromMinutes(t));
+  }
+  return out;
+}
+
+export function isPast(date: string, time: string): boolean {
+  const d = parseIso(date);
+  const [h, m] = time.split(':').map(Number);
+  d.setHours(h, m, 0, 0);
+  return d.getTime() <= Date.now();
+}
+
+export const slotKey = (date: string, time: string) => `${date}_${time.replace(':', '')}`;
+
+@Injectable({ providedIn: 'root' })
+export class AppointmentsService {
+  async list(): Promise<Appointment[]> {
+    const snap = await getDocs(collection(db, 'appointments'));
+    return this.sorted(snap.docs.map((d) => this.toAppointment(d.id, d.data())));
+  }
+
+  async listForDate(date: string): Promise<Appointment[]> {
+    const snap = await getDocs(query(collection(db, 'appointments'), where('date', '==', date)));
+    return this.sorted(snap.docs.map((d) => this.toAppointment(d.id, d.data())));
+  }
+
+  async listForPatient(patientId: string): Promise<Appointment[]> {
+    const snap = await getDocs(query(collection(db, 'appointments'), where('patientId', '==', patientId)));
+    return this.sorted(snap.docs.map((d) => this.toAppointment(d.id, d.data())));
+  }
+
+  async get(id: string): Promise<Appointment | null> {
+    const snap = await getDoc(doc(db, 'appointments', id));
+    return snap.exists() ? this.toAppointment(snap.id, snap.data()) : null;
+  }
+
+  /** Booked times between two dates: { date: { time: appointmentId } } */
+  async bookedBetween(from: string, to: string): Promise<Record<string, Record<string, string>>> {
+    const snap = await getDocs(
+      query(collection(db, 'bookedSlots'), where('date', '>=', from), where('date', '<=', to)),
+    );
+    const out: Record<string, Record<string, string>> = {};
+    for (const d of snap.docs) {
+      const v = d.data();
+      const date = String(v['date']);
+      (out[date] ??= {})[String(v['time'])] = String(v['appointmentId']);
+    }
+    return out;
+  }
+
+  /**
+   * Books a time. Each time has a "lock" document, so two people can never
+   * take the same time, even if they click at the same moment.
+   */
+  async book(b: Booking): Promise<string> {
+    const slotRef = doc(db, 'bookedSlots', slotKey(b.date, b.time));
+    const apptRef = doc(collection(db, 'appointments'));
+    await runTransaction(db, async (tx) => {
+      if ((await tx.get(slotRef)).exists()) throw new Error('slot-taken');
+      tx.set(slotRef, { appointmentId: apptRef.id, date: b.date, time: b.time });
+      tx.set(apptRef, {
+        ...b,
+        status: 'scheduled',
+        createdAt: serverTimestamp(),
+        createdBy: auth.currentUser?.uid ?? null,
+      });
+    });
+    return apptRef.id;
+  }
+
+  /** Reschedules and/or edits the details of a scheduled appointment. */
+  async update(id: string, change: { date: string; time: string; type: string; notes: string }): Promise<void> {
+    await runTransaction(db, async (tx) => {
+      const apptRef = doc(db, 'appointments', id);
+      const appt = await tx.get(apptRef);
+      if (!appt.exists()) throw new Error('not-found');
+      if (appt.data()['status'] !== 'scheduled') throw new Error('not-scheduled');
+
+      const oldKey = slotKey(String(appt.data()['date']), String(appt.data()['time']));
+      const newKey = slotKey(change.date, change.time);
+      if (newKey !== oldKey) {
+        const newRef = doc(db, 'bookedSlots', newKey);
+        if ((await tx.get(newRef)).exists()) throw new Error('slot-taken');
+        tx.delete(doc(db, 'bookedSlots', oldKey));
+        tx.set(newRef, { appointmentId: id, date: change.date, time: change.time });
+      }
+      tx.update(apptRef, { ...change, updatedAt: serverTimestamp() });
+    });
+  }
+
+  async cancel(id: string): Promise<void> {
+    await runTransaction(db, async (tx) => {
+      const apptRef = doc(db, 'appointments', id);
+      const appt = await tx.get(apptRef);
+      if (!appt.exists()) throw new Error('not-found');
+      if (appt.data()['status'] !== 'scheduled') throw new Error('not-scheduled');
+      tx.delete(doc(db, 'bookedSlots', slotKey(String(appt.data()['date']), String(appt.data()['time']))));
+      tx.update(apptRef, { status: 'cancelled', cancelledAt: serverTimestamp() });
+    });
+  }
+
+  async complete(id: string): Promise<void> {
+    await updateDoc(doc(db, 'appointments', id), { status: 'completed', updatedAt: serverTimestamp() });
+  }
+
+  private sorted(list: Appointment[]): Appointment[] {
+    return list.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  }
+
+  private toAppointment(id: string, d: Record<string, unknown>): Appointment {
+    const s = (k: string) => (typeof d[k] === 'string' ? (d[k] as string) : '');
+    const status = s('status');
+    return {
+      id,
+      patientId: s('patientId'),
+      patientName: s('patientName'),
+      date: s('date'),
+      time: s('time'),
+      type: s('type'),
+      notes: s('notes'),
+      status: status === 'completed' || status === 'cancelled' ? status : 'scheduled',
+    };
+  }
+
+  errorMessage(e: unknown): string {
+    const code = (e as { code?: string }).code ?? (e as Error).message;
+    switch (code) {
+      case 'slot-taken':
+        return 'That time was just booked. Please pick another time.';
+      case 'not-found':
+        return 'This appointment was not found.';
+      case 'not-scheduled':
+        return 'This appointment is already completed or cancelled.';
+      case 'permission-denied':
+        return "You don't have permission to do this. Check your Firestore rules.";
+      case 'unavailable':
+      case 'failed-precondition':
+        return 'No connection. Check your internet and try again.';
+      default:
+        return 'Something went wrong. Please try again.';
+    }
+  }
+}

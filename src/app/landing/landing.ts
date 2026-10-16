@@ -1,11 +1,13 @@
-import { Component, HostListener, OnDestroy, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService } from '../core/auth.service';
+import { AuthView, Login } from '../login/login';
 
 interface Service { title: string; text: string; icon: 'user' | 'calendar' | 'folderheart' | 'users' | 'chart'; tone: 'green' | 'lavender' | 'peach'; }
 
 @Component({
   selector: 'app-landing',
-  imports: [RouterLink],
+  imports: [Login],
   templateUrl: './landing.html',
   styleUrl: './landing.css',
 })
@@ -14,13 +16,19 @@ export class Landing implements OnInit, OnDestroy {
   readonly menuOpen = signal(false);
   readonly active = signal('home');
 
+  // Log in window
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private auth = inject(AuthService);
+  readonly authView = signal<AuthView | null>(null);
+  private opener: HTMLElement | null = null;
+
   readonly links = [
     { id: 'home', label: 'Home' },
     { id: 'about', label: 'About' },
     { id: 'services', label: 'Services' },
     { id: 'contact', label: 'Contact' },
   ];
-
 
   readonly services: Service[] = [
     { title: 'Patient registration', text: 'A simple start to your care journey, with organized patient profiles.', icon: 'user', tone: 'green' },
@@ -37,10 +45,13 @@ export class Landing implements OnInit, OnDestroy {
     address: 'Lying-In Care Center, Philippines',
   };
 
-
   private observer?: IntersectionObserver;
 
   ngOnInit(): void {
+    // The /login address opens the page with the log in window already showing.
+    const initial = this.route.snapshot.data['auth'] as AuthView | undefined;
+    if (initial) this.authView.set(initial);
+
     // Highlight the nav link of the section currently in view.
     this.observer = new IntersectionObserver(
       (entries) => {
@@ -56,6 +67,22 @@ export class Landing implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.observer?.disconnect();
+  }
+
+  openAuth(view: AuthView): void {
+    this.menuOpen.set(false);
+    if (this.auth.user() && this.auth.role()) {
+      void this.router.navigateByUrl(this.auth.homeRoute()); // already logged in
+      return;
+    }
+    this.opener = document.activeElement as HTMLElement | null;
+    this.authView.set(view);
+  }
+
+  closeAuth(): void {
+    this.authView.set(null);
+    if (this.router.url.startsWith('/login')) void this.router.navigateByUrl('/');
+    this.opener?.focus();
   }
 
   scrollTo(id: string, event?: Event): void {

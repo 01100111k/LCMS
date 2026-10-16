@@ -1,1 +1,508 @@
-/* You can add global styles to this file, and also import other style files */
+/* Google Fonts - Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --brand-900: #36264f;
+  --brand-700: #6b4fa3;
+  --brand-600: #8d72c4;
+  --brand-500: #C3B1E1;
+  --tint-100: #ece5f6;
+  --tint-50: #f7f3fc;
+  --ink: #2a2438;
+  --muted: #5a5468;
+  --line: #e4dbf1;
+  --white: #ffffff;
+  --rose-100: #fbe6ee;
+  --rose-600: #c2527a;
+  --blue-100: #e6e8fb;
+  --blue-600: #5560c9;
+  --radius: 14px;
+  --nav-h: 68px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #fbf9fe;
+  color: var(--ink);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+/* ========================================================
+   NAVBAR (mw-bar)
+   ======================================================== */
+.mw-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--nav-h);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+}
+
+.mw-bar__in {
+  width: min(1140px, 100% - 48px);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.mw-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--brand-700);
+  text-decoration: none;
+}
+
+.mw-brand svg {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.mw-brand span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.mw-brand strong {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--brand-900);
+}
+
+.mw-brand small {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.mw-nav {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.mw-nav a {
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.mw-nav a:hover {
+  color: var(--brand-700);
+  background: var(--tint-50);
+}
+
+.mw-nav a.on {
+  color: var(--brand-700);
+  background: var(--tint-100);
+  font-weight: 600;
+}
+
+.mw-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.mw-user span {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ========================================================
+   MAIN PAGE LAYOUT (mw-page)
+   ======================================================== */
+.mw-page {
+  width: min(1040px, 100% - 48px);
+  margin: 36px auto 64px;
+}
+
+.mw-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mw-head h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--brand-900);
+  letter-spacing: -0.01em;
+}
+
+.mw-sub {
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+
+.mw-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--brand-700);
+  text-decoration: none;
+  margin-bottom: 14px;
+  transition: transform 0.15s;
+}
+
+.mw-back:hover {
+  transform: translateX(-3px);
+  text-decoration: underline;
+}
+
+/* ========================================================
+   CARDS & TILES (mw-card, mw-cards, mw-tile)
+   ======================================================== */
+.mw-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(54, 38, 79, 0.04);
+}
+
+.mw-card h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--brand-900);
+}
+
+.mw-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.mw-tile {
+  display: block;
+  text-decoration: none;
+  background: #ffffff;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  cursor: pointer;
+}
+
+.mw-tile:hover {
+  transform: translateY(-3px);
+  border-color: var(--brand-600);
+  box-shadow: 0 10px 28px rgba(107, 79, 163, 0.12);
+}
+
+.mw-tile h2 {
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--brand-900);
+  margin: 0 0 6px;
+}
+
+.mw-tile p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+/* ========================================================
+   BUTTONS (mw-btn)
+   ======================================================== */
+.mw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid var(--line);
+  background: #ffffff;
+  color: var(--ink);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mw-btn:hover:not(:disabled) {
+  background: var(--tint-50);
+  border-color: var(--brand-500);
+  color: var(--brand-700);
+  box-shadow: 0 4px 12px rgba(107, 79, 163, 0.1);
+}
+
+.mw-btn--solid {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(107, 79, 163, 0.25);
+}
+
+.mw-btn--solid:hover:not(:disabled) {
+  background: #5b4190;
+  border-color: #5b4190;
+  color: #ffffff;
+  box-shadow: 0 8px 22px rgba(107, 79, 163, 0.35);
+  transform: translateY(-1px);
+}
+
+.mw-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mw-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ========================================================
+   SEARCH INPUT (mw-search)
+   ======================================================== */
+.mw-search {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: #ffffff;
+  font-size: 14.5px;
+  color: var(--ink);
+  margin-bottom: 20px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(54, 38, 79, 0.04);
+}
+
+.mw-search:focus {
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px var(--tint-100);
+}
+
+/* ========================================================
+   TABLES (mw-table-wrap, mw-table)
+   ======================================================== */
+.mw-table-wrap {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  box-shadow: 0 4px 20px rgba(54, 38, 79, 0.03);
+  margin-top: 16px;
+}
+
+.mw-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.mw-table th {
+  padding: 14px 20px;
+  background: var(--tint-50);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+
+.mw-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  vertical-align: middle;
+}
+
+.mw-table tr:last-child td {
+  border-bottom: none;
+}
+
+.mw-table tr:hover td {
+  background: #faf8fe;
+}
+
+.mw-table a {
+  color: var(--brand-700);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mw-table a:hover {
+  text-decoration: underline;
+}
+
+.mw-table small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ========================================================
+   FORMS (mw-grid, mw-field)
+   ======================================================== */
+.mw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px 24px;
+}
+
+.mw-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mw-field--wide {
+  grid-column: 1 / -1;
+}
+
+.mw-field label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--brand-900);
+}
+
+.mw-field input,
+.mw-field select,
+.mw-field textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--tint-50);
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.mw-field input:focus,
+.mw-field select:focus,
+.mw-field textarea:focus {
+  border-color: var(--brand-600);
+  background: #ffffff;
+  outline: 3px solid var(--tint-100);
+}
+
+.mw-field input.bad,
+.mw-field select.bad {
+  border-color: var(--rose-600);
+}
+
+.mw-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ========================================================
+   FEEDBACK & ALERTS (mw-msg, mw-empty)
+   ======================================================== */
+.mw-msg {
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  margin: 16px 0;
+  line-height: 1.5;
+}
+
+.mw-msg--error {
+  background: var(--rose-100);
+  color: #8f2a52;
+  border: 1px solid #f3c9d8;
+}
+
+.mw-msg--ok {
+  background: #dcf1e7;
+  color: #23654e;
+  border: 1px solid #b7e3cf;
+}
+
+.mw-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--muted);
+  font-size: 14.5px;
+}
+
+/* ========================================================
+   DEFINITION LIST (mw-dl - Patient Portal)
+   ======================================================== */
+.mw-dl {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 12px 24px;
+  font-size: 14px;
+  margin: 0;
+}
+
+.mw-dl dt {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.mw-dl dd {
+  color: var(--brand-900);
+  font-weight: 600;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .mw-dl {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .mw-dl dd {
+    margin-bottom: 12px;
+  }
+}
