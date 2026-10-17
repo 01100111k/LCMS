@@ -1,12 +1,12 @@
 import { DatePipe, NgClass } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { Patient, PatientsService, RiskLevel } from '../core/patients.service';
+import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Patient, PatientProfile, PatientsService, PatientStatus, RiskLevel } from '../core/patients.service';
 
 @Component({
   selector: 'app-patient-list',
-  imports: [RouterLink, DatePipe, FormsModule, NgClass],
+  imports: [RouterLink, DatePipe, FormsModule, ReactiveFormsModule, NgClass],
   template: `
     <div class="directory-wrap">
       <!-- ============ HEADER ============ -->
@@ -15,10 +15,10 @@ import { Patient, PatientsService, RiskLevel } from '../core/patients.service';
           <h1>Patient Directory</h1>
           <p class="dir-sub">{{ filtered().length }} patients registered</p>
         </div>
-        <a routerLink="/midwife/register-patient" class="btn-register">
+        <button type="button" class="btn-register" (click)="openRegisterModal()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Register Patient
-        </a>
+        </button>
       </div>
 
       <!-- ============ FILTERS BAR ============ -->
@@ -76,9 +76,9 @@ import { Patient, PatientsService, RiskLevel } from '../core/patients.service';
           </svg>
           <h3>No patients registered yet</h3>
           <p>Register your first patient to begin tracking their care journey.</p>
-          <a routerLink="/midwife/register-patient" class="btn-register" style="margin-top: 8px;">
+          <button type="button" class="btn-register" style="margin-top: 8px;" (click)="openRegisterModal()">
             + Register Patient
-          </a>
+          </button>
         </div>
       } @else if (!filtered().length) {
         <div class="empty-state">
@@ -166,6 +166,124 @@ import { Patient, PatientsService, RiskLevel } from '../core/patients.service';
           </table>
         </div>
       }
+
+      <!-- ============ REGISTER PATIENT POP-OUT MODAL ============ -->
+      @if (showRegisterModal()) {
+        <div class="modal-backdrop" (click)="closeRegisterModal()">
+          <div class="modal-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal-head">
+              <div>
+                <h2 id="modal-title">Register Patient</h2>
+                <p class="modal-sub">Create patient record and account for maternal care management.</p>
+              </div>
+              <button type="button" class="btn-close-modal" (click)="closeRegisterModal()" title="Close dialog">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            @if (registerSuccess()) {
+              <div class="modal-success-box">
+                <div class="success-icon-badge">✓</div>
+                <h3>Patient Registered Successfully!</h3>
+                <p><strong>{{ registeredPatientName() }}</strong> has been added to the directory.</p>
+                <button type="button" class="btn-submit-modal" (click)="closeRegisterModal()">Done</button>
+              </div>
+            } @else {
+              <form [formGroup]="registerForm" (ngSubmit)="submitRegister()" class="modal-form-content" novalidate>
+                @if (registerError()) {
+                  <div class="modal-alert-error" role="alert">{{ registerError() }}</div>
+                }
+
+                <div class="form-section-label">Personal Information</div>
+                <div class="form-fields-grid">
+                  <div class="form-group span-2">
+                    <label for="reg-fullname">Full Name <span class="req">*</span></label>
+                    <input id="reg-fullname" formControlName="fullName" placeholder="e.g. Maria Santos" [class.is-bad]="isBad('fullName')">
+                  </div>
+                  <div class="form-group">
+                    <label for="reg-email">Email Address <span class="req">*</span></label>
+                    <input id="reg-email" type="email" formControlName="email" placeholder="patient@email.com" [class.is-bad]="isBad('email')">
+                  </div>
+                  <div class="form-group">
+                    <label for="reg-dob">Date of Birth <span class="req">*</span></label>
+                    <input id="reg-dob" type="date" formControlName="birthDate" [max]="todayIso" [class.is-bad]="isBad('birthDate')">
+                  </div>
+                  <div class="form-group">
+                    <label for="reg-phone">Contact Number <span class="req">*</span></label>
+                    <input id="reg-phone" type="tel" formControlName="contactNumber" placeholder="0912 345 6789" [class.is-bad]="isBad('contactNumber')">
+                  </div>
+                  <div class="form-group">
+                    <label for="reg-blood">Blood Type</label>
+                    <select id="reg-blood" formControlName="bloodType">
+                      <option value="">Select blood type</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                    </select>
+                  </div>
+                  <div class="form-group span-2">
+                    <label for="reg-address">Address <span class="req">*</span></label>
+                    <input id="reg-address" formControlName="address" placeholder="Barangay, Municipality / City, Province" [class.is-bad]="isBad('address')">
+                  </div>
+                </div>
+
+                <div class="form-section-label">Emergency Contact</div>
+                <div class="form-fields-grid">
+                  <div class="form-group">
+                    <label for="reg-ec-name">Contact Person <span class="req">*</span></label>
+                    <input id="reg-ec-name" formControlName="emergencyContactName" placeholder="Spouse or Guardian name" [class.is-bad]="isBad('emergencyContactName')">
+                  </div>
+                  <div class="form-group">
+                    <label for="reg-ec-phone">Contact Number <span class="req">*</span></label>
+                    <input id="reg-ec-phone" type="tel" formControlName="emergencyContactNumber" placeholder="0912 345 6789" [class.is-bad]="isBad('emergencyContactNumber')">
+                  </div>
+                </div>
+
+                <div class="form-section-label">Care & Pregnancy Details</div>
+                <div class="form-fields-grid">
+                  <div class="form-group">
+                    <label for="reg-lmp">Last Menstrual Period (LMP)</label>
+                    <input id="reg-lmp" type="date" formControlName="lmp" [max]="todayIso" (change)="onLmpChange()">
+                  </div>
+                  <div class="form-group">
+                    <label for="reg-edd">Estimated Due Date (EDD)</label>
+                    <input id="reg-edd" type="date" formControlName="edd">
+                  </div>
+                  <div class="form-group">
+                    <label for="reg-status">Status</label>
+                    <select id="reg-status" formControlName="status">
+                      <option value="Active">Active</option>
+                      <option value="Postpartum">Postpartum</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="reg-risk">Risk Level</label>
+                    <select id="reg-risk" formControlName="riskLevel">
+                      <option value="Low risk">Low risk</option>
+                      <option value="Medium risk">Medium risk</option>
+                      <option value="High risk">High risk</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="modal-footer-actions">
+                  <button type="button" class="btn-cancel-modal" (click)="closeRegisterModal()">Cancel</button>
+                  <button type="submit" class="btn-submit-modal" [disabled]="submittingRegister()">
+                    {{ submittingRegister() ? 'Registering…' : 'Register Patient' }}
+                  </button>
+                </div>
+              </form>
+            }
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: `
@@ -174,11 +292,11 @@ import { Patient, PatientsService, RiskLevel } from '../core/patients.service';
     }
 
     .directory-wrap {
-      max-width: 1280px;
+      max-width: 1240px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
     }
 
     /* Head */
@@ -186,12 +304,12 @@ import { Patient, PatientsService, RiskLevel } from '../core/patients.service';
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 16px;
+      gap: 14px;
     }
 
     .dir-head h1 {
       margin: 0;
-      font-size: 26px;
+      font-size: 22px;
       font-weight: 700;
       color: #271442;
       letter-spacing: -0.01em;
@@ -199,28 +317,29 @@ import { Patient, PatientsService, RiskLevel } from '../core/patients.service';
 
     .dir-sub {
       margin: 4px 0 0;
-      font-size: 13.5px;
+      font-size: 12.5px;
       color: #7a7189;
     }
 
     .btn-register {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       background: #361759;
       color: #ffffff;
-      padding: 10px 22px;
+      padding: 8px 20px;
+      border: none;
       border-radius: 999px;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 600;
-      text-decoration: none;
-      box-shadow: 0 4px 14px rgba(54, 23, 89, 0.25);
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(54, 23, 89, 0.25);
       transition: transform 0.15s, background 0.15s;
     }
 
     .btn-register svg {
-      width: 15px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
     }
 
     .btn-register:hover {
@@ -547,10 +666,257 @@ import { Patient, PatientsService, RiskLevel } from '../core/patients.service';
       font-size: 12.5px;
       cursor: pointer;
     }
+
+    /* ============ MODAL POP-OUT ============ */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 12, 42, 0.6);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 660px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(35, 12, 60, 0.35);
+      border: 1px solid rgba(110, 79, 168, 0.15);
+      animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.95) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-head {
+      padding: 18px 24px;
+      border-bottom: 1px solid #f0eaf8;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      background: #faf8fd;
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #271442;
+    }
+
+    .modal-sub {
+      margin: 3px 0 0;
+      font-size: 12.5px;
+      color: #7a7189;
+    }
+
+    .btn-close-modal {
+      background: transparent;
+      border: none;
+      color: #7a7189;
+      padding: 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-close-modal:hover {
+      background: #f0eaf8;
+      color: #271442;
+    }
+
+    .btn-close-modal svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .modal-form-content {
+      padding: 20px 24px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-section-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b4fa3;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #f3eff9;
+      margin-top: 4px;
+    }
+
+    .form-fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 14px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-group.span-2 {
+      grid-column: span 2;
+    }
+
+    .form-group label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #2a1647;
+    }
+
+    .req {
+      color: #c2527a;
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1.5px solid #ebe5f5;
+      background: #fbf9fe;
+      font-size: 13px;
+      color: #2a2438;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      background: #ffffff;
+      border-color: #6b4fa3;
+      box-shadow: 0 0 0 3px rgba(107, 79, 163, 0.12);
+    }
+
+    .form-group input.is-bad {
+      border-color: #e11d48;
+      background: #fff1f2;
+    }
+
+    .modal-alert-error {
+      padding: 10px 14px;
+      background: #ffe4e6;
+      border: 1px solid #fecdd3;
+      border-radius: 8px;
+      color: #9f1239;
+      font-size: 12.5px;
+    }
+
+    .modal-footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid #f0eaf8;
+      margin-top: 8px;
+    }
+
+    .btn-cancel-modal {
+      padding: 8.5px 18px;
+      border-radius: 999px;
+      border: 1px solid #d8cde9;
+      background: #ffffff;
+      color: #554869;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-cancel-modal:hover {
+      background: #f7f3fc;
+    }
+
+    .btn-submit-modal {
+      padding: 8.5px 22px;
+      border-radius: 999px;
+      border: none;
+      background: #4a1e78;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(74, 30, 120, 0.3);
+      transition: background 0.15s, transform 0.15s;
+    }
+
+    .btn-submit-modal:hover:not(:disabled) {
+      background: #391461;
+      transform: translateY(-1px);
+    }
+
+    .btn-submit-modal:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .modal-success-box {
+      padding: 36px 24px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .success-icon-badge {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #dcfce7;
+      color: #15803d;
+      font-size: 24px;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+    }
+
+    .modal-success-box h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #1e1b4b;
+    }
+
+    .modal-success-box p {
+      margin: 0;
+      font-size: 13.5px;
+      color: #4b5563;
+    }
   `,
 })
 export class PatientList implements OnInit {
   private patients = inject(PatientsService);
+  private fb = inject(NonNullableFormBuilder);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   readonly all = signal<Patient[]>([]);
   readonly loading = signal(true);
@@ -558,6 +924,29 @@ export class PatientList implements OnInit {
   readonly query = signal('');
   readonly selectedStatus = signal<string>('All');
   readonly selectedRisk = signal<string>('All');
+
+  // Modal signals
+  readonly showRegisterModal = signal(false);
+  readonly submittingRegister = signal(false);
+  readonly registerError = signal('');
+  readonly registerSuccess = signal(false);
+  readonly registeredPatientName = signal('');
+  readonly todayIso = new Date().toISOString().split('T')[0];
+
+  readonly registerForm = this.fb.group({
+    fullName: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    birthDate: ['', Validators.required],
+    contactNumber: ['', Validators.required],
+    address: ['', Validators.required],
+    emergencyContactName: ['', Validators.required],
+    emergencyContactNumber: ['', Validators.required],
+    bloodType: [''],
+    lmp: [''],
+    edd: [''],
+    status: ['Active' as PatientStatus],
+    riskLevel: ['Low risk' as RiskLevel],
+  });
 
   readonly filtered = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -586,6 +975,95 @@ export class PatientList implements OnInit {
 
   ngOnInit(): void {
     void this.load();
+    if (this.route.snapshot.queryParams['register'] === 'true') {
+      this.openRegisterModal();
+    }
+  }
+
+  openRegisterModal(): void {
+    this.registerForm.reset({
+      fullName: '',
+      email: '',
+      birthDate: '',
+      contactNumber: '',
+      address: '',
+      emergencyContactName: '',
+      emergencyContactNumber: '',
+      bloodType: '',
+      lmp: '',
+      edd: '',
+      status: 'Active',
+      riskLevel: 'Low risk',
+    });
+    this.registerError.set('');
+    this.registerSuccess.set(false);
+    this.showRegisterModal.set(true);
+  }
+
+  closeRegisterModal(): void {
+    this.showRegisterModal.set(false);
+    if (this.route.snapshot.queryParams['register']) {
+      void this.router.navigate([], { queryParams: {}, replaceUrl: true });
+    }
+  }
+
+  onLmpChange(): void {
+    const lmp = this.registerForm.controls.lmp.value;
+    if (lmp) {
+      const d = new Date(lmp);
+      d.setDate(d.getDate() + 280);
+      const edd = d.toISOString().split('T')[0];
+      this.registerForm.controls.edd.setValue(edd);
+    }
+  }
+
+  isBad(controlName: keyof typeof this.registerForm.controls): boolean {
+    const c = this.registerForm.controls[controlName];
+    return c.invalid && (c.touched || c.dirty);
+  }
+
+  async submitRegister(): Promise<void> {
+    if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
+      this.registerError.set('Please fill in all required fields marked with *');
+      return;
+    }
+
+    this.submittingRegister.set(true);
+    this.registerError.set('');
+
+    try {
+      const val = this.registerForm.getRawValue();
+      const profile: PatientProfile = {
+        fullName: val.fullName.trim(),
+        email: val.email.trim().toLowerCase(),
+        birthDate: val.birthDate,
+        contactNumber: val.contactNumber.trim(),
+        address: val.address.trim(),
+        emergencyContactName: val.emergencyContactName.trim(),
+        emergencyContactNumber: val.emergencyContactNumber.trim(),
+        bloodType: val.bloodType || '',
+        lmp: val.lmp || '',
+        edd: val.edd || '',
+        status: val.status,
+        riskLevel: val.riskLevel,
+        gravidaPara: 'G1P0',
+      };
+
+      await this.patients.register(profile);
+      this.registeredPatientName.set(profile.fullName);
+      this.registerSuccess.set(true);
+      await this.load();
+    } catch (e: any) {
+      const code = e?.code || '';
+      if (code === 'auth/email-already-in-use') {
+        this.registerError.set('A patient with this email already exists.');
+      } else {
+        this.registerError.set(e?.message || 'Could not register patient. Please check the information and try again.');
+      }
+    } finally {
+      this.submittingRegister.set(false);
+    }
   }
 
   async load(): Promise<void> {

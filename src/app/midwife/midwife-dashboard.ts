@@ -37,11 +37,11 @@ interface WeekDayBar {
         </div>
 
         <div class="hero-actions">
-          <a routerLink="/midwife/register-patient" class="btn-hero-solid">
+          <a [routerLink]="['/midwife/patients']" [queryParams]="{ register: 'true' }" class="btn-hero-solid">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Register Patient
           </a>
-          <a routerLink="/midwife/appointments/new" class="btn-hero-glass">
+          <a [routerLink]="['/midwife/appointments']" [queryParams]="{ new: 'true' }" class="btn-hero-glass">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             New Appointment
           </a>
@@ -260,8 +260,8 @@ interface WeekDayBar {
     .dashboard-wrap {
       display: flex;
       flex-direction: column;
-      gap: 22px;
-      max-width: 1280px;
+      gap: 16px;
+      max-width: 1240px;
       margin: 0 auto;
     }
 
@@ -272,61 +272,61 @@ interface WeekDayBar {
         linear-gradient(to right, rgba(63, 26, 110, 0.78) 0%, rgba(80, 40, 130, 0.42) 100%),
         url('/images/dashboard-banner-bg.png') center / cover no-repeat,
         #3f1a6e;
-      border-radius: 18px;
-      padding: 32px 36px;
+      border-radius: 14px;
+      padding: 22px 28px;
       color: #ffffff;
       display: flex;
       justify-content: space-between;
       align-items: center;
       overflow: hidden;
-      box-shadow: 0 10px 28px rgba(50, 22, 80, 0.2);
+      box-shadow: 0 8px 24px rgba(50, 22, 80, 0.16);
     }
 
     .hero-content {
       position: relative;
       z-index: 2;
-      max-width: 620px;
+      max-width: 580px;
     }
 
     .hero-date {
-      margin: 0 0 8px;
-      font-size: 13.5px;
+      margin: 0 0 6px;
+      font-size: 12.5px;
       color: #cdbfe3;
       font-weight: 500;
     }
 
     .hero-banner h1 {
       margin: 0;
-      font-size: 28px;
+      font-size: 23px;
       font-weight: 700;
       letter-spacing: -0.01em;
       color: #ffffff;
     }
 
     .hero-sub {
-      margin: 8px 0 0;
-      font-size: 14.5px;
+      margin: 6px 0 0;
+      font-size: 13.5px;
       color: #dfd4f2;
-      line-height: 1.5;
+      line-height: 1.45;
     }
 
     .hero-actions {
       position: relative;
       z-index: 2;
       display: flex;
-      gap: 12px;
+      gap: 10px;
       flex-shrink: 0;
     }
 
     .btn-hero-solid {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       background: #ffffff;
       color: #3e1b64;
-      padding: 10px 20px;
+      padding: 8.5px 18px;
       border-radius: 999px;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 600;
       text-decoration: none;
       transition: transform 0.15s, box-shadow 0.15s;
@@ -334,8 +334,8 @@ interface WeekDayBar {
     }
 
     .btn-hero-solid svg {
-      width: 15px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
     }
 
     .btn-hero-solid:hover {
@@ -346,12 +346,12 @@ interface WeekDayBar {
     .btn-hero-glass {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       background: rgba(255, 255, 255, 0.16);
       color: #ffffff;
-      padding: 10px 20px;
+      padding: 8.5px 18px;
       border-radius: 999px;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 600;
       text-decoration: none;
       backdrop-filter: blur(4px);
@@ -360,8 +360,8 @@ interface WeekDayBar {
     }
 
     .btn-hero-glass svg {
-      width: 15px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
     }
 
     .btn-hero-glass:hover {
@@ -382,41 +382,41 @@ interface WeekDayBar {
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
+      gap: 13px;
     }
 
     .kpi-card {
       background: #ffffff;
       border: 1px solid #ebe5f5;
-      border-radius: 16px;
-      padding: 20px 22px;
-      box-shadow: 0 4px 16px rgba(50, 24, 78, 0.03);
+      border-radius: 13px;
+      padding: 15px 18px;
+      box-shadow: 0 4px 14px rgba(50, 24, 78, 0.03);
       transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .kpi-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(50, 24, 78, 0.08);
+      box-shadow: 0 6px 20px rgba(50, 24, 78, 0.07);
     }
 
     .kpi-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     .kpi-icon-circle {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       display: grid;
       place-items: center;
     }
 
     .kpi-icon-circle svg {
-      width: 19px;
-      height: 19px;
+      width: 16px;
+      height: 16px;
     }
 
     .tone-purple {
@@ -430,7 +430,7 @@ interface WeekDayBar {
     }
 
     .kpi-trend {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
     }
 
@@ -443,7 +443,7 @@ interface WeekDayBar {
     }
 
     .kpi-value {
-      font-size: 32px;
+      font-size: 25px;
       font-weight: 700;
       color: #271442;
       line-height: 1.1;
@@ -451,8 +451,8 @@ interface WeekDayBar {
     }
 
     .kpi-label {
-      margin-top: 6px;
-      font-size: 13.5px;
+      margin-top: 4px;
+      font-size: 12.5px;
       color: #6a6177;
       font-weight: 500;
     }
@@ -461,27 +461,27 @@ interface WeekDayBar {
     .two-col-grid {
       display: grid;
       grid-template-columns: 1.6fr 1fr;
-      gap: 18px;
+      gap: 14px;
     }
 
     .panel-card {
       background: #ffffff;
       border: 1px solid #ebe5f5;
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 4px 16px rgba(50, 24, 78, 0.03);
+      border-radius: 14px;
+      padding: 18px 20px;
+      box-shadow: 0 4px 14px rgba(50, 24, 78, 0.03);
     }
 
     .panel-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .panel-header h2 {
       margin: 0;
-      font-size: 17px;
+      font-size: 15.5px;
       font-weight: 700;
       color: #2a1647;
       letter-spacing: -0.01em;

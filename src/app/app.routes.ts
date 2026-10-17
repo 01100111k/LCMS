@@ -19,7 +19,7 @@ export const routes: Routes = [
     canActivate: [roleGuard('midwife')],
     children: [
       { path: '', component: MidwifeDashboard, title: 'Dashboard · Lying-In Care' },
-      { path: 'register-patient', component: PatientForm, title: 'Register patient · Lying-In Care' },
+      { path: 'register-patient', redirectTo: 'patients', pathMatch: 'full' },
       { path: 'patients', component: PatientList, title: 'Patients · Lying-In Care' },
       { path: 'patients/new', component: PatientForm, title: 'Register patient · Lying-In Care' },
       { path: 'patients/:id', component: PatientForm, title: 'Patient profile · Lying-In Care' },

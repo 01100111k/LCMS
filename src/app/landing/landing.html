@@ -24,127 +24,307 @@
 <header class="nav">
   <div class="container nav__inner">
     <a class="brand" href="#home" (click)="scrollTo('home', $event)" aria-label="Lying-In Care Management System, home">
-      <svg class="brand__logo"><use href="#i-logo"/></svg>
+      <div class="brand-icon-box">
+        <svg class="brand__logo"><use href="#i-logo"/></svg>
+      </div>
       <span class="brand__text"><strong>Lying-In Care</strong></span>
     </a>
 
     <nav id="main-nav" class="nav__links" [class.open]="menuOpen()" aria-label="Main">
       @for (l of links; track l.id) {
-        <a [href]="'#' + l.id" [class.active]="active() === l.id" [attr.aria-current]="active() === l.id ? 'true' : null" (click)="scrollTo(l.id, $event)">{{ l.label }}</a>
+        <a
+          [href]="'#' + l.id"
+          [class.active]="active() === l.id"
+          [attr.aria-current]="active() === l.id ? 'true' : null"
+          (click)="scrollTo(l.id, $event)"
+        >
+          {{ l.label }}
+        </a>
       }
       <div class="nav__actions nav__actions--mobile">
-        <button type="button" class="btn btn--outline" (click)="openAuth('login')"><svg><use href="#i-login"/></svg>Login</button>
-        <button type="button" class="btn btn--solid" (click)="openAuth('start')">Get Started<svg class="arrow"><use href="#i-arrow"/></svg></button>
+        <button type="button" class="btn btn--outline" (click)="openAuth('login')">
+          <svg><use href="#i-login"/></svg>Login
+        </button>
+        <button type="button" class="btn btn--solid" (click)="openAuth('start')">
+          Get Started<svg class="arrow"><use href="#i-arrow"/></svg>
+        </button>
       </div>
     </nav>
 
     <div class="nav__actions">
-      <button type="button" class="btn btn--outline" (click)="openAuth('login')"><svg><use href="#i-login"/></svg>Login</button>
-      <button type="button" class="btn btn--solid" (click)="openAuth('start')">Get Started<svg class="arrow"><use href="#i-arrow"/></svg></button>
+      <button type="button" class="btn btn--outline" (click)="openAuth('login')">
+        <svg><use href="#i-login"/></svg>Login
+      </button>
+      <button type="button" class="btn btn--solid" (click)="openAuth('start')">
+        Get Started<svg class="arrow"><use href="#i-arrow"/></svg>
+      </button>
     </div>
 
-    <button class="burger" type="button" [class.is-open]="menuOpen()" (click)="menuOpen.set(!menuOpen())" [attr.aria-expanded]="menuOpen()" aria-controls="main-nav" aria-label="Toggle menu">
+    <button
+      class="burger"
+      type="button"
+      [class.is-open]="menuOpen()"
+      (click)="menuOpen.set(!menuOpen())"
+      [attr.aria-expanded]="menuOpen()"
+      aria-controls="main-nav"
+      aria-label="Toggle menu"
+    >
       <span></span><span></span><span></span>
     </button>
   </div>
 </header>
 
 <main>
-  <!-- ============ HERO ============ -->
+  <!-- ========================================================
+       1. LANDING PAGE FIRST PART (Hero)
+       - Full viewport height when zoomed out (only hero previewed)
+       - Natural photo of midwife and mother on right like before
+       - Enhanced wordings with Get Started & Learn More buttons
+       - No awkward checkmark row, no floating cards
+       ======================================================== -->
   <section id="home" class="hero">
+    <!-- Natural photo on the right with soft gradient mask like before -->
     <div class="hero__photo" role="img" aria-label="A midwife caring for an expectant mother"></div>
+
     <div class="container hero__inner">
       <div class="hero__copy">
-        <p class="eyebrow">Maternal care, simplified</p>
-        <h1>Compassionate Care for Every Stage of Motherhood.</h1>
-        <p class="hero__lead">The Lying-In Care Management System helps midwives and patients stay connected through secure access to appointments, records, and personalized maternal care.</p>
-        <div class="hero__cta">
-          <button type="button" class="btn btn--solid btn--lg" (click)="openAuth('start')">Get Started<svg class="arrow"><use href="#i-arrow"/></svg></button>
-          <a href="#about" class="btn btn--outline btn--lg" (click)="scrollTo('about', $event)">Learn More</a>
+        <p class="eyebrow reveal-on-scroll">Maternal care, simplified</p>
+        <h1 class="reveal-on-scroll delay-1">
+          Maternal Care Made<br>
+          <span class="hero-purple">Effortless</span>.
+        </h1>
+        <p class="hero__lead reveal-on-scroll delay-2">
+          Streamline prenatal checkups, clinical schedules, and patient records with a secure platform thoughtfully crafted for midwives and expecting mothers.
+        </p>
+        <div class="hero__cta reveal-on-scroll delay-3">
+          <button type="button" class="btn btn--solid btn--lg" (click)="openAuth('start')">
+            Get Started<svg class="arrow"><use href="#i-arrow"/></svg>
+          </button>
+          <a href="#about" class="btn btn--outline btn--lg" (click)="scrollTo('about', $event)">
+            Learn More
+          </a>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ============ ABOUT ============ -->
+  <!-- ========================================================
+       2. ABOUT LYING-IN CARE (Full Viewport Page)
+       - Newborn hand photo on left
+       - Eyebrow: ABOUT LYING-IN CARE
+       - Checked words removed
+       ======================================================== -->
   <section id="about" class="about">
     <div class="container about__grid">
-      <figure class="about__media">
+      <figure class="about__media reveal-on-scroll">
         <div class="about__photo" role="img" aria-label="A newborn's hand holding an adult's finger"></div>
       </figure>
-      <div class="about__copy">
-        <p class="eyebrow">About our system</p>
-        <h2>A little less paperwork.<br>A lot more connected care.</h2>
-        <p>The Lying-In Care Management System brings maternal healthcare into one thoughtfully organized space. It helps midwives manage patient records and appointments, while giving patients a simple way to stay informed and involved in their care.</p>
-        <ul class="about__points">
-          <li><svg><use href="#i-check"/></svg>For patients and midwives</li>
-          <li><svg><use href="#i-check"/></svg>From prenatal to postpartum</li>
-        </ul>
+      <div class="about__copy reveal-on-scroll delay-1">
+        <p class="eyebrow">ABOUT LYING-IN CARE</p>
+        <h2>Less Administrative Burden.<br>More Connected Maternal Care.</h2>
+        <p>
+          The Lying-In Care Management System brings maternal healthcare into one thoughtfully organized space. It helps midwives manage patient records and clinical appointments with precision, while giving patients a simple, reassuring way to stay informed and involved throughout pregnancy and birth.
+        </p>
       </div>
     </div>
   </section>
 
-  <!-- ============ SERVICES ============ -->
-  <section id="services" class="services">
+  <!-- ========================================================
+       3. THE FEATURES (Services)
+       - Balanced, squarish BOX shape in a 3x2 grid
+       - Clear icons, titles, and descriptions
+       ======================================================== -->
+  <section id="features" class="services">
     <div class="container">
-      <header class="section-head">
-        <p class="eyebrow">Our services</p>
-        <h2>Thoughtful tools. Better care.</h2>
-        <p class="section-sub">Everything you need for a more organized maternal care journey.</p>
+      <header class="section-head reveal-on-scroll">
+        <p class="eyebrow">Our Features</p>
+        <h2>Thoughtful Tools. Better Care.</h2>
+        <p class="section-sub">Everything needed for a well-coordinated and organized maternal care journey.</p>
       </header>
-      <div class="services__grid">
-        @for (f of services; track f.title) {
-          <article class="card">
-            <span class="icon-circle icon-circle--lg" [class]="'icon-circle icon-circle--lg tone-' + f.tone"><svg><use [attr.href]="'#i-' + f.icon"/></svg></span>
+
+      <div class="features__grid">
+        @for (f of features; track f.title; let idx = $index) {
+          <article class="feature-box reveal-on-scroll" [class]="'feature-box reveal-on-scroll delay-' + (idx % 3 + 1)">
+            <span class="icon-circle icon-circle--lg" [class]="'icon-circle icon-circle--lg tone-' + f.tone">
+              <svg><use [attr.href]="'#i-' + f.icon"/></svg>
+            </span>
             <h3>{{ f.title }}</h3>
             <p>{{ f.text }}</p>
           </article>
         }
       </div>
 
-      <!-- ============ CTA ============ -->
-      <aside class="cta">
+      <!-- ============ CTA BANNER ============ -->
+      <aside class="cta reveal-on-scroll">
         <svg class="cta__icon"><use href="#i-people"/></svg>
         <div class="cta__copy">
-          <h3>Ready to get started?</h3>
-          <p>Join our system today and experience a more organized and connected maternal care journey.</p>
+          <h3>Ready to experience better maternal care?</h3>
+          <p>Join our lying-in care network today and enjoy organized, dignified clinical support.</p>
         </div>
-        <button type="button" class="btn btn--white" (click)="openAuth('login')">Login Now<svg class="arrow"><use href="#i-arrow"/></svg></button>
+        <button type="button" class="btn btn--white" (click)="openAuth('start')">
+          Get Started Now<svg class="arrow"><use href="#i-arrow"/></svg>
+        </button>
       </aside>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       4. MISSION, BUILT FOR EVERYONE, RELIABLE & SECURE
+       (Matching Screenshot Mockup #3)
+       ======================================================== -->
+  <section id="mission" class="mission-section">
+    <div class="container">
+      <div class="section-head reveal-on-scroll">
+        <p class="eyebrow">Our Core Principles</p>
+        <h2>Designed for Compassion, Built for Trust</h2>
+        <p class="section-sub">
+          A dedicated foundation empowering healthcare providers and providing mothers peace of mind.
+        </p>
+      </div>
+
+      <div class="mission-cards-grid">
+        <!-- Card 1: Our Mission -->
+        <article class="mission-card reveal-on-scroll delay-1">
+          <div class="mission-icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <circle cx="12" cy="12" r="6"/>
+              <circle cx="12" cy="12" r="2"/>
+            </svg>
+          </div>
+          <h3>Our Mission</h3>
+          <p>
+            To simplify maternal healthcare management for lying-in clinics, making prenatal tracking, safe delivery prep, and postpartum care seamless and accurate.
+          </p>
+        </article>
+
+        <!-- Card 2: Built for Everyone -->
+        <article class="mission-card reveal-on-scroll delay-2">
+          <div class="mission-icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <h3>Built for Everyone</h3>
+          <p>
+            Designed with both healthcare providers and expecting mothers in mind, offering role-based dashboards tailored to midwife workflows and patient comfort.
+          </p>
+        </article>
+
+        <!-- Card 3: Reliable & Secure -->
+        <article class="mission-card reveal-on-scroll delay-3">
+          <div class="mission-icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+          </div>
+          <h3>Reliable & Secure</h3>
+          <p>
+            Your health records and patient history are encrypted, private, and safely backed up with real-time cloud synchronization across all devices.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       5. FREQUENTLY ASKED QUESTIONS (FAQs)
+       (Matching Screenshot Mockup #4)
+       ======================================================== -->
+  <section id="faqs" class="faqs-section">
+    <div class="container container--narrow">
+      <header class="section-head reveal-on-scroll">
+        <p class="eyebrow">FAQS</p>
+        <h2>Frequently Asked Questions</h2>
+        <p class="section-sub">
+          Everything you need to know about our lying-in care platform and clinical workflows.
+        </p>
+      </header>
+
+      <div class="faq-accordion-container">
+        @for (f of faqs; track f.question; let idx = $index) {
+          <div class="faq-item-card reveal-on-scroll" [class.is-open]="openFaqIndex() === idx">
+            <button
+              type="button"
+              class="faq-header-btn"
+              (click)="toggleFaq(idx)"
+              [attr.aria-expanded]="openFaqIndex() === idx"
+            >
+              <span class="faq-question-text">{{ f.question }}</span>
+              <svg class="faq-chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            @if (openFaqIndex() === idx) {
+              <div class="faq-answer-pane">
+                <p>{{ f.answer }}</p>
+              </div>
+            }
+          </div>
+        }
+      </div>
     </div>
   </section>
 </main>
 
-<!-- ============ FOOTER / CONTACT ============ -->
+<!-- ========================================================
+     6. THE CONTACTS / FOOTER
+     - Soft lavender/purple theme matching the entire site
+     - Clean brand lockup, quick links, system portals, contact info
+     ======================================================== -->
 <footer id="contact" class="footer">
   <div class="container footer__grid">
-    <div class="footer__brand">
-      <svg class="brand__logo"><use href="#i-logo"/></svg>
-      <span class="brand__text"><strong>Lying-In Care</strong></span>
+    <div class="footer__brand-col reveal-on-scroll">
+      <div class="footer__brand-lockup">
+        <div class="brand-icon-box">
+          <svg class="brand__logo"><use href="#i-logo"/></svg>
+        </div>
+        <span class="footer__brand-title"><strong>Lying-In Care</strong></span>
+      </div>
+      <p class="footer__bio">
+        A modern maternal healthcare management system connecting midwives and expecting mothers through organized appointments, prenatal records, and compassionate care.
+      </p>
     </div>
 
-    <nav class="footer__col" aria-label="Quick links">
+    <nav class="footer__col reveal-on-scroll delay-1" aria-label="Quick links">
       <h4>Quick Links</h4>
       @for (l of links; track l.id) {
         <a [href]="'#' + l.id" (click)="scrollTo(l.id, $event)">{{ l.label }}</a>
       }
     </nav>
 
-    <address class="footer__col">
-      <h4>Contact Us</h4>
-      <a [href]="'mailto:' + contact.email"><svg><use href="#i-mail"/></svg>{{ contact.email }}</a>
-      <a [href]="'tel:' + contact.phone.replaceAll(' ', '')"><svg><use href="#i-phone"/></svg>{{ contact.phone }}</a>
-      <span><svg><use href="#i-pin"/></svg>{{ contact.address }}</span>
-    </address>
+    <nav class="footer__col reveal-on-scroll delay-2" aria-label="System portals">
+      <h4>System Portals</h4>
+      <a href="/login" (click)="openAuth('login'); $event.preventDefault()">Midwife Portal</a>
+      <a href="/login" (click)="openAuth('login'); $event.preventDefault()">Patient Portal</a>
+      <a href="#features" (click)="scrollTo('features', $event)">Appointment Scheduling</a>
+      <a href="#features" (click)="scrollTo('features', $event)">Maternal Records</a>
+    </nav>
 
-    <div class="footer__end">
-      <div class="social">
-        <a href="#" aria-label="Facebook"><svg><use href="#i-facebook"/></svg></a>
-        <a href="#" aria-label="Instagram"><svg><use href="#i-instagram"/></svg></a>
-        <a href="#" aria-label="YouTube"><svg><use href="#i-youtube"/></svg></a>
-      </div>
-      <p>© {{ year }} Lying-In Care Management System.<br>All rights reserved.</p>
-    </div>
+    <address class="footer__col reveal-on-scroll delay-3">
+      <h4>Contact Us</h4>
+      <a [href]="'mailto:' + contact.email">
+        <svg><use href="#i-mail"/></svg>
+        <span>{{ contact.email }}</span>
+      </a>
+      <a [href]="'tel:' + contact.phone.replaceAll(' ', '')">
+        <svg><use href="#i-phone"/></svg>
+        <span>{{ contact.phone }}</span>
+      </a>
+      <span>
+        <svg><use href="#i-pin"/></svg>
+        <span>{{ contact.address }}</span>
+      </span>
+    </address>
+  </div>
+
+  <div class="container footer__bottom-bar">
+    <p>© {{ year }} Lying-In Care Management System. All rights reserved.</p>
   </div>
 </footer>
 

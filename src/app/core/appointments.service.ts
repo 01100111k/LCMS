@@ -4,12 +4,16 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
-export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled';
+export type AppointmentStatus = 'scheduled' | 'confirmed' | 'requested' | 'completed' | 'cancelled';
 
 export const APPOINTMENT_TYPES = [
-  'Prenatal checkup',
-  'Postpartum follow-up',
-  'Delivery consultation',
+  'Prenatal',
+  'Postpartum',
+  'Delivery',
+  'Consultation',
+  'Follow-up',
+  'First Trimester Scan',
+  'Lab Test',
   'Newborn check',
   'Other',
 ];
@@ -42,6 +46,7 @@ export interface Booking {
   time: string;
   type: string;
   notes: string;
+  status?: AppointmentStatus;
 }
 
 // ---------- small date/time helpers (all in local time) ----------
@@ -140,7 +145,7 @@ export class AppointmentsService {
       tx.set(slotRef, { appointmentId: apptRef.id, date: b.date, time: b.time });
       tx.set(apptRef, {
         ...b,
-        status: 'scheduled',
+        status: b.status || 'scheduled',
         createdAt: serverTimestamp(),
         createdBy: auth.currentUser?.uid ?? null,
       });
@@ -154,7 +159,7 @@ export class AppointmentsService {
       const apptRef = doc(db, 'appointments', id);
       const appt = await tx.get(apptRef);
       if (!appt.exists()) throw new Error('not-found');
-      if (appt.data()['status'] !== 'scheduled') throw new Error('not-scheduled');
+      if (appt.data()['status'] === 'cancelled') throw new Error('not-scheduled');
 
       const oldKey = slotKey(String(appt.data()['date']), String(appt.data()['time']));
       const newKey = slotKey(change.date, change.time);
@@ -168,19 +173,41 @@ export class AppointmentsService {
     });
   }
 
+  /** Change appointment status with bookedSlots synchronization */
+  async setStatus(id: string, newStatus: AppointmentStatus): Promise<void> {
+    const apptRef = doc(db, 'appointments', id);
+    const snap = await getDoc(apptRef);
+    if (!snap.exists()) throw new Error('not-found');
+    const data = snap.data();
+    const curStatus = (data['status'] as AppointmentStatus) || 'scheduled';
+    const key = slotKey(String(data['date']), String(data['time']));
+    const slotRef = doc(db, 'bookedSlots', key);
+
+    if (newStatus === 'cancelled' && curStatus !== 'cancelled') {
+      await runTransaction(db, async (tx) => {
+        tx.delete(slotRef);
+        tx.update(apptRef, { status: 'cancelled', cancelledAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      });
+    } else if (newStatus !== 'cancelled' && curStatus === 'cancelled') {
+      await runTransaction(db, async (tx) => {
+        const slotSnap = await tx.get(slotRef);
+        if (slotSnap.exists() && slotSnap.data()['appointmentId'] !== id) {
+          throw new Error('slot-taken');
+        }
+        tx.set(slotRef, { appointmentId: id, date: data['date'], time: data['time'] });
+        tx.update(apptRef, { status: newStatus, updatedAt: serverTimestamp() });
+      });
+    } else {
+      await updateDoc(apptRef, { status: newStatus, updatedAt: serverTimestamp() });
+    }
+  }
+
   async cancel(id: string): Promise<void> {
-    await runTransaction(db, async (tx) => {
-      const apptRef = doc(db, 'appointments', id);
-      const appt = await tx.get(apptRef);
-      if (!appt.exists()) throw new Error('not-found');
-      if (appt.data()['status'] !== 'scheduled') throw new Error('not-scheduled');
-      tx.delete(doc(db, 'bookedSlots', slotKey(String(appt.data()['date']), String(appt.data()['time']))));
-      tx.update(apptRef, { status: 'cancelled', cancelledAt: serverTimestamp() });
-    });
+    return this.setStatus(id, 'cancelled');
   }
 
   async complete(id: string): Promise<void> {
-    await updateDoc(doc(db, 'appointments', id), { status: 'completed', updatedAt: serverTimestamp() });
+    return this.setStatus(id, 'completed');
   }
 
   private sorted(list: Appointment[]): Appointment[] {
@@ -189,7 +216,9 @@ export class AppointmentsService {
 
   private toAppointment(id: string, d: Record<string, unknown>): Appointment {
     const s = (k: string) => (typeof d[k] === 'string' ? (d[k] as string) : '');
-    const status = s('status');
+    const validStatuses: AppointmentStatus[] = ['scheduled', 'confirmed', 'requested', 'completed', 'cancelled'];
+    const rawStatus = s('status') as AppointmentStatus;
+    const status: AppointmentStatus = validStatuses.includes(rawStatus) ? rawStatus : 'scheduled';
     return {
       id,
       patientId: s('patientId'),
@@ -198,7 +227,7 @@ export class AppointmentsService {
       time: s('time'),
       type: s('type'),
       notes: s('notes'),
-      status: status === 'completed' || status === 'cancelled' ? status : 'scheduled',
+      status,
     };
   }
 

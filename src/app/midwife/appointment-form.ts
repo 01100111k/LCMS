@@ -116,7 +116,13 @@ export class AppointmentForm implements OnInit {
   readonly id = this.route.snapshot.paramMap.get('id'); // null when scheduling a new one
   readonly editing = this.id !== null;
   readonly types = APPOINTMENT_TYPES;
-  readonly statusLabel: Record<AppointmentStatus, string> = { scheduled: 'Scheduled', completed: 'Completed', cancelled: 'Cancelled' };
+  readonly statusLabel: Record<AppointmentStatus, string> = {
+    scheduled: 'Scheduled',
+    confirmed: 'Confirmed',
+    requested: 'Requested',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+  };
   readonly fmt = formatTime;
 
   readonly patients = signal<Patient[]>([]);

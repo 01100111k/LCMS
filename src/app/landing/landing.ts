@@ -1,9 +1,19 @@
-import { Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { AuthView, Login } from '../login/login';
 
-interface Service { title: string; text: string; icon: 'user' | 'calendar' | 'folderheart' | 'users' | 'chart'; tone: 'green' | 'lavender' | 'peach'; }
+interface Feature {
+  title: string;
+  text: string;
+  icon: 'user' | 'calendar' | 'folderheart' | 'users' | 'chart' | 'check';
+  tone: 'green' | 'lavender' | 'peach';
+}
+
+interface FaqItem {
+  question: string;
+  answer: string;
+}
 
 @Component({
   selector: 'app-landing',
@@ -11,7 +21,7 @@ interface Service { title: string; text: string; icon: 'user' | 'calendar' | 'fo
   templateUrl: './landing.html',
   styleUrl: './landing.css',
 })
-export class Landing implements OnInit, OnDestroy {
+export class Landing implements OnInit, AfterViewInit, OnDestroy {
   readonly year = new Date().getFullYear();
   readonly menuOpen = signal(false);
   readonly active = signal('home');
@@ -26,53 +36,158 @@ export class Landing implements OnInit, OnDestroy {
   readonly links = [
     { id: 'home', label: 'Home' },
     { id: 'about', label: 'About' },
-    { id: 'services', label: 'Services' },
+    { id: 'features', label: 'Features' },
+    { id: 'mission', label: 'Mission' },
+    { id: 'faqs', label: 'FAQs' },
     { id: 'contact', label: 'Contact' },
   ];
 
-  readonly services: Service[] = [
-    { title: 'Patient registration', text: 'A simple start to your care journey, with organized patient profiles.', icon: 'user', tone: 'green' },
-    { title: 'Appointment scheduling', text: 'Book, reschedule, and keep track of upcoming appointments.', icon: 'calendar', tone: 'lavender' },
-    { title: 'Maternal care records', text: 'Connected records from prenatal visits to postpartum care.', icon: 'folderheart', tone: 'peach' },
-    { title: 'Patient portal', text: 'Your profile, appointments, and permitted care records in one place.', icon: 'users', tone: 'lavender' },
-    { title: 'Reports & insights', text: 'Meaningful summaries that support informed care coordination.', icon: 'chart', tone: 'green' },
+  // 6 box-shaped features in a balanced 3x2 grid
+  readonly features: Feature[] = [
+    {
+      title: 'Patient Registration & EDD',
+      text: 'Fast, organized onboarding with auto-calculated Estimated Due Date (EDD) from LMP and complete maternal background.',
+      icon: 'user',
+      tone: 'green',
+    },
+    {
+      title: 'Appointment Scheduling',
+      text: 'Interactive calendar with Month & Week views, clinic working hours, open slot booking, and conflict prevention.',
+      icon: 'calendar',
+      tone: 'lavender',
+    },
+    {
+      title: 'Maternal Health Records',
+      text: 'Connected records from first trimester scans and routine prenatal visits to delivery preparation and postpartum care.',
+      icon: 'folderheart',
+      tone: 'peach',
+    },
+    {
+      title: 'Dedicated Patient Portal',
+      text: 'Convenient mobile-friendly access for expecting mothers to check appointment times, clinic schedules, and visit history.',
+      icon: 'users',
+      tone: 'lavender',
+    },
+    {
+      title: 'Live Status Management',
+      text: 'Instant status updates for every visit — Requested, Scheduled, Confirmed, Completed, or Cancelled with live sync.',
+      icon: 'check',
+      tone: 'green',
+    },
+    {
+      title: 'Clinical Analytics & Insights',
+      text: 'Meaningful summaries of monthly patient volume, care completion rates, and clinic activity for informed coordination.',
+      icon: 'chart',
+      tone: 'peach',
+    },
   ];
 
-  // Replace these with your facility's real details.
+  // Frequently Asked Questions
+  readonly openFaqIndex = signal<number | null>(null);
+
+  readonly faqs: FaqItem[] = [
+    {
+      question: 'How does appointment scheduling work for prenatal checkups?',
+      answer:
+        'Midwives and clinic staff can easily book appointments for registered patients via the interactive calendar. Patients can also coordinate their schedules through the patient portal. The system prevents double bookings and manages clinic working hours automatically.',
+    },
+    {
+      question: 'Can expecting mothers access the portal on their smartphones?',
+      answer:
+        'Yes! The system is fully responsive across mobile phones, tablets, and desktops. Expecting mothers can log in from any web browser to view upcoming appointments, visit history, and clinic updates without downloading an external app.',
+    },
+    {
+      question: 'How are appointment statuses (Scheduled, Confirmed, Cancelled, Completed) managed?',
+      answer:
+        'Midwives can click any patient on the calendar to open an appointment status card. Statuses can be updated in real time between Requested, Scheduled, Confirmed, Completed, or Cancelled with automatic synchronization to Firebase.',
+    },
+    {
+      question: 'Can midwives track medical history and prenatal milestones?',
+      answer:
+        'Yes. Each patient has a dedicated profile that records gestational milestones, obstetrical history (Gravida, Para), Estimated Date of Delivery (EDD), vital signs, and personalized visit notes for every stage of pregnancy.',
+    },
+    {
+      question: 'Is patient medical data secure and confidential?',
+      answer:
+        'Your health records are stored in secure cloud infrastructure with enterprise-level encryption, role-based access rules, and authenticated credentials so only authorized healthcare personnel and the patient can view records.',
+    },
+    {
+      question: 'What user roles are available in the system?',
+      answer:
+        'The system features two tailored portals: the Midwife Portal with clinical management tools, calendar controls, and patient registration, and the Patient Portal designed for mothers to view their care schedule.',
+    },
+  ];
+
   readonly contact = {
     email: 'lyingincare@system.com',
     phone: '+63 912 345 6789',
     address: 'Lying-In Care Center, Philippines',
   };
 
-  private observer?: IntersectionObserver;
+  private navObserver?: IntersectionObserver;
+  private scrollRevealObserver?: IntersectionObserver;
 
   ngOnInit(): void {
-    // The /login address opens the page with the log in window already showing.
     const initial = this.route.snapshot.data['auth'] as AuthView | undefined;
     if (initial) this.authView.set(initial);
+  }
 
-    // Highlight the nav link of the section currently in view.
-    this.observer = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) if (e.isIntersecting) this.active.set(e.target.id);
-      },
-      { rootMargin: '-40% 0px -55% 0px' },
-    );
-    this.links.forEach((l) => {
-      const el = document.getElementById(l.id);
-      if (el) this.observer!.observe(el);
-    });
+  ngAfterViewInit(): void {
+    this.updateNavHeight();
+    this.setupNavObserver();
+    this.setupScrollReveal();
   }
 
   ngOnDestroy(): void {
-    this.observer?.disconnect();
+    this.navObserver?.disconnect();
+    this.scrollRevealObserver?.disconnect();
+  }
+
+  toggleFaq(index: number): void {
+    this.openFaqIndex.update((curr) => (curr === index ? null : index));
+  }
+
+  private setupNavObserver(): void {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+    this.navObserver = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) this.active.set(e.target.id);
+        }
+      },
+      { rootMargin: '-30% 0px -60% 0px' },
+    );
+    this.links.forEach((l) => {
+      const el = document.getElementById(l.id);
+      if (el) this.navObserver!.observe(el);
+    });
+  }
+
+  private setupScrollReveal(): void {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+
+    this.scrollRevealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' },
+    );
+
+    setTimeout(() => {
+      document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
+        this.scrollRevealObserver?.observe(el);
+      });
+    }, 120);
   }
 
   openAuth(view: AuthView): void {
     this.menuOpen.set(false);
     if (this.auth.user() && this.auth.role()) {
-      void this.router.navigateByUrl(this.auth.homeRoute()); // already logged in
+      void this.router.navigateByUrl(this.auth.homeRoute());
       return;
     }
     this.opener = document.activeElement as HTMLElement | null;
@@ -91,9 +206,31 @@ export class Landing implements OnInit, OnDestroy {
     if (id === 'home') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      const el = document.getElementById(id);
+      if (el) {
+        const nav = document.querySelector('.nav') as HTMLElement | null;
+        const navH = nav ? nav.offsetHeight : 68;
+        const targetTop = el.getBoundingClientRect().top + window.scrollY - navH;
+        window.scrollTo({ top: Math.round(targetTop), behavior: 'smooth' });
+      }
     }
     this.active.set(id);
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.updateNavHeight();
+  }
+
+  private updateNavHeight(): void {
+    if (typeof window === 'undefined') return;
+    const nav = document.querySelector('.nav') as HTMLElement | null;
+    if (nav) {
+      const h = nav.offsetHeight;
+      if (h > 0) {
+        document.documentElement.style.setProperty('--nav-h', `${h}px`);
+      }
+    }
   }
 
   @HostListener('window:keydown.escape')

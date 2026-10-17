@@ -117,7 +117,13 @@ export class PatientPortal implements OnInit {
   private patients = inject(PatientsService);
   private appointments = inject(AppointmentsService);
 
-  readonly statusLabel: Record<AppointmentStatus, string> = { scheduled: 'Scheduled', completed: 'Completed', cancelled: 'Cancelled' };
+  readonly statusLabel: Record<AppointmentStatus, string> = {
+    scheduled: 'Scheduled',
+    confirmed: 'Confirmed',
+    requested: 'Requested',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+  };
   readonly fmt = formatTime;
   readonly appts = signal<Appointment[]>([]);
   readonly upcoming = computed(() =>

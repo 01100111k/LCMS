@@ -32,16 +32,7 @@ import { AuthService } from '../core/auth.service';
             <span>Dashboard</span>
           </a>
 
-          <!-- 2. Register Patient (Direct Section right under Dashboard) -->
-          <a routerLink="/midwife/register-patient" routerLinkActive="active" class="nav-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/>
-              <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
-            </svg>
-            <span>Register Patient</span>
-          </a>
-
-          <!-- 3. Patients (Patient Directory) -->
+          <!-- 2. Patients (Patient Directory) -->
           <a routerLink="/midwife/patients" routerLinkActive="active" class="nav-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -206,8 +197,8 @@ import { AuthService } from '../core/auth.service';
 
     /* ============ SIDEBAR ============ */
     .mw-sidebar {
-      width: 254px;
-      min-width: 254px;
+      width: 224px;
+      min-width: 224px;
       height: 100vh;
       background: #2b1446;
       display: flex;
@@ -220,30 +211,30 @@ import { AuthService } from '../core/auth.service';
     .sidebar-brand {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 22px 20px 18px;
+      gap: 10px;
+      padding: 16px 16px 14px;
       text-decoration: none;
     }
 
     .brand-logo-box {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
       background: #6b4fa3;
       display: grid;
       place-items: center;
       color: #ffffff;
       flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
     }
 
     .brand-logo-box svg {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
     }
 
     .brand-text strong {
-      font-size: 17px;
+      font-size: 15.5px;
       font-weight: 700;
       color: #ffffff;
       letter-spacing: -0.01em;
@@ -253,10 +244,10 @@ import { AuthService } from '../core/auth.service';
     .sidebar-nav {
       flex: 1;
       overflow-y: auto;
-      padding: 10px 14px;
+      padding: 6px 10px;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
     }
 
     .sidebar-nav::-webkit-scrollbar {
@@ -270,10 +261,10 @@ import { AuthService } from '../core/auth.service';
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 13px;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 13.5px;
+      gap: 11px;
+      padding: 7.5px 11px;
+      border-radius: 8px;
+      font-size: 13px;
       font-weight: 500;
       color: #cdbfe3;
       text-decoration: none;
@@ -281,8 +272,8 @@ import { AuthService } from '../core/auth.service';
     }
 
     .nav-item svg {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       flex-shrink: 0;
       opacity: 0.85;
     }
@@ -395,19 +386,19 @@ import { AuthService } from '../core/auth.service';
 
     /* Top Bar */
     .mw-top-bar {
-      height: 64px;
-      min-height: 64px;
+      height: 54px;
+      min-height: 54px;
       background: #ffffff;
       border-bottom: 1px solid #ebe5f5;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 32px;
+      padding: 0 24px;
       z-index: 5;
     }
 
     .top-bar-title {
-      font-size: 19px;
+      font-size: 17px;
       font-weight: 700;
       color: #2a1647;
       letter-spacing: -0.01em;
@@ -416,7 +407,7 @@ import { AuthService } from '../core/auth.service';
     .top-bar-actions {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
     .top-search {
@@ -427,20 +418,20 @@ import { AuthService } from '../core/auth.service';
 
     .top-search svg {
       position: absolute;
-      left: 14px;
-      width: 16px;
-      height: 16px;
+      left: 12px;
+      width: 15px;
+      height: 15px;
       color: #8c829e;
       pointer-events: none;
     }
 
     .top-search input {
-      width: 270px;
-      padding: 8px 14px 8px 38px;
+      width: 230px;
+      padding: 6.5px 12px 6.5px 34px;
       border-radius: 999px;
       border: 1.5px solid #e5dff0;
       background: #fbf9fe;
-      font-size: 13.5px;
+      font-size: 13px;
       color: #2a2438;
       outline: none;
       transition: all 0.2s;
@@ -512,7 +503,7 @@ import { AuthService } from '../core/auth.service';
     .mw-content-body {
       flex: 1;
       overflow-y: auto;
-      padding: 24px 32px 48px;
+      padding: 18px 24px 36px;
     }
 
     .mw-content-body::-webkit-scrollbar {
