@@ -127,13 +127,28 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
   private navObserver?: IntersectionObserver;
   private scrollRevealObserver?: IntersectionObserver;
 
+  constructor() {
+    if (typeof window !== 'undefined') {
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+      }
+      window.scrollTo(0, 0);
+    }
+  }
+
   ngOnInit(): void {
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+    }
     const initial = this.route.snapshot.data['auth'] as AuthView | undefined;
     if (initial) this.authView.set(initial);
   }
 
   ngAfterViewInit(): void {
-    this.updateNavHeight();
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+      requestAnimationFrame(() => window.scrollTo(0, 0));
+    }
     this.setupNavObserver();
     this.setupScrollReveal();
   }
@@ -196,7 +211,7 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
 
   closeAuth(): void {
     this.authView.set(null);
-    if (this.router.url.startsWith('/login')) void this.router.navigateByUrl('/');
+    if (this.router.url.startsWith('/login') || this.router.url.startsWith('/signup')) void this.router.navigateByUrl('/');
     this.opener?.focus();
   }
 
@@ -206,30 +221,15 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
     if (id === 'home') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      const el = document.getElementById(id);
-      if (el) {
-        const nav = document.querySelector('.nav') as HTMLElement | null;
-        const navH = nav ? nav.offsetHeight : 68;
-        const targetTop = el.getBoundingClientRect().top + window.scrollY - navH;
-        window.scrollTo({ top: Math.round(targetTop), behavior: 'smooth' });
-      }
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     }
     this.active.set(id);
   }
 
-  @HostListener('window:resize')
-  onResize(): void {
-    this.updateNavHeight();
-  }
-
-  private updateNavHeight(): void {
-    if (typeof window === 'undefined') return;
-    const nav = document.querySelector('.nav') as HTMLElement | null;
-    if (nav) {
-      const h = nav.offsetHeight;
-      if (h > 0) {
-        document.documentElement.style.setProperty('--nav-h', `${h}px`);
-      }
+  @HostListener('window:beforeunload')
+  onBeforeUnload(): void {
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
     }
   }
 

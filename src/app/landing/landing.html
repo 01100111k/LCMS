@@ -25,7 +25,11 @@
   <div class="container nav__inner">
     <a class="brand" href="#home" (click)="scrollTo('home', $event)" aria-label="Lying-In Care Management System, home">
       <div class="brand-icon-box">
-        <svg class="brand__logo"><use href="#i-logo"/></svg>
+        <svg viewBox="0 0 48 48" class="brand__logo" aria-hidden="true">
+          <path d="M24 42S5 30.5 5 17.5A9.5 9.5 0 0 1 24 12.5 9.5 9.5 0 0 1 43 17.5C43 30.5 24 42 24 42z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M17 22c0-3.5 3-5.5 6-4.5 3 1 3.5 4.5 1.5 7s-5.5 3.5-7.5 1.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="26.5" cy="26" r="2" fill="currentColor"/>
+        </svg>
       </div>
       <span class="brand__text"><strong>Lying-In Care</strong></span>
     </a>
@@ -45,7 +49,7 @@
         <button type="button" class="btn btn--outline" (click)="openAuth('login')">
           <svg><use href="#i-login"/></svg>Login
         </button>
-        <button type="button" class="btn btn--solid" (click)="openAuth('start')">
+        <button type="button" class="btn btn--solid" (click)="openAuth('role-select')">
           Get Started<svg class="arrow"><use href="#i-arrow"/></svg>
         </button>
       </div>
@@ -55,7 +59,7 @@
       <button type="button" class="btn btn--outline" (click)="openAuth('login')">
         <svg><use href="#i-login"/></svg>Login
       </button>
-      <button type="button" class="btn btn--solid" (click)="openAuth('start')">
+      <button type="button" class="btn btn--solid" (click)="openAuth('role-select')">
         Get Started<svg class="arrow"><use href="#i-arrow"/></svg>
       </button>
     </div>
@@ -97,7 +101,7 @@
           Streamline prenatal checkups, clinical schedules, and patient records with a secure platform thoughtfully crafted for midwives and expecting mothers.
         </p>
         <div class="hero__cta reveal-on-scroll delay-3">
-          <button type="button" class="btn btn--solid btn--lg" (click)="openAuth('start')">
+          <button type="button" class="btn btn--solid btn--lg" (click)="openAuth('role-select')">
             Get Started<svg class="arrow"><use href="#i-arrow"/></svg>
           </button>
           <a href="#about" class="btn btn--outline btn--lg" (click)="scrollTo('about', $event)">
@@ -161,7 +165,7 @@
           <h3>Ready to experience better maternal care?</h3>
           <p>Join our lying-in care network today and enjoy organized, dignified clinical support.</p>
         </div>
-        <button type="button" class="btn btn--white" (click)="openAuth('start')">
+        <button type="button" class="btn btn--white" (click)="openAuth('role-select')">
           Get Started Now<svg class="arrow"><use href="#i-arrow"/></svg>
         </button>
       </aside>
@@ -282,7 +286,11 @@
     <div class="footer__brand-col reveal-on-scroll">
       <div class="footer__brand-lockup">
         <div class="brand-icon-box">
-          <svg class="brand__logo"><use href="#i-logo"/></svg>
+          <svg viewBox="0 0 48 48" class="brand__logo" aria-hidden="true">
+            <path d="M24 42S5 30.5 5 17.5A9.5 9.5 0 0 1 24 12.5 9.5 9.5 0 0 1 43 17.5C43 30.5 24 42 24 42z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M17 22c0-3.5 3-5.5 6-4.5 3 1 3.5 4.5 1.5 7s-5.5 3.5-7.5 1.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <circle cx="26.5" cy="26" r="2" fill="currentColor"/>
+          </svg>
         </div>
         <span class="footer__brand-title"><strong>Lying-In Care</strong></span>
       </div>
@@ -300,10 +308,11 @@
 
     <nav class="footer__col reveal-on-scroll delay-2" aria-label="System portals">
       <h4>System Portals</h4>
-      <a href="/login" (click)="openAuth('login'); $event.preventDefault()">Midwife Portal</a>
+      <a href="/login" (click)="openAuth('login'); $event.preventDefault()">Admin / Midwife Portal</a>
       <a href="/login" (click)="openAuth('login'); $event.preventDefault()">Patient Portal</a>
       <a href="#features" (click)="scrollTo('features', $event)">Appointment Scheduling</a>
       <a href="#features" (click)="scrollTo('features', $event)">Maternal Records</a>
+      <a href="/signup" (click)="openAuth('role-select'); $event.preventDefault()">Create an Account</a>
     </nav>
 
     <address class="footer__col reveal-on-scroll delay-3">

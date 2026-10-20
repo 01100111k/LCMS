@@ -1,0 +1,1329 @@
+/* ========================================================
+   PATIENT PORTAL STYLES
+   Color Theme: Plum (#361759), Lavender (#ede7f6), Sage (#0d8a72)
+   ======================================================== */
+
+.patient-wrap {
+  min-height: 100vh;
+  background: #f8f6fc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #2a1647;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============ TOP NAVBAR ============ */
+.patient-navbar {
+  background: #ffffff;
+  border-bottom: 1.5px solid #ebe5f5;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(54, 23, 89, 0.04);
+}
+
+.navbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-icon {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #361759, #6a349c);
+  color: #ffffff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(54, 23, 89, 0.2);
+  flex-shrink: 0;
+}
+
+.brand-logo-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.brand-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2a1647;
+  line-height: 1.2;
+}
+
+.brand-tag {
+  font-size: 11.5px;
+  color: #7a6e8f;
+  font-weight: 500;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hotline-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #fff0f3;
+  color: #c92a42;
+  border: 1px solid #fed7df;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.hotline-pill svg {
+  width: 14px;
+  height: 14px;
+}
+
+.hotline-pill:hover {
+  background: #ffe3e8;
+  transform: translateY(-1px);
+}
+
+.user-profile-menu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 8px;
+  border-left: 1px solid #ebe5f5;
+}
+
+.user-avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ede7f6;
+  color: #361759;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #d5c8ea;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-name-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2a1647;
+}
+
+.user-role-label {
+  font-size: 11px;
+  color: #0d8a72;
+  font-weight: 600;
+}
+
+.btn-signout {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: transparent;
+  color: #7a6e8f;
+  border: 1px solid #e1dbe9;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-signout:hover {
+  background: #f3effa;
+  color: #361759;
+  border-color: #361759;
+}
+
+.btn-signout svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ============ HERO HEADER SECTION ============ */
+.patient-hero {
+  background: linear-gradient(135deg, #361759 0%, #4f227e 60%, #68309f 100%);
+  color: #ffffff;
+  padding: 28px 24px 34px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-glow-1, .hero-glow-2 {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(50px);
+}
+.hero-glow-1 {
+  width: 280px;
+  height: 280px;
+  background: rgba(255, 255, 255, 0.08);
+  top: -80px;
+  right: 5%;
+}
+.hero-glow-2 {
+  width: 220px;
+  height: 220px;
+  background: rgba(13, 138, 114, 0.15);
+  bottom: -60px;
+  left: 20%;
+}
+
+.hero-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.greeting-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  backdrop-filter: blur(4px);
+}
+
+.hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  letter-spacing: -0.5px;
+}
+
+.hero-sub {
+  font-size: 13.5px;
+  opacity: 0.88;
+  margin: 0;
+  max-width: 540px;
+  line-height: 1.45;
+}
+
+.hero-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-book-hero {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #ffffff;
+  color: #361759;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: all 0.2s;
+}
+
+.btn-book-hero:hover {
+  background: #fbf9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+.btn-book-hero svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-edit-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: all 0.15s;
+}
+
+.btn-edit-profile:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.btn-edit-profile svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ============ PREGNANCY PROGRESS CARDS ============ */
+.pregnancy-kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.kpi-glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 14px 16px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.kpi-glass-card:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.kpi-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpi-icon-wrap.purple {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.kpi-icon-wrap.green {
+  background: rgba(13, 138, 114, 0.25);
+  color: #4eedcb;
+}
+
+.kpi-icon-wrap.peach {
+  background: rgba(255, 140, 66, 0.25);
+  color: #ffbc85;
+}
+
+.kpi-icon-wrap.lavender {
+  background: rgba(193, 168, 237, 0.25);
+  color: #f1e9fc;
+}
+
+.kpi-icon-wrap svg {
+  width: 20px;
+  height: 20px;
+}
+
+.kpi-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.kpi-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.kpi-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+.kpi-sub {
+  font-size: 11.5px;
+  opacity: 0.85;
+  margin-top: 1px;
+}
+
+/* ============ TIMELINE SLIDER (PROGRESS BAR) ============ */
+.gestational-timeline-bar {
+  margin-top: 18px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bar-labels-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.bar-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4eedcb, #ffd166);
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.trimester-tags-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* ============ MAIN TAB NAVIGATION ============ */
+.patient-tabs-nav {
+  background: #ffffff;
+  border-bottom: 1.5px solid #ebe5f5;
+  box-shadow: 0 2px 4px rgba(54, 23, 89, 0.02);
+}
+
+.tabs-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  gap: 28px;
+  overflow-x: auto;
+}
+
+.tab-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 4px 16px;
+  border: none;
+  background: transparent;
+  color: #736982;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+
+.tab-nav-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.tab-nav-btn:hover {
+  color: #361759;
+}
+
+.tab-nav-btn.active {
+  color: #361759;
+  font-weight: 700;
+}
+
+.tab-nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1.5px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #361759;
+  border-radius: 3px 3px 0 0;
+}
+
+.tab-badge {
+  background: #ede7f6;
+  color: #361759;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ============ PAGE CONTAINER ============ */
+.portal-main-body {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ============ TAB 1: OVERVIEW & DASHBOARD ============ */
+.overview-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 22px;
+}
+
+.portal-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #ebe5f5;
+  padding: 20px 22px;
+  box-shadow: 0 4px 16px rgba(54, 23, 89, 0.03);
+  margin-bottom: 20px;
+}
+
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.card-title-row h2 {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2a1647;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title-row h2 svg {
+  width: 19px;
+  height: 19px;
+  color: #532788;
+}
+
+.link-btn-subtle {
+  background: none;
+  border: none;
+  color: #532788;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-btn-subtle:hover {
+  text-decoration: underline;
+}
+
+/* Next Appointment Callout Box */
+.next-appt-box {
+  background: #fbf9ff;
+  border: 1.5px solid #dcd1ed;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.next-appt-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.appt-calendar-badge {
+  background: #361759;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: center;
+  min-width: 48px;
+}
+
+.badge-month {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-day {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.appt-info-col h3 {
+  margin: 0 0 3px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2a1647;
+}
+
+.appt-meta-sub {
+  margin: 0;
+  font-size: 12.5px;
+  color: #736982;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status-scheduled {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+.status-confirmed {
+  background: #e6f7f3;
+  color: #0d8a72;
+}
+
+.status-requested {
+  background: #fff4e5;
+  color: #b76e00;
+}
+
+.status-completed {
+  background: #f1f3f4;
+  color: #5f6368;
+}
+
+.status-cancelled {
+  background: #fce8e6;
+  color: #c5221f;
+}
+
+.no-appt-box {
+  text-align: center;
+  padding: 24px 16px;
+  background: #faf9fd;
+  border-radius: 12px;
+  border: 1px dashed #d5c8ea;
+}
+
+.no-appt-box p {
+  margin: 0 0 12px;
+  color: #736982;
+  font-size: 13.5px;
+}
+
+.btn-schedule-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #361759;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-schedule-now:hover {
+  background: #4a2179;
+}
+
+/* Weekly Baby & Mom Highlights Card */
+.journey-highlight-box {
+  background: linear-gradient(135deg, #f4effb, #fdfbfe);
+  border: 1px solid #e5daf3;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.highlight-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.highlight-icon-circle {
+  width: 32px;
+  height: 32px;
+  background: #ebdcf9;
+  color: #532788;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.highlight-icon-circle svg {
+  width: 17px;
+  height: 17px;
+}
+
+.highlight-header h3 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #2a1647;
+}
+
+.highlight-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #4b3d62;
+  margin: 0 0 10px;
+}
+
+.tips-bullet-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 12.5px;
+  color: #55476d;
+  line-height: 1.6;
+}
+
+/* Sidebar in Overview: Midwife Contact & Danger Signs */
+.midwife-profile-card {
+  text-align: center;
+  padding: 22px 18px;
+}
+
+.midwife-avatar-large {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #ede7f6;
+  border: 3px solid #d5c8ea;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #361759;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.midwife-title-name {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #2a1647;
+  margin: 0 0 2px;
+}
+
+.midwife-subtitle {
+  font-size: 12px;
+  color: #0d8a72;
+  font-weight: 600;
+  margin: 0 0 14px;
+}
+
+.midwife-contacts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  border-top: 1px solid #ebe5f5;
+  padding-top: 14px;
+  margin-bottom: 16px;
+}
+
+.contact-row-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #473a5e;
+}
+
+.contact-row-item svg {
+  width: 15px;
+  height: 15px;
+  color: #736982;
+  flex-shrink: 0;
+}
+
+.btn-contact-clinic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 9px 14px;
+  background: #361759;
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-contact-clinic:hover {
+  background: #4a2179;
+}
+
+/* Danger Signs Box */
+.danger-warning-box {
+  background: #fff5f5;
+  border: 1.5px solid #fecaca;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.danger-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #dc2626;
+  font-size: 13.5px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.danger-head svg {
+  width: 18px;
+  height: 18px;
+}
+
+.danger-subtext {
+  font-size: 12px;
+  color: #7f1d1d;
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+.danger-list {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #991b1b;
+  line-height: 1.5;
+}
+
+.btn-emergency-call {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  background: #dc2626;
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+}
+
+.btn-emergency-call:hover {
+  background: #b91c1c;
+}
+
+/* ============ TAB 2: APPOINTMENTS ============ */
+.appts-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.appt-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.appt-section-header h2 {
+  font-size: 17px;
+  font-weight: 800;
+  color: #2a1647;
+  margin: 0;
+}
+
+.appts-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.appt-card-item {
+  background: #ffffff;
+  border: 1px solid #ebe5f5;
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 8px rgba(54, 23, 89, 0.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  transition: all 0.15s;
+}
+
+.appt-card-item:hover {
+  border-color: #d8cde9;
+  box-shadow: 0 4px 14px rgba(54, 23, 89, 0.06);
+}
+
+.appt-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.appt-card-type {
+  font-size: 15px;
+  font-weight: 800;
+  color: #2a1647;
+  margin: 0 0 3px;
+}
+
+.appt-card-time {
+  font-size: 12.5px;
+  color: #736982;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+}
+
+.appt-card-time svg {
+  width: 14px;
+  height: 14px;
+  color: #361759;
+}
+
+.appt-notes-preview {
+  font-size: 12.5px;
+  color: #55476d;
+  background: #fbf9fd;
+  border-left: 3px solid #361759;
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin: 0;
+}
+
+.appt-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #f3effa;
+  padding-top: 10px;
+}
+
+.btn-cancel-appt {
+  background: transparent;
+  border: 1px solid #fed7df;
+  color: #c92a42;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-cancel-appt:hover {
+  background: #fff0f3;
+}
+
+/* ============ TAB 3: PRENATAL & CLINICAL RECORDS ============ */
+.records-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.clinical-vitals-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.vital-box {
+  background: #ffffff;
+  border: 1px solid #ebe5f5;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.vital-title {
+  font-size: 12px;
+  color: #736982;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.vital-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #2a1647;
+  margin: 4px 0 2px;
+}
+
+.vital-subtext {
+  font-size: 11.5px;
+  color: #0d8a72;
+  font-weight: 600;
+}
+
+.timeline-visits-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #ebe5f5;
+}
+
+.visits-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.visits-table th {
+  background: #fbf9fd;
+  color: #4b3d62;
+  font-weight: 700;
+  padding: 12px 14px;
+  border-bottom: 1.5px solid #ebe5f5;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.visits-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #f3effa;
+  color: #382c4e;
+}
+
+.visits-table tr:last-child td {
+  border-bottom: none;
+}
+
+.visits-table tr:hover td {
+  background: #faf7fd;
+}
+
+/* ============ TAB 4: PREGNANCY GUIDE ============ */
+.guide-tab-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 22px;
+}
+
+.trimester-card {
+  border-left: 4px solid #532788;
+  margin-bottom: 16px;
+}
+
+.guide-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3effa;
+  font-size: 13px;
+  color: #473a5e;
+}
+
+.guide-checklist-item:last-child {
+  border-bottom: none;
+}
+
+.guide-check-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #e6f7f3;
+  color: #0d8a72;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ============ TAB 5: PROFILE & EMERGENCY DETAILS ============ */
+.profile-tab-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.info-dl-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px 16px;
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.info-dl-grid dt {
+  color: #736982;
+  font-weight: 600;
+}
+
+.info-dl-grid dd {
+  color: #2a1647;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ============ MODAL POPUPS ============ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(42, 22, 71, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.modal-dialog-box {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 16px 40px rgba(54, 23, 89, 0.25);
+  overflow: hidden;
+  animation: modalPopIn 0.2s ease-out;
+}
+
+@keyframes modalPopIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-head {
+  padding: 18px 22px;
+  background: #fbf9fd;
+  border-bottom: 1.5px solid #ebe5f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-head h2 {
+  margin: 0 0 2px;
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #2a1647;
+}
+
+.modal-sub {
+  margin: 0;
+  font-size: 12.5px;
+  color: #736982;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #736982;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-close-modal:hover {
+  background: #ede7f6;
+  color: #361759;
+}
+
+.btn-close-modal svg {
+  width: 18px;
+  height: 18px;
+}
+
+.modal-body {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.form-group-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group-field label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #382c4e;
+}
+
+.form-group-field input,
+.form-group-field select,
+.form-group-field textarea {
+  border: 1.5px solid #dcd1ed;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  color: #2a1647;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-group-field input:focus,
+.form-group-field select:focus,
+.form-group-field textarea:focus {
+  border-color: #532788;
+  box-shadow: 0 0 0 3px rgba(83, 39, 136, 0.12);
+}
+
+.modal-footer {
+  padding: 14px 22px 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #ebe5f5;
+  background: #fbf9fd;
+}
+
+.btn-modal-cancel {
+  padding: 9px 16px;
+  background: #ffffff;
+  border: 1px solid #dcd1ed;
+  color: #55476d;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-modal-cancel:hover {
+  background: #f3effa;
+}
+
+.btn-modal-submit {
+  padding: 9px 20px;
+  background: #361759;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-modal-submit:hover:not(:disabled) {
+  background: #4a2179;
+}
+
+.btn-modal-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .pregnancy-kpis-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .overview-grid, .guide-tab-content, .profile-tab-content {
+    grid-template-columns: 1fr;
+  }
+  .clinical-vitals-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-top-row {
+    flex-direction: column;
+  }
+  .pregnancy-kpis-grid {
+    grid-template-columns: 1fr;
+  }
+  .tabs-nav-inner {
+    gap: 14px;
+  }
+  .user-meta {
+    display: none;
+  }
+}

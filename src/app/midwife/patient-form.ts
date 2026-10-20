@@ -30,7 +30,7 @@ function addDays(iso: string, days: number): string {
         </div>
         @if (editing && !loading() && !error()) {
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <a routerLink="/midwife/appointments/new" [queryParams]="{ patient: id }" class="mw-btn mw-btn--solid">Schedule appointment</a>
+            <a [routerLink]="['/midwife/appointments']" [queryParams]="{ new: 'true', patient: id }" class="mw-btn mw-btn--solid">Schedule appointment</a>
             <button type="button" class="mw-btn" (click)="invite(form.getRawValue().email)" [disabled]="inviting()">
               {{ inviting() ? 'Sending…' : 'Resend invitation' }}
             </button>

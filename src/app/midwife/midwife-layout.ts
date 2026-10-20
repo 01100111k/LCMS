@@ -49,14 +49,6 @@ import { AuthService } from '../core/auth.service';
             <span>Appointments</span>
           </a>
 
-          <a routerLink="/midwife/availability" routerLinkActive="active" class="nav-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-              <circle cx="12" cy="14" r="3"/><polyline points="12 12 12 14 13.5 14"/>
-            </svg>
-            <span>Availability</span>
-          </a>
-
           <a routerLink="/midwife/queue" routerLinkActive="active" class="nav-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
@@ -217,15 +209,21 @@ import { AuthService } from '../core/auth.service';
     }
 
     .brand-logo-box {
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       border-radius: 9px;
-      background: #6b4fa3;
-      display: grid;
-      place-items: center;
+      background: linear-gradient(135deg, #361759, #6a349c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: #ffffff;
       flex-shrink: 0;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    }
+
+    .brand-logo-box svg {
+      width: 21px;
+      height: 21px;
     }
 
     .brand-logo-box svg {

@@ -77,7 +77,7 @@ import { Patient, PatientProfile, PatientsService, PatientStatus, RiskLevel } fr
           <h3>No patients registered yet</h3>
           <p>Register your first patient to begin tracking their care journey.</p>
           <button type="button" class="btn-register" style="margin-top: 8px;" (click)="openRegisterModal()">
-            + Register Patient
+            Register Patient
           </button>
         </div>
       } @else if (!filtered().length) {

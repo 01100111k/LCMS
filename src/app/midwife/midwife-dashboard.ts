@@ -142,7 +142,7 @@ interface WeekDayBar {
                 <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
               <p>Nothing scheduled for today.</p>
-              <a routerLink="/midwife/appointments/new" class="btn-subtle">+ Schedule Appointment</a>
+              <a [routerLink]="['/midwife/appointments']" [queryParams]="{ new: 'true' }" class="btn-subtle">Schedule Appointment</a>
             </div>
           }
         </div>
@@ -214,7 +214,7 @@ interface WeekDayBar {
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
               </svg>
               <p>No patients registered yet.</p>
-              <a routerLink="/midwife/register-patient" class="btn-subtle">+ Register Patient</a>
+              <a routerLink="/midwife/register-patient" class="btn-subtle">Register Patient</a>
             </div>
           }
         </div>

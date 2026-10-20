@@ -1,83 +1,449 @@
 <div class="backdrop" (click)="onBackdrop($event)">
-  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+  <div class="dialog" [class.dialog--wide]="view() === 'role-select'" role="dialog" aria-modal="true" aria-labelledby="auth-title">
 
+    <!-- Top close button -->
     <button type="button" class="close" (click)="close()" aria-label="Close">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
     </button>
 
+    <!-- Brand Header -->
     <div class="brand">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <path d="M24 42S5 30.5 5 17.5A9.5 9.5 0 0 1 24 12.5 9.5 9.5 0 0 1 43 17.5C43 30.5 24 42 24 42z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
-        <path d="M17 22c0-3.5 3-5.5 6-4.5 3 1 3.5 4.5 1.5 7s-5.5 3.5-7.5 1.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-        <circle cx="26.5" cy="26" r="2" fill="currentColor"/>
-      </svg>
+      <div class="brand-logo-box">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M24 42S5 30.5 5 17.5A9.5 9.5 0 0 1 24 12.5 9.5 9.5 0 0 1 43 17.5C43 30.5 24 42 24 42z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M17 22c0-3.5 3-5.5 6-4.5 3 1 3.5 4.5 1.5 7s-5.5 3.5-7.5 1.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="26.5" cy="26" r="2" fill="currentColor"/>
+        </svg>
+      </div>
       <strong>Lying-In Care</strong>
     </div>
 
     @switch (view()) {
 
-      <!-- ============ LOG IN ============ -->
+      <!-- ========================================================
+           1. LOG IN
+           ======================================================== -->
       @case ('login') {
         <h2 id="auth-title">Welcome back</h2>
         <p class="sub">Log in to your account to continue.</p>
 
         <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" novalidate>
           <label for="l-email">Email address</label>
-          <input id="l-email" type="email" formControlName="email" autocomplete="email" placeholder="you@example.com"
-                 data-autofocus [class.bad]="bad(loginForm.controls.email)">
-          @if (bad(loginForm.controls.email)) { <p class="field-error">Enter a valid email address.</p> }
+          <input
+            id="l-email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            placeholder="you@example.com"
+            data-autofocus
+            [class.bad]="bad(loginForm.controls.email)"
+          />
+          @if (bad(loginForm.controls.email)) {
+            <p class="field-error">Enter a valid email address.</p>
+          }
 
           <label for="l-pw">Password</label>
           <div class="pw">
-            <input id="l-pw" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
-                   autocomplete="current-password" placeholder="Your password" [class.bad]="bad(loginForm.controls.password)">
-            <button type="button" class="eye" (click)="showPassword.set(!showPassword())"
-                    [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showPassword()">
+            <input
+              id="l-pw"
+              [type]="showLoginPassword() ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="current-password"
+              placeholder="Your password"
+              [class.bad]="bad(loginForm.controls.password)"
+            />
+            <button
+              type="button"
+              class="eye"
+              (click)="showLoginPassword.set(!showLoginPassword())"
+              [attr.aria-label]="showLoginPassword() ? 'Hide password' : 'Show password'"
+            >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
                 <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
-                @if (showPassword()) { <path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/> }
+                @if (showLoginPassword()) {
+                  <path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                }
               </svg>
             </button>
           </div>
-          <div class="row-end"><button type="button" class="link" (click)="forgot()">Forgot password?</button></div>
 
-          @if (error()) { <p class="msg msg--error" role="alert">{{ error() }}</p> }
-          @if (info()) { <p class="msg msg--info" role="status">{{ info() }}</p> }
+          <div class="row-end">
+            <button type="button" class="link-btn" (click)="forgot()">Forgot password?</button>
+          </div>
 
-          <button type="submit" class="submit" [disabled]="loading()">{{ loading() ? 'Logging in…' : 'Log In' }}</button>
+          @if (error()) {
+            <p class="msg msg--error" role="alert">{{ error() }}</p>
+          }
+          @if (info()) {
+            <p class="msg msg--info" role="status">{{ info() }}</p>
+          }
+
+          <button type="submit" class="submit" [disabled]="loading()">
+            {{ loading() ? 'Logging in…' : 'Log In' }}
+          </button>
         </form>
 
-        <p class="switch">New here? <button type="button" class="link" (click)="go('start')">See how to get started</button></p>
+        <p class="switch-text">
+          New here?
+          <button type="button" class="link-btn" (click)="go('role-select')">
+            Create an account
+          </button>
+        </p>
+
+
       }
 
-      <!-- ============ GETTING STARTED ============ -->
+      <!-- ========================================================
+           2. ROLE SELECTION (Create an Account)
+           ======================================================== -->
+      @case ('role-select') {
+        <h2 id="auth-title">Create an Account</h2>
+        <p class="sub">Choose your role to get started.</p>
+
+        <div class="roles-grid">
+          <!-- Midwife Card -->
+          <div class="role-card" (click)="go('signup-midwife')" tabindex="0" (keydown.enter)="go('signup-midwife')">
+            <div class="role-icon-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+                <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+                <path d="M9 12H4s.55-3.03 2-4.5c1.62-1.63 5-2.5 5-2.5"/>
+                <path d="M15 15v5s3.03-.55 4.5-2c1.63-1.62 2.5-5 2.5-5"/>
+              </svg>
+            </div>
+            <h3>Midwife</h3>
+            <p>Manage prenatal checkups, clinical schedules, and patient maternal health records.</p>
+            <div class="role-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Patient Card -->
+          <div class="role-card" (click)="go('signup-patient')" tabindex="0" (keydown.enter)="go('signup-patient')">
+            <div class="role-icon-box role-icon-box--patient">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="7" r="4"/>
+                <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
+                <path d="M19 11v6M22 14h-6"/>
+              </svg>
+            </div>
+            <h3>Patient</h3>
+            <p>View upcoming appointments, track prenatal care milestones, and access your profile.</p>
+            <div class="role-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <p class="switch-text">
+          Already have an account?
+          <button type="button" class="link-btn" (click)="go('login')">Log in</button>
+        </p>
+      }
+
+      <!-- ========================================================
+           3. SIGN UP: MIDWIFE
+           ======================================================== -->
+      @case ('signup-midwife') {
+        <div class="sub-header-bar">
+          <button type="button" class="back-btn" (click)="go('role-select')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back
+          </button>
+          <span class="role-tag-pill">Midwife Sign Up</span>
+        </div>
+
+        <h2 id="auth-title">Create Midwife Account</h2>
+        <p class="sub">Fill in your clinical details to get started.</p>
+
+        <form [formGroup]="signupForm" (ngSubmit)="submitSignup('midwife')" novalidate>
+          <div class="form-grid-2">
+            <div>
+              <label for="m-fn">First Name</label>
+              <input
+                id="m-fn"
+                type="text"
+                formControlName="firstName"
+                placeholder="First name"
+                data-autofocus
+                [class.bad]="bad(signupForm.controls.firstName)"
+              />
+            </div>
+            <div>
+              <label for="m-ln">Last Name</label>
+              <input
+                id="m-ln"
+                type="text"
+                formControlName="lastName"
+                placeholder="Last name"
+                [class.bad]="bad(signupForm.controls.lastName)"
+              />
+            </div>
+          </div>
+
+          <label for="m-email">Email Address</label>
+          <input
+            id="m-email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            placeholder="midwife@example.com"
+            [class.bad]="bad(signupForm.controls.email)"
+          />
+
+          <label for="m-prc">PRC License / Midwife ID <small>(Optional)</small></label>
+          <input
+            id="m-prc"
+            type="text"
+            formControlName="roleExtra"
+            placeholder="e.g. 0123456"
+          />
+
+          <label for="m-pw">Password</label>
+          <div class="pw">
+            <input
+              id="m-pw"
+              [type]="showSignupPassword() ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="Min. 8 characters"
+              [class.bad]="bad(signupForm.controls.password)"
+            />
+            <button
+              type="button"
+              class="eye"
+              (click)="showSignupPassword.set(!showSignupPassword())"
+              [attr.aria-label]="showSignupPassword() ? 'Hide password' : 'Show password'"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                @if (showSignupPassword()) {
+                  <path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                }
+              </svg>
+            </button>
+          </div>
+
+          <label for="m-cpw">Confirm Password</label>
+          <div class="pw">
+            <input
+              id="m-cpw"
+              [type]="showConfirmPassword() ? 'text' : 'password'"
+              formControlName="confirmPassword"
+              placeholder="Re-enter password"
+              [class.bad]="bad(signupForm.controls.confirmPassword)"
+            />
+            <button
+              type="button"
+              class="eye"
+              (click)="showConfirmPassword.set(!showConfirmPassword())"
+              [attr.aria-label]="showConfirmPassword() ? 'Hide password' : 'Show password'"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                @if (showConfirmPassword()) {
+                  <path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                }
+              </svg>
+            </button>
+          </div>
+
+          @if (error()) {
+            <p class="msg msg--error" role="alert">{{ error() }}</p>
+          }
+
+          <button type="submit" class="submit" [disabled]="loading()">
+            {{ loading() ? 'Creating Midwife Account…' : 'Create Account' }}
+          </button>
+        </form>
+
+        <p class="switch-text">
+          Already have an account?
+          <button type="button" class="link-btn" (click)="go('login')">Log in</button>
+        </p>
+      }
+
+      <!-- ========================================================
+           4. SIGN UP: PATIENT
+           ======================================================== -->
+      @case ('signup-patient') {
+        <div class="sub-header-bar">
+          <button type="button" class="back-btn" (click)="go('role-select')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back
+          </button>
+          <span class="role-tag-pill">Patient Sign Up</span>
+        </div>
+
+        <h2 id="auth-title">Create Patient Account</h2>
+        <p class="sub">Fill in your information to access your prenatal portal.</p>
+
+        <form [formGroup]="signupForm" (ngSubmit)="submitSignup('patient')" novalidate>
+          <div class="form-grid-2">
+            <div>
+              <label for="p-fn">First Name</label>
+              <input
+                id="p-fn"
+                type="text"
+                formControlName="firstName"
+                placeholder="First name"
+                data-autofocus
+                [class.bad]="bad(signupForm.controls.firstName)"
+              />
+            </div>
+            <div>
+              <label for="p-ln">Last Name</label>
+              <input
+                id="p-ln"
+                type="text"
+                formControlName="lastName"
+                placeholder="Last name"
+                [class.bad]="bad(signupForm.controls.lastName)"
+              />
+            </div>
+          </div>
+
+          <label for="p-email">Email Address</label>
+          <input
+            id="p-email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            placeholder="patient@example.com"
+            [class.bad]="bad(signupForm.controls.email)"
+          />
+
+          <label for="p-contact">Contact Number <small>(e.g. 0912 345 6789)</small></label>
+          <input
+            id="p-contact"
+            type="tel"
+            formControlName="roleExtra"
+            placeholder="0912 345 6789"
+          />
+
+          <label for="p-pw">Password</label>
+          <div class="pw">
+            <input
+              id="p-pw"
+              [type]="showSignupPassword() ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="Min. 8 characters"
+              [class.bad]="bad(signupForm.controls.password)"
+            />
+            <button
+              type="button"
+              class="eye"
+              (click)="showSignupPassword.set(!showSignupPassword())"
+              [attr.aria-label]="showSignupPassword() ? 'Hide password' : 'Show password'"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                @if (showSignupPassword()) {
+                  <path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                }
+              </svg>
+            </button>
+          </div>
+
+          <label for="p-cpw">Confirm Password</label>
+          <div class="pw">
+            <input
+              id="p-cpw"
+              [type]="showConfirmPassword() ? 'text' : 'password'"
+              formControlName="confirmPassword"
+              placeholder="Re-enter password"
+              [class.bad]="bad(signupForm.controls.confirmPassword)"
+            />
+            <button
+              type="button"
+              class="eye"
+              (click)="showConfirmPassword.set(!showConfirmPassword())"
+              [attr.aria-label]="showConfirmPassword() ? 'Hide password' : 'Show password'"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                @if (showConfirmPassword()) {
+                  <path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                }
+              </svg>
+            </button>
+          </div>
+
+          @if (error()) {
+            <p class="msg msg--error" role="alert">{{ error() }}</p>
+          }
+
+          <button type="submit" class="submit" [disabled]="loading()">
+            {{ loading() ? 'Creating Patient Account…' : 'Create Account' }}
+          </button>
+        </form>
+
+        <p class="switch-text">
+          Already have an account?
+          <button type="button" class="link-btn" (click)="go('login')">Log in</button>
+        </p>
+      }
+
+      <!-- ========================================================
+           5. GETTING STARTED EXPLANATION
+           ======================================================== -->
       @case ('start') {
         <h2 id="auth-title">Getting started</h2>
-        <p class="sub">Accounts are created by your midwife. Here is how it works.</p>
+        <p class="sub">Accounts can also be created by your midwife at the facility. Here is how it works:</p>
 
         <ol class="steps">
           <li>
             <span class="step__num" aria-hidden="true">1</span>
-            <div><strong>Your midwife registers you</strong><span class="step__text">Your information is recorded when you visit the facility.</span></div>
+            <div>
+              <strong>Your midwife registers you</strong>
+              <span class="step__text">Your clinical details are recorded during your clinic visit.</span>
+            </div>
           </li>
           <li>
             <span class="step__num" aria-hidden="true">2</span>
-            <div><strong>You receive an email invitation</strong><span class="step__text">A secure link to set up your account is sent to your email.</span></div>
+            <div>
+              <strong>You receive an email invitation</strong>
+              <span class="step__text">A secure link to set up your account is sent directly to your email.</span>
+            </div>
           </li>
           <li>
             <span class="step__num" aria-hidden="true">3</span>
-            <div><strong>You set your own password</strong><span class="step__text">Only you will know it.</span></div>
+            <div>
+              <strong>You set your own password</strong>
+              <span class="step__text">Safe, private, and known only to you.</span>
+            </div>
           </li>
           <li>
             <span class="step__num" aria-hidden="true">4</span>
-            <div><strong>You log in</strong><span class="step__text">See your profile, appointments, and the records you are allowed to view.</span></div>
+            <div>
+              <strong>You log in</strong>
+              <span class="step__text">Access your visit records, scheduled appointments, and maternal profile.</span>
+            </div>
           </li>
         </ol>
 
-        <p class="note">Midwives log in with the account provided by the facility. If your link has expired, use "Forgot password?" on the Log In screen to get a new one.</p>
-
-        <button type="button" class="submit" data-autofocus (click)="go('login')">Go to Log In</button>
+        <div class="start-actions">
+          <button type="button" class="submit" (click)="go('role-select')">
+            Create an Account Online
+          </button>
+          <button type="button" class="btn-ghost" (click)="go('login')">
+            Go to Log In
+          </button>
+        </div>
       }
     }
   </div>

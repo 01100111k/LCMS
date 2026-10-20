@@ -8,6 +8,8 @@ export const roleGuard = (role: Role): CanActivateFn => async () => {
   await auth.ready;
   if (!auth.user() || !auth.role()) return router.createUrlTree(['/login']);
   if (auth.role() === role) return true;
+  // Admin has overall authority to access all dashboards
+  if (auth.role() === 'admin') return true;
   return router.createUrlTree([auth.homeRoute()]);
 };
 

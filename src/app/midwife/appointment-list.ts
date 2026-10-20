@@ -228,7 +228,7 @@ interface WeekDaySetting {
                   <label>Reason</label>
                   <input type="text" [(ngModel)]="newBlockedReason" placeholder="Holiday, leave, etc.">
                 </div>
-                <button type="button" class="btn-add-blocked" (click)="addBlockedDate()">+ Add</button>
+                <button type="button" class="btn-add-blocked" (click)="addBlockedDate()">Add</button>
               </div>
 
               <div class="blocked-list">
@@ -493,6 +493,46 @@ interface WeekDaySetting {
             <button type="button" class="btn-detail-close-solid" (click)="closeDetailModal()">
               Close
             </button>
+          </div>
+        </div>
+      }
+
+      <!-- ========================================================
+           POP-OUT MODAL: BLOCK DATE (TIME OFF)
+           ======================================================== -->
+      @if (showBlockedModal()) {
+        <div class="modal-backdrop" (click)="closeBlockedModal()">
+          <div class="modal-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="modal-block-title" style="max-width: 440px;">
+            <div class="modal-head">
+              <div>
+                <h2 id="modal-block-title">Block Date (Time Off)</h2>
+                <p class="modal-sub">Set clinic holidays or personal leave. Appointments cannot be scheduled on blocked days.</p>
+              </div>
+              <button type="button" class="btn-close-modal" (click)="closeBlockedModal()" title="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <form (ngSubmit)="submitBlockedModal()" class="modal-form-content">
+              <div class="form-fields-grid" style="display:flex; flex-direction:column; gap:14px;">
+                <div class="form-group">
+                  <label for="modal-block-date">Select Date <span class="req">*</span></label>
+                  <input id="modal-block-date" type="date" [(ngModel)]="newBlockedDate" name="modalBlockedDate" [min]="today" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="modal-block-reason">Reason (Holiday, Leave, Renovation)</label>
+                  <input id="modal-block-reason" type="text" [(ngModel)]="newBlockedReason" name="modalBlockedReason" placeholder="e.g. National Holiday, Facility Cleaning, Leave">
+                </div>
+              </div>
+
+              <div class="modal-footer-actions" style="margin-top: 18px;">
+                <button type="button" class="btn-cancel-modal" (click)="closeBlockedModal()">Cancel</button>
+                <button type="submit" class="btn-submit-modal" [disabled]="!newBlockedDate">
+                  Block Date
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       }
@@ -1795,11 +1835,11 @@ export class AppointmentList implements OnInit {
   readonly blockedDates = signal<BlockedDate[]>([]);
   readonly weeklyHours = signal<WeekDaySetting[]>([
     { dayName: 'Sunday', dayIndex: 0, enabled: false, startTime: '08:00 AM', endTime: '05:00 PM', slotDuration: '30 min' },
-    { dayName: 'Monday', dayIndex: 1, enabled: true, startTime: '08:00 AM', endTime: '05:00 PM', slotDuration: '30 min' },
-    { dayName: 'Tuesday', dayIndex: 2, enabled: true, startTime: '08:00 AM', endTime: '05:00 PM', slotDuration: '30 min' },
-    { dayName: 'Wednesday', dayIndex: 3, enabled: true, startTime: '08:00 AM', endTime: '05:00 PM', slotDuration: '30 min' },
-    { dayName: 'Thursday', dayIndex: 4, enabled: true, startTime: '08:00 AM', endTime: '05:00 PM', slotDuration: '30 min' },
-    { dayName: 'Friday', dayIndex: 5, enabled: true, startTime: '09:00 AM', endTime: '03:00 PM', slotDuration: '30 min' },
+    { dayName: 'Monday', dayIndex: 1, enabled: false, startTime: '08:00 AM', endTime: '05:00 PM', slotDuration: '30 min' },
+    { dayName: 'Tuesday', dayIndex: 2, enabled: false, startTime: '08:00 AM', endTime: '05:00 PM', slotDuration: '30 min' },
+    { dayName: 'Wednesday', dayIndex: 3, enabled: false, startTime: '08:00 AM', endTime: '05:00 PM', slotDuration: '30 min' },
+    { dayName: 'Thursday', dayIndex: 4, enabled: false, startTime: '08:00 AM', endTime: '05:00 PM', slotDuration: '30 min' },
+    { dayName: 'Friday', dayIndex: 5, enabled: false, startTime: '09:00 AM', endTime: '03:00 PM', slotDuration: '30 min' },
     { dayName: 'Saturday', dayIndex: 6, enabled: false, startTime: '08:00 AM', endTime: '05:00 PM', slotDuration: '30 min' },
   ]);
 
@@ -1811,6 +1851,7 @@ export class AppointmentList implements OnInit {
   readonly bookedPatientName = signal('');
   readonly scheduledDate = signal('');
   readonly scheduledTime = signal('');
+  readonly showBlockedModal = signal(false);
 
   // Selected appointment for detail / status update
   readonly selectedAppt = signal<Appointment | null>(null);
@@ -2031,9 +2072,11 @@ export class AppointmentList implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    this.loadPersistedBlockedDates();
     await Promise.all([this.loadAppointments(), this.loadPatients()]);
-    if (this.route.snapshot.queryParams['new'] === 'true') {
-      this.openScheduleModal();
+    const qp = this.route.snapshot.queryParams;
+    if (qp['new'] === 'true' || qp['patient']) {
+      this.openScheduleModal(qp['patient']);
     }
   }
 
@@ -2098,9 +2141,9 @@ export class AppointmentList implements OnInit {
   }
 
   // Modal open/close
-  openScheduleModal(): void {
+  openScheduleModal(patientId?: string): void {
     this.scheduleForm.reset({
-      patientId: '',
+      patientId: patientId || '',
       type: 'Prenatal',
       date: this.today,
       time: this.availableSlotsForBookingDate()[0] || '08:00',
@@ -2129,7 +2172,7 @@ export class AppointmentList implements OnInit {
 
   closeScheduleModal(): void {
     this.showScheduleModal.set(false);
-    if (this.route.snapshot.queryParams['new']) {
+    if (this.route.snapshot.queryParams['new'] || this.route.snapshot.queryParams['patient']) {
       void this.router.navigate([], { queryParams: {}, replaceUrl: true });
     }
   }
@@ -2255,18 +2298,67 @@ export class AppointmentList implements OnInit {
     alert('Weekly working hours schedule saved successfully.');
   }
 
+  // Blocked Dates & Pop-up Modal actions
+  openBlockedModal(): void {
+    this.showBlockedModal.set(true);
+  }
+
+  closeBlockedModal(): void {
+    this.showBlockedModal.set(false);
+  }
+
   addBlockedDate(): void {
+    if (!this.newBlockedDate) {
+      // If no date was entered in the inline row, open the pop-out modal!
+      this.openBlockedModal();
+      return;
+    }
+    this.saveBlockedDateEntry(this.newBlockedDate, this.newBlockedReason || 'Time off');
+  }
+
+  submitBlockedModal(): void {
     if (!this.newBlockedDate) return;
+    this.saveBlockedDateEntry(this.newBlockedDate, this.newBlockedReason || 'Time off');
+    this.closeBlockedModal();
+  }
+
+  saveBlockedDateEntry(date: string, reason: string): void {
     const list = [...this.blockedDates()];
-    if (!list.some((b) => b.date === this.newBlockedDate)) {
-      list.push({ date: this.newBlockedDate, reason: this.newBlockedReason || 'Time off' });
+    if (!list.some((b) => b.date === date)) {
+      list.push({ date, reason: reason || 'Time off' });
+      list.sort((a, b) => a.date.localeCompare(b.date));
       this.blockedDates.set(list);
+      this.persistBlockedDates(list);
     }
     this.newBlockedDate = '';
     this.newBlockedReason = '';
   }
 
   removeBlockedDate(date: string): void {
-    this.blockedDates.set(this.blockedDates().filter((b) => b.date !== date));
+    const updated = this.blockedDates().filter((b) => b.date !== date);
+    this.blockedDates.set(updated);
+    this.persistBlockedDates(updated);
+  }
+
+  private persistBlockedDates(list: BlockedDate[]): void {
+    try {
+      localStorage.setItem('lcms_blocked_dates', JSON.stringify(list));
+    } catch {
+      // ignore
+    }
+  }
+
+  private loadPersistedBlockedDates(): void {
+    try {
+      const raw = localStorage.getItem('lcms_blocked_dates');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length) {
+          this.blockedDates.set(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
   }
 }
