@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../core/auth.service';
@@ -7,7 +7,7 @@ import { DeliveryRecord, RecordsService } from '../core/records.service';
 
 @Component({
   selector: 'app-delivery-records',
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, NgClass],
   template: `
     <div class="records-page-wrap">
       <!-- ============ TOP HEADER ============ -->
@@ -150,10 +150,11 @@ import { DeliveryRecord, RecordsService } from '../core/records.service';
         </div>
       }
 
-      <!-- ==================== REGISTER DELIVERY MODAL ==================== -->
+      <!-- ==================== REGISTER DELIVERY WIZARD MODAL ==================== -->
       @if (showAddModal()) {
         <div class="modal-backdrop" (click)="closeAddModal()">
-          <div class="modal-dialog-card modal-lg" (click)="$event.stopPropagation()">
+          <div class="modal-dialog-card modal-lg wizard-modal-card" (click)="$event.stopPropagation()">
+            <!-- Modal Header -->
             <div class="modal-header">
               <div class="modal-title-row">
                 <div class="modal-icon tone-purple">
@@ -164,209 +165,375 @@ import { DeliveryRecord, RecordsService } from '../core/records.service';
                   <p class="modal-subtitle">Record delivery details, newborn parameters, and EINC clinical execution.</p>
                 </div>
               </div>
-              <button type="button" class="btn-close-modal" (click)="closeAddModal()">✕</button>
+              <button type="button" class="btn-close-modal" (click)="closeAddModal()" title="Close dialog">✕</button>
             </div>
 
-            <form (ngSubmit)="submitDeliveryRecord()" class="modal-body-scroll">
-              <!-- Section 1: Mother Information -->
-              <div class="form-section-title">1. Maternal Admission & Delivery Timestamp</div>
-              <div class="form-row-2">
-                <div class="form-field">
-                  <label>Select Mother / Patient <span class="req">*</span></label>
-                  <select [(ngModel)]="formPatientId" name="patientId" (change)="onPatientSelect()" required>
-                    <option value="" disabled>-- Choose mother from registered patients --</option>
-                    @for (p of patients(); track p.id) {
-                      <option [value]="p.id">{{ p.fullName }} ({{ p.status || 'Active' }})</option>
-                    }
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label>Delivery Date & Time <span class="req">*</span></label>
-                  <input type="datetime-local" [(ngModel)]="formDeliveryDateTime" name="formDeliveryDateTime" required />
-                </div>
+            <!-- Stepper Progress Bar -->
+            <div class="wizard-stepper-wrap">
+              <div class="wizard-stepper-bar">
+                @for (step of steps; track step.num) {
+                  <button
+                    type="button"
+                    class="step-item"
+                    [class.active]="currentStep() === step.num"
+                    [class.completed]="currentStep() > step.num"
+                    (click)="goToStep(step.num)"
+                    [attr.aria-current]="currentStep() === step.num ? 'step' : null"
+                  >
+                    <div class="step-circle">
+                      @if (currentStep() > step.num) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      } @else {
+                        <span>{{ step.num }}</span>
+                      }
+                    </div>
+                    <div class="step-label-group">
+                      <span class="step-num-text">Step {{ step.num }}</span>
+                      <strong class="step-title-text">{{ step.title }}</strong>
+                    </div>
+                  </button>
+                  @if (!$last) {
+                    <div class="step-connector" [class.filled]="currentStep() > step.num"></div>
+                  }
+                }
               </div>
+            </div>
 
-              <div class="form-row-3">
-                <div class="form-field">
-                  <label>Admission Date & Time</label>
-                  <input type="datetime-local" [(ngModel)]="formAdmissionDateTime" name="formAdmissionDateTime" />
+            <!-- Modal Body (Step Specific Content) -->
+            <div class="wizard-step-body">
+              @if (stepError()) {
+                <div class="step-alert-banner" role="alert">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span>{{ stepError() }}</span>
                 </div>
+              }
 
-                <div class="form-field">
-                  <label>Type of Delivery <span class="req">*</span></label>
-                  <select [(ngModel)]="formDeliveryType" name="formDeliveryType" required>
-                    <option value="Normal Spontaneous Vaginal Delivery (NSVD)">Normal Spontaneous Vaginal Delivery (NSVD)</option>
-                    <option value="Assisted Vaginal Delivery">Assisted Vaginal Delivery</option>
-                    <option value="Emergency Transfer">Emergency Transfer to Hospital</option>
-                  </select>
+              <!-- STEP 1: MATERNAL ADMISSION & DELIVERY TIMESTAMP -->
+              @if (currentStep() === 1) {
+                <div class="wizard-step-pane">
+                  <div class="step-header-intro">
+                    <span class="step-badge">Section 1</span>
+                    <h3>Maternal Admission & Delivery Timestamp</h3>
+                    <p>Select mother from registered patients and specify admission & delivery date/times.</p>
+                  </div>
+
+                  <div class="form-row-2">
+                    <div class="form-field">
+                      <label>Select Mother / Patient <span class="req">*</span></label>
+                      <select [(ngModel)]="formPatientId" name="patientId" (change)="onPatientSelect()" required>
+                        <option value="" disabled>-- Choose mother from registered patients --</option>
+                        @for (p of patients(); track p.id) {
+                          <option [value]="p.id">{{ p.fullName }} ({{ p.status || 'Active' }})</option>
+                        }
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Delivery Date & Time <span class="req">*</span></label>
+                      <input type="datetime-local" [(ngModel)]="formDeliveryDateTime" name="formDeliveryDateTime" required />
+                    </div>
+                  </div>
+
+                  <div class="form-row-3" style="margin-top: 14px;">
+                    <div class="form-field">
+                      <label>Admission Date & Time</label>
+                      <input type="datetime-local" [(ngModel)]="formAdmissionDateTime" name="formAdmissionDateTime" />
+                    </div>
+
+                    <div class="form-field">
+                      <label>Type of Delivery <span class="req">*</span></label>
+                      <select [(ngModel)]="formDeliveryType" name="formDeliveryType" required>
+                        <option value="Normal Spontaneous Vaginal Delivery (NSVD)">Normal Spontaneous Vaginal Delivery (NSVD)</option>
+                        <option value="Assisted Vaginal Delivery">Assisted Vaginal Delivery</option>
+                        <option value="Emergency Transfer">Emergency Transfer to Hospital</option>
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Gestational Age at Birth</label>
+                      <input type="text" [(ngModel)]="formGaAtDelivery" name="formGaAtDelivery" placeholder="39 weeks" />
+                    </div>
+                  </div>
+
+                  @if (selectedPatientObj(); as pt) {
+                    <div class="patient-preview-card">
+                      <div class="pt-avatar">{{ getInitials(pt.fullName) }}</div>
+                      <div class="pt-info">
+                        <div class="pt-title-row">
+                          <strong class="pt-name">{{ pt.fullName }}</strong>
+                          <span class="badge-status status-active">{{ pt.status || 'Active' }}</span>
+                          <span class="badge-risk" [ngClass]="'risk-' + getRiskSlug(pt.riskLevel)">{{ pt.riskLevel || 'Low risk' }}</span>
+                        </div>
+                        <div class="pt-meta-row">
+                          <span>Phone: <strong>{{ pt.contactNumber || '—' }}</strong></span>
+                          <span class="meta-dot">•</span>
+                          <span>Email: <strong>{{ pt.email || '—' }}</strong></span>
+                          <span class="meta-dot">•</span>
+                          <span>Gravida/Para: <strong>{{ formGravidaPara || pt.gravidaPara || 'G1P0' }}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="patient-select-hint">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      <span>Please select a registered mother above to auto-populate obstetric history.</span>
+                    </div>
+                  }
                 </div>
+              }
 
-                <div class="form-field">
-                  <label>Gestational Age at Birth</label>
-                  <input type="text" [(ngModel)]="formGaAtDelivery" name="formGaAtDelivery" placeholder="39 weeks" />
+              <!-- STEP 2: LABOR PROGRESS, PERINEUM & BLOOD LOSS -->
+              @if (currentStep() === 2) {
+                <div class="wizard-step-pane">
+                  <div class="step-header-intro">
+                    <span class="step-badge">Section 2</span>
+                    <h3>Labor Progress, Perineum & Blood Loss</h3>
+                    <p>Document membrane rupture, perineal condition, placenta delivery, and estimated blood loss.</p>
+                  </div>
+
+                  <div class="form-row-3">
+                    <div class="form-field">
+                      <label>Rupture of Membranes</label>
+                      <select [(ngModel)]="formRuptureMembranes" name="formRuptureMembranes">
+                        <option value="Spontaneous - Clear amniotic fluid">Spontaneous - Clear fluid</option>
+                        <option value="Artificial (AROM) - Clear">Artificial (AROM) - Clear</option>
+                        <option value="Meconium-stained fluid">Meconium-stained</option>
+                        <option value="Premature Rupture (PROM)">Premature Rupture (PROM)</option>
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Perineum Status</label>
+                      <select [(ngModel)]="formPerineumStatus" name="formPerineumStatus">
+                        <option value="Intact">Intact (No laceration)</option>
+                        <option value="1st Degree Laceration">1st Degree Laceration</option>
+                        <option value="2nd Degree Laceration">2nd Degree Laceration</option>
+                        <option value="Episiotomy">Episiotomy (Mediolateral)</option>
+                        <option value="Repaired">Repaired with sutures</option>
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Estimated Blood Loss (mL)</label>
+                      <input type="number" [(ngModel)]="formBloodLossMl" name="formBloodLossMl" placeholder="250" />
+                    </div>
+                  </div>
+
+                  <div class="form-row-2" style="margin-top: 14px;">
+                    <div class="form-field">
+                      <label>Placenta Delivery</label>
+                      <select [(ngModel)]="formPlacentaStatus" name="formPlacentaStatus">
+                        <option value="Complete & intact">Complete & intact (Schultze / Duncan)</option>
+                        <option value="Manual extraction">Manual extraction required</option>
+                        <option value="Incomplete">Incomplete / Cotyledon retained</option>
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Maternal Complications</label>
+                      <input type="text" [(ngModel)]="formMaternalComplications" name="formMaternalComplications" placeholder="None / Normal postpartum recovery" />
+                    </div>
+                  </div>
+
+                  <div class="vitals-reference-pill">
+                    <span>Clinical Reference: Normal blood loss for vaginal delivery is &lt; <strong>500 mL</strong>. Monitor vital signs closely postpartum.</span>
+                  </div>
                 </div>
-              </div>
+              }
 
-              <!-- Section 2: Labor & Maternal Outcome -->
-              <div class="form-section-title">2. Labor Progress, Perineum & Blood Loss</div>
-              <div class="form-row-3">
-                <div class="form-field">
-                  <label>Rupture of Membranes</label>
-                  <select [(ngModel)]="formRuptureMembranes" name="formRuptureMembranes">
-                    <option value="Spontaneous - Clear amniotic fluid">Spontaneous - Clear fluid</option>
-                    <option value="Artificial (AROM) - Clear">Artificial (AROM) - Clear</option>
-                    <option value="Meconium-stained fluid">Meconium-stained</option>
-                    <option value="Premature Rupture (PROM)">Premature Rupture (PROM)</option>
-                  </select>
+              <!-- STEP 3: NEWBORN ASSESSMENT & APGAR SCORE -->
+              @if (currentStep() === 3) {
+                <div class="wizard-step-pane">
+                  <div class="step-header-intro">
+                    <span class="step-badge">Section 3</span>
+                    <h3>Newborn Assessment & APGAR Score</h3>
+                    <p>Record infant anthropometric measurements and 1-min & 5-min APGAR vitality scores.</p>
+                  </div>
+
+                  <div class="form-row-4">
+                    <div class="form-field">
+                      <label>Baby Sex <span class="req">*</span></label>
+                      <select [(ngModel)]="formBabySex" name="formBabySex" required>
+                        <option value="Female">Female (Girl)</option>
+                        <option value="Male">Male (Boy)</option>
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Birth Weight (grams) <span class="req">*</span></label>
+                      <input type="number" [(ngModel)]="formBirthWeightGrams" name="formBirthWeightGrams" placeholder="3200" required />
+                    </div>
+
+                    <div class="form-field">
+                      <label>Birth Length (cm) <span class="req">*</span></label>
+                      <input type="number" step="0.1" [(ngModel)]="formBirthLengthCm" name="formBirthLengthCm" placeholder="50" required />
+                    </div>
+
+                    <div class="form-field">
+                      <label>Head Circumference (cm)</label>
+                      <input type="number" step="0.1" [(ngModel)]="formHeadCircumferenceCm" name="formHeadCircumferenceCm" placeholder="34" />
+                    </div>
+                  </div>
+
+                  <div class="form-row-3" style="margin-top: 14px;">
+                    <div class="form-field">
+                      <label>Chest Circumference (cm)</label>
+                      <input type="number" step="0.1" [(ngModel)]="formChestCircumferenceCm" name="formChestCircumferenceCm" placeholder="33" />
+                    </div>
+
+                    <div class="form-field">
+                      <label>APGAR Score at 1 Minute (0-10)</label>
+                      <input type="number" min="0" max="10" [(ngModel)]="formApgar1Min" name="formApgar1Min" placeholder="9" />
+                    </div>
+
+                    <div class="form-field">
+                      <label>APGAR Score at 5 Minutes (0-10)</label>
+                      <input type="number" min="0" max="10" [(ngModel)]="formApgar5Min" name="formApgar5Min" placeholder="10" />
+                    </div>
+                  </div>
+
+                  <div class="vitals-reference-pill">
+                    <span>Clinical Reference: Normal birth weight is <strong>2,500 – 4,000g</strong> · APGAR score <strong>7 – 10</strong> indicates good newborn transition.</span>
+                  </div>
                 </div>
+              }
 
-                <div class="form-field">
-                  <label>Perineum Status</label>
-                  <select [(ngModel)]="formPerineumStatus" name="formPerineumStatus">
-                    <option value="Intact">Intact (No laceration)</option>
-                    <option value="1st Degree Laceration">1st Degree Laceration</option>
-                    <option value="2nd Degree Laceration">2nd Degree Laceration</option>
-                    <option value="Episiotomy">Episiotomy (Mediolateral)</option>
-                    <option value="Repaired">Repaired with sutures</option>
-                  </select>
+              <!-- STEP 4: EINC PROTOCOL & NEWBORN PROPHYLAXIS -->
+              @if (currentStep() === 4) {
+                <div class="wizard-step-pane">
+                  <div class="step-header-intro">
+                    <span class="step-badge">Section 4</span>
+                    <h3>Essential Intrapartum & Newborn Care (EINC) & Immunization</h3>
+                    <p>Verify adherence to standard DOH EINC sequence and birth prophylaxis administrations.</p>
+                  </div>
+
+                  <div class="checks-cluster">
+                    <span style="font-size: 12px; font-weight: 700; color: #361759;">Core EINC Time-Bound Sequence:</span>
+                    <label class="check-box-item">
+                      <input type="checkbox" [(ngModel)]="formEincDrying" name="formEincDrying" />
+                      <strong>1. Immediate & thorough drying (30 seconds)</strong>
+                    </label>
+                    <label class="check-box-item">
+                      <input type="checkbox" [(ngModel)]="formEincSkin" name="formEincSkin" />
+                      <strong>2. Early skin-to-skin contact (at least 90 mins)</strong>
+                    </label>
+                    <label class="check-box-item">
+                      <input type="checkbox" [(ngModel)]="formEincClamping" name="formEincClamping" />
+                      <strong>3. Properly timed / delayed cord clamping</strong>
+                    </label>
+                    <label class="check-box-item">
+                      <input type="checkbox" [(ngModel)]="formEincFeeding" name="formEincFeeding" />
+                      <strong>4. Non-separation & initiation of breastfeeding</strong>
+                    </label>
+                  </div>
+
+                  <div class="checks-cluster" style="background:#eaf7f4; border-color:#bce5dc; margin-top: 14px;">
+                    <span style="font-size:12px; font-weight:700; color:#0b6b58;">Newborn Prophylaxis & Immunization Given:</span>
+                    <div style="display:flex; flex-wrap:wrap; gap:14px; margin-top:4px;">
+                      <label class="check-box-item">
+                        <input type="checkbox" [(ngModel)]="formVitaminK" name="formVitaminK" />
+                        <span>Vitamin K Injection (Phytonadione)</span>
+                      </label>
+                      <label class="check-box-item">
+                        <input type="checkbox" [(ngModel)]="formEyeProphylaxis" name="formEyeProphylaxis" />
+                        <span>Eye Prophylaxis (Erythromycin)</span>
+                      </label>
+                      <label class="check-box-item">
+                        <input type="checkbox" [(ngModel)]="formHepatitisB" name="formHepatitisB" />
+                        <span>Hepatitis B Birth Dose</span>
+                      </label>
+                      <label class="check-box-item">
+                        <input type="checkbox" [(ngModel)]="formBcg" name="formBcg" />
+                        <span>BCG Immunization</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
+              }
 
-                <div class="form-field">
-                  <label>Estimated Blood Loss (mL)</label>
-                  <input type="number" [(ngModel)]="formBloodLossMl" name="formBloodLossMl" placeholder="250" />
+              <!-- STEP 5: ATTENDING TEAM & CLINICAL NOTES -->
+              @if (currentStep() === 5) {
+                <div class="wizard-step-pane">
+                  <div class="step-header-intro">
+                    <span class="step-badge">Section 5</span>
+                    <h3>Attending Team & Clinical Delivery Summary</h3>
+                    <p>Review labor overview, assign attending practitioners, and confirm birth entry.</p>
+                  </div>
+
+                  <!-- Quick Delivery Summary Card -->
+                  <div class="wizard-summary-card">
+                    <div class="summary-head">
+                      <strong>Delivery Record Summary</strong>
+                      <span class="summary-patient">{{ selectedPatientObj()?.fullName || 'Mother Selected' }}</span>
+                    </div>
+                    <div class="summary-grid">
+                      <div class="summary-item">
+                        <span class="sum-lbl">Delivery Type & GA</span>
+                        <strong class="sum-val">{{ formDeliveryType }} · {{ formGaAtDelivery }}</strong>
+                      </div>
+                      <div class="summary-item">
+                        <span class="sum-lbl">Infant Assessment</span>
+                        <strong class="sum-val">{{ formBabySex }} · {{ formBirthWeightGrams }}g · {{ formBirthLengthCm }}cm</strong>
+                      </div>
+                      <div class="summary-item">
+                        <span class="sum-lbl">APGAR Scores</span>
+                        <strong class="sum-val">1-min: {{ formApgar1Min }}/10 · 5-min: {{ formApgar5Min }}/10</strong>
+                      </div>
+                      <div class="summary-item">
+                        <span class="sum-lbl">Perineum & Placenta</span>
+                        <strong class="sum-val">{{ formPerineumStatus }} · {{ formPlacentaStatus }}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-row-2" style="margin-top: 10px;">
+                    <div class="form-field">
+                      <label>Attending Midwife <span class="req">*</span></label>
+                      <input type="text" [(ngModel)]="formMidwife" name="formMidwife" required />
+                    </div>
+
+                    <div class="form-field">
+                      <label>Assistant Midwife / Nurse</label>
+                      <input type="text" [(ngModel)]="formAssistantMidwife" name="formAssistantMidwife" placeholder="Staff Midwife" />
+                    </div>
+                  </div>
+
+                  <div class="form-field" style="margin-top: 10px;">
+                    <label>Clinical Notes / Delivery Summary</label>
+                    <textarea [(ngModel)]="formNewbornNotes" name="formNewbornNotes" rows="2" style="height: 52px; min-height: 48px; resize: vertical;" placeholder="e.g. Delivered healthy baby girl via NSVD. Vigorous cry, good tone and color. Placenta expelled complete. Mother stable."></textarea>
+                  </div>
                 </div>
-              </div>
+              }
+            </div>
 
-              <div class="form-row-2">
-                <div class="form-field">
-                  <label>Placenta Delivery</label>
-                  <select [(ngModel)]="formPlacentaStatus" name="formPlacentaStatus">
-                    <option value="Complete & intact">Complete & intact (Schultze / Duncan)</option>
-                    <option value="Manual extraction">Manual extraction required</option>
-                    <option value="Incomplete">Incomplete / Cotyledon retained</option>
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label>Maternal Complications</label>
-                  <input type="text" [(ngModel)]="formMaternalComplications" name="formMaternalComplications" placeholder="None / Stable" />
-                </div>
-              </div>
-
-              <!-- Section 3: Newborn Clinical Assessment -->
-              <div class="form-section-title">3. Newborn Assessment & APGAR Score</div>
-              <div class="form-row-4">
-                <div class="form-field">
-                  <label>Baby Sex <span class="req">*</span></label>
-                  <select [(ngModel)]="formBabySex" name="formBabySex" required>
-                    <option value="Female">Female (Girl)</option>
-                    <option value="Male">Male (Boy)</option>
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label>Birth Weight (grams) <span class="req">*</span></label>
-                  <input type="number" [(ngModel)]="formBirthWeightGrams" name="formBirthWeightGrams" placeholder="3200" required />
-                </div>
-
-                <div class="form-field">
-                  <label>Birth Length (cm) <span class="req">*</span></label>
-                  <input type="number" step="0.1" [(ngModel)]="formBirthLengthCm" name="formBirthLengthCm" placeholder="50" required />
-                </div>
-
-                <div class="form-field">
-                  <label>Head Circumference (cm)</label>
-                  <input type="number" step="0.1" [(ngModel)]="formHeadCircumferenceCm" name="formHeadCircumferenceCm" placeholder="34" />
-                </div>
-              </div>
-
-              <div class="form-row-3">
-                <div class="form-field">
-                  <label>Chest Circumference (cm)</label>
-                  <input type="number" step="0.1" [(ngModel)]="formChestCircumferenceCm" name="formChestCircumferenceCm" placeholder="33" />
-                </div>
-
-                <div class="form-field">
-                  <label>APGAR Score at 1 Minute (0-10)</label>
-                  <input type="number" min="0" max="10" [(ngModel)]="formApgar1Min" name="formApgar1Min" placeholder="9" />
-                </div>
-
-                <div class="form-field">
-                  <label>APGAR Score at 5 Minutes (0-10)</label>
-                  <input type="number" min="0" max="10" [(ngModel)]="formApgar5Min" name="formApgar5Min" placeholder="10" />
-                </div>
-              </div>
-
-              <!-- Section 4: EINC Protocol & Newborn Prophylaxis -->
-              <div class="form-section-title">4. Essential Intrapartum & Newborn Care (EINC) & Immunization</div>
-              <div class="checks-cluster">
-                <label class="check-box-item">
-                  <input type="checkbox" [(ngModel)]="formEincDrying" name="formEincDrying" />
-                  <strong>1. Immediate & thorough drying (30 seconds)</strong>
-                </label>
-                <label class="check-box-item">
-                  <input type="checkbox" [(ngModel)]="formEincSkin" name="formEincSkin" />
-                  <strong>2. Early skin-to-skin contact (at least 90 mins)</strong>
-                </label>
-                <label class="check-box-item">
-                  <input type="checkbox" [(ngModel)]="formEincClamping" name="formEincClamping" />
-                  <strong>3. Properly timed / delayed cord clamping</strong>
-                </label>
-                <label class="check-box-item">
-                  <input type="checkbox" [(ngModel)]="formEincFeeding" name="formEincFeeding" />
-                  <strong>4. Non-separation & initiation of breastfeeding</strong>
-                </label>
-              </div>
-
-              <div class="checks-cluster" style="background:#eaf7f4; border-color:#bce5dc;">
-                <span style="font-size:12px; font-weight:700; color:#0b6b58;">Newborn Prophylaxis Given:</span>
-                <div style="display:flex; flex-wrap:wrap; gap:14px; margin-top:4px;">
-                  <label class="check-box-item">
-                    <input type="checkbox" [(ngModel)]="formVitaminK" name="formVitaminK" />
-                    Vitamin K Injection
-                  </label>
-                  <label class="check-box-item">
-                    <input type="checkbox" [(ngModel)]="formEyeProphylaxis" name="formEyeProphylaxis" />
-                    Eye Prophylaxis (Erythromycin)
-                  </label>
-                  <label class="check-box-item">
-                    <input type="checkbox" [(ngModel)]="formHepatitisB" name="formHepatitisB" />
-                    Hepatitis B Birth Dose
-                  </label>
-                  <label class="check-box-item">
-                    <input type="checkbox" [(ngModel)]="formBcg" name="formBcg" />
-                    BCG Immunization
-                  </label>
-                </div>
-              </div>
-
-              <!-- Section 5: Staff & Delivery Notes -->
-              <div class="form-section-title">5. Attending Team & Summary Notes</div>
-              <div class="form-row-2">
-                <div class="form-field">
-                  <label>Attending Midwife <span class="req">*</span></label>
-                  <input type="text" [(ngModel)]="formMidwife" name="formMidwife" required />
-                </div>
-
-                <div class="form-field">
-                  <label>Assistant Midwife / Nurse</label>
-                  <input type="text" [(ngModel)]="formAssistantMidwife" name="formAssistantMidwife" placeholder="Staff Midwife" />
-                </div>
-              </div>
-
-              <div class="form-field">
-                <label>Clinical Notes / Delivery Summary</label>
-                <textarea [(ngModel)]="formNewbornNotes" name="formNewbornNotes" rows="2" placeholder="e.g. Delivered healthy baby girl via NSVD. Vigorous cry, good tone and color. Placenta expelled complete. Mother stable."></textarea>
-              </div>
-
-              <div class="modal-footer">
+            <!-- Wizard Footer Navigation -->
+            <div class="modal-footer wizard-footer">
+              <div class="footer-left">
                 <button type="button" class="btn-cancel" (click)="closeAddModal()">Cancel</button>
-                <button type="submit" class="btn-submit" [disabled]="saving()">
-                  {{ saving() ? 'Registering Delivery...' : 'Save Delivery Record' }}
-                </button>
               </div>
-            </form>
+
+              <div class="footer-right">
+                @if (currentStep() > 1) {
+                  <button type="button" class="btn-wizard-prev" (click)="prevStep()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+                    Previous
+                  </button>
+                }
+
+                @if (currentStep() < 5) {
+                  <button type="button" class="btn-wizard-next" (click)="nextStep()">
+                    Next Step
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                } @else {
+                  <button type="button" class="btn-submit" (click)="submitDeliveryRecord()" [disabled]="saving()">
+                    {{ saving() ? 'Registering Delivery...' : 'Save Delivery Record' }}
+                  </button>
+                }
+              </div>
+            </div>
           </div>
         </div>
       }
@@ -984,6 +1151,447 @@ import { DeliveryRecord, RecordsService } from '../core/records.service';
 
     .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
+    /* ==================== WIZARD STEPPER STYLES ==================== */
+    .wizard-modal-card {
+      max-width: 860px !important;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      max-height: 92vh;
+      overflow: hidden;
+    }
+
+    .wizard-stepper-wrap {
+      padding: 12px 18px;
+      background: #faf8fd;
+      border-bottom: 1px solid #efe8f8;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .wizard-stepper-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      text-align: left;
+      flex-shrink: 0;
+    }
+
+    .step-item:hover .step-circle {
+      border-color: #361759;
+    }
+
+    .step-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 12.5px;
+      font-weight: 700;
+      border: 1.8px solid #d4c8e8;
+      background: #ffffff;
+      color: #6b5b82;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
+    }
+
+    .step-circle svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .step-item.active .step-circle {
+      background: #361759;
+      border-color: #361759;
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(54, 23, 89, 0.28);
+      transform: scale(1.05);
+    }
+
+    .step-item.completed .step-circle {
+      background: #ede6f8;
+      border-color: #361759;
+      color: #361759;
+    }
+
+    .step-label-group {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+    }
+
+    .step-num-text {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #8c829e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .step-title-text {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #554a66;
+      white-space: nowrap;
+    }
+
+    .step-item.active .step-title-text {
+      color: #271442;
+      font-weight: 800;
+    }
+
+    .step-item.completed .step-title-text {
+      color: #361759;
+    }
+
+    .step-connector {
+      flex: 1 1 10px;
+      min-width: 8px;
+      height: 2px;
+      background: #e8dfef;
+      margin: 0 3px;
+      border-radius: 2px;
+      transition: background 0.3s ease;
+    }
+
+    .step-connector.filled {
+      background: #361759;
+    }
+
+    .wizard-step-body {
+      padding: 18px 24px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      flex: 1;
+      max-height: calc(88vh - 170px);
+    }
+
+    .wizard-step-pane {
+      animation: fadeInStep 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeInStep {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-header-intro {
+      margin-bottom: 12px;
+    }
+
+    .step-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: #ede6f8;
+      color: #4a287c;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 4px;
+    }
+
+    .step-header-intro h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      color: #271442;
+    }
+
+    .step-header-intro p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: #7a7189;
+    }
+
+    .step-alert-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #be123c;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .step-alert-banner svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .patient-preview-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #fbf9fd;
+      border: 1.5px solid #ece4f5;
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-top: 14px;
+    }
+
+    .pt-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #361759;
+      color: #ffffff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 14px;
+      flex-shrink: 0;
+      box-shadow: 0 3px 8px rgba(54, 23, 89, 0.2);
+    }
+
+    .pt-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .pt-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pt-name {
+      font-size: 14.5px;
+      color: #271442;
+    }
+
+    .badge-status {
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status-active {
+      background: #e6f7f3;
+      color: #0b6b58;
+    }
+
+    .badge-risk {
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
+    .risk-low {
+      background: #e6f7f3;
+      color: #0b6b58;
+    }
+
+    .risk-medium {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .risk-high {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .pt-meta-row {
+      font-size: 12px;
+      color: #695f77;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .meta-dot {
+      color: #b5a9c8;
+    }
+
+    .patient-select-hint {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f7f3fb;
+      border: 1px dashed #d8cde9;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12.5px;
+      color: #6b5c82;
+      margin-top: 14px;
+    }
+
+    .patient-select-hint svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      color: #6b4fa3;
+    }
+
+    .vitals-reference-pill {
+      background: #f4effa;
+      border-radius: 8px;
+      padding: 9px 13px;
+      font-size: 12px;
+      color: #4a287c;
+      margin-top: 14px;
+      border: 1px solid #e7ddf2;
+    }
+
+    .wizard-summary-card {
+      background: #fcfaff;
+      border: 1.5px solid #ebdff5;
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+
+    .summary-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #efe5f8;
+      padding-bottom: 5px;
+      margin-bottom: 7px;
+    }
+
+    .summary-head strong {
+      font-size: 12.5px;
+      color: #271442;
+    }
+
+    .summary-patient {
+      font-size: 12px;
+      font-weight: 700;
+      color: #361759;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5px 12px;
+    }
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sum-lbl {
+      font-size: 10.5px;
+      color: #7a7189;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+
+    .sum-val {
+      font-size: 12px;
+      color: #271442;
+    }
+
+    .wizard-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      border-top: 1px solid #ebe5f5;
+      background: #fbf9fd;
+    }
+
+    .footer-left, .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-indicator-pill {
+      background: #f0eaf8;
+      color: #4a287c;
+      padding: 5px 13px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-wizard-prev {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      border: 1px solid #d4c8e8;
+      background: #ffffff;
+      color: #361759;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-wizard-prev:hover {
+      background: #f3ecfb;
+      border-color: #361759;
+    }
+
+    .btn-wizard-prev svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .btn-wizard-next {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 20px;
+      border-radius: 999px;
+      border: none;
+      background: #361759;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(54, 23, 89, 0.25);
+      transition: all 0.15s ease;
+    }
+
+    .btn-wizard-next:hover {
+      background: #4a2179;
+      transform: translateY(-1px);
+    }
+
+    .btn-wizard-next svg {
+      width: 14px;
+      height: 14px;
+    }
+
     /* View Summary Sheet */
     .view-sheet-body {
       padding: 22px 24px;
@@ -1115,6 +1723,22 @@ export class DeliveryRecords implements OnInit {
   readonly showAddModal = signal(false);
   readonly viewingRecord = signal<DeliveryRecord | null>(null);
 
+  // Wizard State
+  readonly currentStep = signal(1);
+  readonly stepError = signal('');
+  readonly steps = [
+    { num: 1, title: 'Admission' },
+    { num: 2, title: 'Labor & Delivery' },
+    { num: 3, title: 'Newborn Vitals' },
+    { num: 4, title: 'EINC & Care' },
+    { num: 5, title: 'Team & Sign-off' },
+  ];
+
+  readonly selectedPatientObj = computed(() => {
+    const id = this.formPatientId;
+    return this.patients().find((p) => p.id === id) || null;
+  });
+
   // Form Fields
   formPatientId = '';
   formDeliveryDateTime = new Date().toISOString().slice(0, 16);
@@ -1143,7 +1767,7 @@ export class DeliveryRecords implements OnInit {
   formEyeProphylaxis = true;
   formHepatitisB = true;
   formBcg = true;
-  formMidwife = 'Midwife Maria Santos, RM';
+  formMidwife = '';
   formAssistantMidwife = '';
   formNewbornNotes = '';
 
@@ -1174,11 +1798,17 @@ export class DeliveryRecords implements OnInit {
   readonly countMale = computed(() => this.records().filter((r) => r.babySex === 'Male').length);
 
   async ngOnInit(): Promise<void> {
-    const u = this.auth.user();
-    if (u?.displayName) {
-      this.formMidwife = `${u.displayName}, RM`;
-    }
+    this.refreshAttendingMidwife();
     await this.loadAll();
+  }
+
+  private refreshAttendingMidwife(): void {
+    const name = this.auth.userFullName();
+    if (name && name !== 'Midwife') {
+      this.formMidwife = name.toLowerCase().startsWith('midwife') ? `${name}, RM` : `Midwife ${name}, RM`;
+    } else {
+      this.formMidwife = 'Licensed Midwife, RM';
+    }
   }
 
   async loadAll(): Promise<void> {
@@ -1201,7 +1831,85 @@ export class DeliveryRecords implements OnInit {
     if (p.gestationalAge) this.formGaAtDelivery = p.gestationalAge;
   }
 
+  getInitials(name?: string): string {
+    if (!name) return 'PT';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  getRiskSlug(risk?: string): string {
+    const r = (risk || '').toLowerCase();
+    if (r.includes('high')) return 'high';
+    if (r.includes('med')) return 'medium';
+    return 'low';
+  }
+
+  validateCurrentStep(): boolean {
+    this.stepError.set('');
+    const s = this.currentStep();
+    if (s === 1) {
+      if (!this.formPatientId) {
+        this.stepError.set('Please select a mother / patient to proceed.');
+        return false;
+      }
+      if (!this.formDeliveryDateTime) {
+        this.stepError.set('Please specify the delivery date & time.');
+        return false;
+      }
+      if (!this.formDeliveryType) {
+        this.stepError.set('Please select the delivery type.');
+        return false;
+      }
+    } else if (s === 3) {
+      if (!this.formBabySex) {
+        this.stepError.set('Please specify the newborn baby sex.');
+        return false;
+      }
+      if (!this.formBirthWeightGrams || Number(this.formBirthWeightGrams) <= 0) {
+        this.stepError.set('Please enter a valid birth weight in grams.');
+        return false;
+      }
+      if (!this.formBirthLengthCm || Number(this.formBirthLengthCm) <= 0) {
+        this.stepError.set('Please enter a valid birth length in cm.');
+        return false;
+      }
+    } else if (s === 5) {
+      if (!this.formMidwife?.trim()) {
+        this.stepError.set('Please enter the attending midwife name.');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  nextStep(): void {
+    if (!this.validateCurrentStep()) return;
+    if (this.currentStep() < this.steps.length) {
+      this.currentStep.update((s) => s + 1);
+    }
+  }
+
+  prevStep(): void {
+    this.stepError.set('');
+    if (this.currentStep() > 1) {
+      this.currentStep.update((s) => s - 1);
+    }
+  }
+
+  goToStep(stepNum: number): void {
+    if (stepNum === this.currentStep()) return;
+    if (stepNum > this.currentStep()) {
+      if (!this.validateCurrentStep()) return;
+    }
+    this.stepError.set('');
+    this.currentStep.set(stepNum);
+  }
+
   openAddModal(): void {
+    this.refreshAttendingMidwife();
+    this.currentStep.set(1);
+    this.stepError.set('');
     this.formDeliveryDateTime = new Date().toISOString().slice(0, 16);
     this.formAdmissionDateTime = new Date().toISOString().slice(0, 16);
     this.showAddModal.set(true);
@@ -1216,8 +1924,9 @@ export class DeliveryRecords implements OnInit {
   }
 
   async submitDeliveryRecord(): Promise<void> {
+    if (!this.validateCurrentStep()) return;
     if (!this.formPatientId) {
-      alert('Please select a mother / patient.');
+      this.stepError.set('Please select a mother / patient.');
       return;
     }
 

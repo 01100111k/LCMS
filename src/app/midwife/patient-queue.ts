@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Appointment, AppointmentsService, formatTime, todayIso } from '../core/appointments.service';
 import { Patient, PatientsService } from '../core/patients.service';
+import { EXAMPLE_QUEUE_TICKETS } from '../core/example-data';
 
 export type QueueStatus = 'waiting' | 'serving' | 'completed' | 'skipped';
 export type QueuePriority = 'Regular' | 'High Risk' | 'Emergency' | 'Senior/PWD';
@@ -355,7 +356,7 @@ export interface QueueTicket {
                 } @else {
                   <div class="form-group span-2">
                     <label for="input-walkin-name">Patient Full Name <span class="req">*</span></label>
-                    <input id="input-walkin-name" type="text" [(ngModel)]="walkinName" name="walkinName" placeholder="e.g. Maria Santos" required>
+                    <input id="input-walkin-name" type="text" [(ngModel)]="walkinName" name="walkinName" placeholder="Enter patient full name" required>
                   </div>
                   <div class="form-group span-2">
                     <label for="input-walkin-phone">Contact Number (Optional)</label>
@@ -1327,10 +1328,8 @@ export class PatientQueue implements OnInit {
       const raw = localStorage.getItem('lcms_daily_queue_' + this.today);
       if (raw) {
         const parsed: QueueTicket[] = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          // Clean out any lingering seed records so the queue starts clean
-          const realTickets = parsed.filter((t) => t && t.id && !t.id.startsWith('q-seed'));
-          this.queueList.set(realTickets);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.queueList.set(parsed);
           return;
         }
       }
@@ -1338,8 +1337,8 @@ export class PatientQueue implements OnInit {
       // ignore
     }
 
-    // Queue starts completely blank for the midwife/user to add and manage real patients
-    this.queueList.set([]);
+    // Default to the connected example queue tickets for today
+    this.queueList.set(EXAMPLE_QUEUE_TICKETS);
   }
 
   clearAllQueue(): void {

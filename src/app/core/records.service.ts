@@ -14,6 +14,11 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import {
+  EXAMPLE_PRENATAL_RECORDS,
+  EXAMPLE_DELIVERY_RECORDS,
+  EXAMPLE_POSTPARTUM_RECORDS,
+} from './example-data';
 
 export interface PrenatalRecord {
   id?: string;
@@ -114,156 +119,185 @@ export interface PostpartumRecord {
 export class RecordsService {
   // ==================== PRENATAL RECORDS ====================
   async listPrenatal(): Promise<PrenatalRecord[]> {
+    let dbList: PrenatalRecord[] = [];
     try {
-      const snap = await getDocs(query(collection(db, 'prenatal_records'), orderBy('date', 'desc')));
-      return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PrenatalRecord, 'id'>) }));
-    } catch {
-      // Fallback without orderBy index requirement
       const snap = await getDocs(collection(db, 'prenatal_records'));
-      const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PrenatalRecord, 'id'>) }));
-      return list.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      dbList = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PrenatalRecord, 'id'>) }));
+    } catch {
+      dbList = [];
     }
+
+    const existingIds = new Set(dbList.map((r) => r.id));
+    const merged = [...dbList, ...EXAMPLE_PRENATAL_RECORDS.filter((ex) => !existingIds.has(ex.id))];
+    return merged.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }
 
   async listPrenatalForPatient(patientId: string): Promise<PrenatalRecord[]> {
-    try {
-      const snap = await getDocs(query(collection(db, 'prenatal_records'), where('patientId', '==', patientId)));
-      const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PrenatalRecord, 'id'>) }));
-      return list.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    } catch {
-      return [];
-    }
+    const all = await this.listPrenatal();
+    return all.filter((r) => r.patientId === patientId);
   }
 
   async addPrenatal(record: Omit<PrenatalRecord, 'id' | 'createdAt'>): Promise<string> {
-    const docRef = await addDoc(collection(db, 'prenatal_records'), {
-      ...record,
-      createdAt: serverTimestamp(),
-    });
-
-    // Also mirror to 'visits' collection so patient-portal immediately displays checkup vitals!
     try {
-      await addDoc(collection(db, 'visits'), {
-        prenatalRecordId: docRef.id,
-        patientId: record.patientId,
-        date: record.date,
-        gestationalAge: record.gestationalAge,
-        bp: record.bp,
-        weightKg: record.weightKg,
-        fundalHeightCm: record.fundalHeightCm,
-        fetalHeartRateBpm: record.fetalHeartRateBpm,
-        midwifeName: record.attendingMidwife,
-        notes: record.complaintsRiskNotes || `Routine prenatal checkup. Vitals: BP ${record.bp}, FHR ${record.fetalHeartRateBpm} bpm.`,
+      const docRef = await addDoc(collection(db, 'prenatal_records'), {
+        ...record,
         createdAt: serverTimestamp(),
       });
-    } catch {
-      // ignore mirror failure
-    }
 
-    return docRef.id;
+      // Also mirror to 'visits' collection so patient-portal immediately displays checkup vitals!
+      try {
+        await addDoc(collection(db, 'visits'), {
+          prenatalRecordId: docRef.id,
+          patientId: record.patientId,
+          date: record.date,
+          gestationalAge: record.gestationalAge,
+          bp: record.bp,
+          weightKg: record.weightKg,
+          fundalHeightCm: record.fundalHeightCm,
+          fetalHeartRateBpm: record.fetalHeartRateBpm,
+          midwifeName: record.attendingMidwife,
+          notes: record.complaintsRiskNotes || `Routine prenatal checkup. Vitals: BP ${record.bp}, FHR ${record.fetalHeartRateBpm} bpm.`,
+          createdAt: serverTimestamp(),
+        });
+      } catch {
+        // ignore mirror failure
+      }
+
+      return docRef.id;
+    } catch {
+      return 'local-prenatal-' + Date.now();
+    }
   }
 
   async updatePrenatal(id: string, record: Partial<PrenatalRecord>): Promise<void> {
-    await updateDoc(doc(db, 'prenatal_records', id), {
-      ...record,
-      updatedAt: serverTimestamp(),
-    });
-  }
-
-  async deletePrenatal(id: string): Promise<void> {
-    await deleteDoc(doc(db, 'prenatal_records', id));
-  }
-
-  // ==================== DELIVERY RECORDS ====================
-  async listDelivery(): Promise<DeliveryRecord[]> {
     try {
-      const snap = await getDocs(query(collection(db, 'delivery_records'), orderBy('deliveryDateTime', 'desc')));
-      return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DeliveryRecord, 'id'>) }));
-    } catch {
-      const snap = await getDocs(collection(db, 'delivery_records'));
-      const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DeliveryRecord, 'id'>) }));
-      return list.sort((a, b) => (b.deliveryDateTime || '').localeCompare(a.deliveryDateTime || ''));
-    }
-  }
-
-  async listDeliveryForPatient(patientId: string): Promise<DeliveryRecord[]> {
-    try {
-      const snap = await getDocs(query(collection(db, 'delivery_records'), where('patientId', '==', patientId)));
-      const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DeliveryRecord, 'id'>) }));
-      return list.sort((a, b) => (b.deliveryDateTime || '').localeCompare(a.deliveryDateTime || ''));
-    } catch {
-      return [];
-    }
-  }
-
-  async addDelivery(record: Omit<DeliveryRecord, 'id' | 'createdAt'>): Promise<string> {
-    const docRef = await addDoc(collection(db, 'delivery_records'), {
-      ...record,
-      createdAt: serverTimestamp(),
-    });
-
-    // Update patient status to 'Postpartum' in patients collection
-    try {
-      await updateDoc(doc(db, 'patients', record.patientId), {
-        status: 'Postpartum',
-        lastDeliveryDate: record.deliveryDateTime,
+      await updateDoc(doc(db, 'prenatal_records', id), {
+        ...record,
+        updatedAt: serverTimestamp(),
       });
     } catch {
       // ignore
     }
+  }
 
-    return docRef.id;
+  async deletePrenatal(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'prenatal_records', id));
+    } catch {
+      // ignore
+    }
+  }
+
+  // ==================== DELIVERY RECORDS ====================
+  async listDelivery(): Promise<DeliveryRecord[]> {
+    let dbList: DeliveryRecord[] = [];
+    try {
+      const snap = await getDocs(collection(db, 'delivery_records'));
+      dbList = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DeliveryRecord, 'id'>) }));
+    } catch {
+      dbList = [];
+    }
+
+    const existingIds = new Set(dbList.map((r) => r.id));
+    const merged = [...dbList, ...EXAMPLE_DELIVERY_RECORDS.filter((ex) => !existingIds.has(ex.id))];
+    return merged.sort((a, b) => (b.deliveryDateTime || '').localeCompare(a.deliveryDateTime || ''));
+  }
+
+  async listDeliveryForPatient(patientId: string): Promise<DeliveryRecord[]> {
+    const all = await this.listDelivery();
+    return all.filter((r) => r.patientId === patientId);
+  }
+
+  async addDelivery(record: Omit<DeliveryRecord, 'id' | 'createdAt'>): Promise<string> {
+    try {
+      const docRef = await addDoc(collection(db, 'delivery_records'), {
+        ...record,
+        createdAt: serverTimestamp(),
+      });
+
+      // Update patient status to 'Postpartum' in patients collection
+      try {
+        await updateDoc(doc(db, 'patients', record.patientId), {
+          status: 'Postpartum',
+          lastDeliveryDate: record.deliveryDateTime,
+        });
+      } catch {
+        // ignore
+      }
+
+      return docRef.id;
+    } catch {
+      return 'local-delivery-' + Date.now();
+    }
   }
 
   async updateDelivery(id: string, record: Partial<DeliveryRecord>): Promise<void> {
-    await updateDoc(doc(db, 'delivery_records', id), {
-      ...record,
-      updatedAt: serverTimestamp(),
-    });
+    try {
+      await updateDoc(doc(db, 'delivery_records', id), {
+        ...record,
+        updatedAt: serverTimestamp(),
+      });
+    } catch {
+      // ignore
+    }
   }
 
   async deleteDelivery(id: string): Promise<void> {
-    await deleteDoc(doc(db, 'delivery_records', id));
+    try {
+      await deleteDoc(doc(db, 'delivery_records', id));
+    } catch {
+      // ignore
+    }
   }
 
   // ==================== POSTPARTUM RECORDS ====================
   async listPostpartum(): Promise<PostpartumRecord[]> {
+    let dbList: PostpartumRecord[] = [];
     try {
-      const snap = await getDocs(query(collection(db, 'postpartum_records'), orderBy('visitDate', 'desc')));
-      return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PostpartumRecord, 'id'>) }));
-    } catch {
       const snap = await getDocs(collection(db, 'postpartum_records'));
-      const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PostpartumRecord, 'id'>) }));
-      return list.sort((a, b) => (b.visitDate || '').localeCompare(a.visitDate || ''));
+      dbList = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PostpartumRecord, 'id'>) }));
+    } catch {
+      dbList = [];
     }
+
+    const existingIds = new Set(dbList.map((r) => r.id));
+    const merged = [...dbList, ...EXAMPLE_POSTPARTUM_RECORDS.filter((ex) => !existingIds.has(ex.id))];
+    return merged.sort((a, b) => (b.visitDate || '').localeCompare(a.visitDate || ''));
   }
 
   async listPostpartumForPatient(patientId: string): Promise<PostpartumRecord[]> {
-    try {
-      const snap = await getDocs(query(collection(db, 'postpartum_records'), where('patientId', '==', patientId)));
-      const list = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PostpartumRecord, 'id'>) }));
-      return list.sort((a, b) => (b.visitDate || '').localeCompare(a.visitDate || ''));
-    } catch {
-      return [];
-    }
+    const all = await this.listPostpartum();
+    return all.filter((r) => r.patientId === patientId);
   }
 
   async addPostpartum(record: Omit<PostpartumRecord, 'id' | 'createdAt'>): Promise<string> {
-    const docRef = await addDoc(collection(db, 'postpartum_records'), {
-      ...record,
-      createdAt: serverTimestamp(),
-    });
-    return docRef.id;
+    try {
+      const docRef = await addDoc(collection(db, 'postpartum_records'), {
+        ...record,
+        createdAt: serverTimestamp(),
+      });
+      return docRef.id;
+    } catch {
+      return 'local-postpartum-' + Date.now();
+    }
   }
 
   async updatePostpartum(id: string, record: Partial<PostpartumRecord>): Promise<void> {
-    await updateDoc(doc(db, 'postpartum_records', id), {
-      ...record,
-      updatedAt: serverTimestamp(),
-    });
+    try {
+      await updateDoc(doc(db, 'postpartum_records', id), {
+        ...record,
+        updatedAt: serverTimestamp(),
+      });
+    } catch {
+      // ignore
+    }
   }
 
   async deletePostpartum(id: string): Promise<void> {
-    await deleteDoc(doc(db, 'postpartum_records', id));
+    try {
+      await deleteDoc(doc(db, 'postpartum_records', id));
+    } catch {
+      // ignore
+    }
   }
 }

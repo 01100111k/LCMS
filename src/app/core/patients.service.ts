@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { createUserWithEmailAndPassword, deleteUser, sendPasswordResetEmail, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
 import { auth, db, secondaryAuth } from './firebase';
+import { EXAMPLE_PATIENTS } from './example-data';
 
 export type PatientStatus = 'Active' | 'Postpartum' | 'Completed' | 'Inactive';
 export type RiskLevel = 'Low risk' | 'Medium risk' | 'High risk';
@@ -87,31 +88,77 @@ export class PatientsService {
     }
   }
 
+  private getLocalEdits(): Record<string, Patient> {
+    try {
+      const raw = localStorage.getItem('lcms_example_patients_edits');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private saveLocalEdit(id: string, updated: Patient): void {
+    try {
+      const edits = this.getLocalEdits();
+      edits[id] = updated;
+      localStorage.setItem('lcms_example_patients_edits', JSON.stringify(edits));
+    } catch {
+      // ignore
+    }
+  }
+
   async list(): Promise<Patient[]> {
+    const edits = this.getLocalEdits();
+    let dbPatients: Patient[] = [];
     try {
       const snap = await getDocs(collection(db, 'patients'));
-      return snap.docs
-        .map((d) => this.toPatient(d.id, d.data()))
-        .sort((a, b) => a.fullName.localeCompare(b.fullName));
+      dbPatients = snap.docs.map((d) => this.toPatient(d.id, d.data()));
     } catch {
-      return [];
+      dbPatients = [];
     }
+
+    const existingIds = new Set(dbPatients.map((p) => p.id));
+    const existingEmails = new Set(dbPatients.map((p) => p.email.toLowerCase()));
+
+    const mergedExamples = EXAMPLE_PATIENTS.map((ex) => (edits[ex.id] ? edits[ex.id] : ex)).filter(
+      (ex) => !existingIds.has(ex.id) && !existingEmails.has(ex.email.toLowerCase()),
+    );
+
+    return [...dbPatients, ...mergedExamples].sort((a, b) => a.fullName.localeCompare(b.fullName));
   }
 
   async get(id: string): Promise<Patient | null> {
     try {
       const snap = await getDoc(doc(db, 'patients', id));
       if (snap.exists()) return this.toPatient(snap.id, snap.data());
-      return null;
     } catch {
-      return null;
+      // fallback to example patients
     }
+
+    const edits = this.getLocalEdits();
+    if (edits[id]) return edits[id];
+
+    const found = EXAMPLE_PATIENTS.find((p) => p.id === id);
+    return found || null;
   }
 
   async update(id: string, profile: PatientProfile): Promise<void> {
     const changes: Partial<PatientProfile> = { ...profile };
     delete changes.email;
-    await updateDoc(doc(db, 'patients', id), { ...changes, updatedAt: serverTimestamp() });
+    try {
+      await updateDoc(doc(db, 'patients', id), { ...changes, updatedAt: serverTimestamp() });
+    } catch {
+      // ignore for example patients or offline
+    }
+
+    const current = await this.get(id);
+    if (current) {
+      const updated: Patient = {
+        ...current,
+        ...profile,
+      };
+      this.saveLocalEdit(id, updated);
+    }
   }
 
   private toPatient(id: string, d: Record<string, unknown>): Patient {

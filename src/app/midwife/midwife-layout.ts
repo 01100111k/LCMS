@@ -1,5 +1,7 @@
-import { Component, computed, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 
 @Component({
@@ -110,26 +112,13 @@ import { AuthService } from '../core/auth.service';
 
         <!-- Sidebar Footer -->
         <div class="sidebar-footer">
-          <a routerLink="/midwife/settings" class="nav-item settings-link">
+          <a routerLink="/midwife/settings" routerLinkActive="active" class="nav-item settings-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
             <span>Settings</span>
           </a>
-
-          <div class="user-profile-badge">
-            <div class="user-avatar">{{ userInitials() }}</div>
-            <div class="user-details">
-              <strong>{{ userName() }}</strong>
-              <small>Licensed Midwife</small>
-            </div>
-            <button type="button" class="logout-icon-btn" (click)="auth.logout()" title="Log out">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
-            </button>
-          </div>
         </div>
       </aside>
 
@@ -156,9 +145,62 @@ import { AuthService } from '../core/auth.service';
               <span class="bell-dot"></span>
             </button>
 
-            <!-- User Initials Circle -->
-            <div class="user-pill-btn" (click)="auth.logout()" title="Click to log out">
-              <span>{{ userInitials() }}</span>
+            <!-- User Menu Container & Dropdown Popover (Matches Screenshot) -->
+            <div class="user-menu-wrapper" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                class="user-pill-btn"
+                [class.active]="userMenuOpen()"
+                (click)="toggleUserMenu()"
+                title="Account & preferences"
+                aria-label="Toggle user menu"
+                [attr.aria-expanded]="userMenuOpen()"
+              >
+                <span>{{ userInitials() }}</span>
+              </button>
+
+              @if (userMenuOpen()) {
+                <div class="user-dropdown-card">
+                  <!-- 1. Account -->
+                  <a routerLink="/midwife/settings" class="dropdown-item" (click)="closeUserMenu()">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="dropdown-icon" aria-hidden="true">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    <span class="dropdown-label">Account</span>
+                  </a>
+
+                  <!-- 2. Settings -->
+                  <a routerLink="/midwife/settings" class="dropdown-item" (click)="closeUserMenu()">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="dropdown-icon" aria-hidden="true">
+                      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                    </svg>
+                    <span class="dropdown-label">Settings</span>
+                  </a>
+
+                  <!-- 3. Dark Mode -->
+                  <div class="dropdown-item dark-mode-row" (click)="toggleDarkMode()">
+                    <div class="dark-mode-left">
+                      <svg viewBox="0 0 24 24" fill="currentColor" class="dropdown-icon" aria-hidden="true">
+                        <path d="M12.3 2a10 10 0 0 0-1.9 19.8 10 10 0 0 0 11.6-11.6A10.02 10.02 0 0 1 12.3 2z"/>
+                      </svg>
+                      <span class="dropdown-label">Dark Mode</span>
+                    </div>
+                    <span class="dropdown-switch" [class.on]="isDarkMode()">
+                      <span class="switch-thumb"></span>
+                    </span>
+                  </div>
+
+                  <!-- 4. Sign out -->
+                  <button type="button" class="dropdown-item signout-item" (click)="onSignOutClicked()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="dropdown-icon signout-icon" aria-hidden="true">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span class="dropdown-label signout-label">Sign out</span>
+                  </button>
+                </div>
+              }
             </div>
           </div>
         </header>
@@ -168,6 +210,68 @@ import { AuthService } from '../core/auth.service';
           <router-outlet />
         </main>
       </div>
+
+      <!-- ============ SIGN OUT CONFIRMATION MODAL (Matches Image 3) ============ -->
+      @if (showSignOutModal()) {
+        <div class="signout-modal-backdrop" (click)="closeSignOutModal()">
+          <div class="signout-modal-card" (click)="$event.stopPropagation()">
+            <!-- Brand Badge -->
+            <div class="modal-brand-header">
+              <svg viewBox="0 0 48 48" class="modal-brand-icon" aria-hidden="true">
+                <path d="M24 42S5 30.5 5 17.5A9.5 9.5 0 0 1 24 12.5 9.5 9.5 0 0 1 43 17.5C43 30.5 24 42 24 42z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+                <path d="M17 22c0-3.5 3-5.5 6-4.5 3 1 3.5 4.5 1.5 7s-5.5 3.5-7.5 1.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                <circle cx="26.5" cy="26" r="2" fill="currentColor"/>
+              </svg>
+              <span>Lying-In Care</span>
+            </div>
+
+            <!-- Red Logout Icon Box -->
+            <div class="signout-icon-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </div>
+
+            <!-- Title & Notice -->
+            <h2 class="signout-title">Sign out?</h2>
+            <p class="signout-desc">
+              You are about to leave your midwife session. Unsaved changes on open pages may be lost.
+            </p>
+
+            <!-- Midwife Account Profile Card -->
+            <div class="signout-user-card">
+              <div class="signout-user-avatar">{{ userInitials() }}</div>
+              <div class="signout-user-meta">
+                <strong class="user-card-name">{{ userName() }}</strong>
+                <span class="user-card-email">{{ userEmail() }}</span>
+              </div>
+            </div>
+
+            <!-- Bullet Points -->
+            <ul class="signout-bullet-list">
+              <li>You will need your password to sign in again.</li>
+              <li>Approval and attendance notifications still go to your clinic account when you return.</li>
+            </ul>
+
+            <!-- Action Buttons -->
+            <div class="signout-btn-group">
+              <button type="button" class="btn-stay-signed-in" (click)="closeSignOutModal()">
+                Stay signed in
+              </button>
+              <button type="button" class="btn-confirm-signout" (click)="confirmSignOut()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Sign out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: `
@@ -178,6 +282,11 @@ import { AuthService } from '../core/auth.service';
       background: #fbf9fe;
       color: #2a2438;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    :host-context(body.dark-mode) {
+      background: #120e1b;
+      color: #ede7f6;
     }
 
     .mw-app-layout {
@@ -302,73 +411,7 @@ import { AuthService } from '../core/auth.service';
     }
 
     .settings-link {
-      padding: 8px 14px;
-    }
-
-    .user-profile-badge {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .user-avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: #503185;
-      color: #ffffff;
-      font-weight: 700;
-      font-size: 12.5px;
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
-      border: 1.5px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .user-details {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      line-height: 1.2;
-    }
-
-    .user-details strong {
-      font-size: 13px;
-      color: #ffffff;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .user-details small {
-      font-size: 11px;
-      color: #b5a2d4;
-    }
-
-    .logout-icon-btn {
-      background: transparent;
-      border: 0;
-      color: #cdbfe3;
-      padding: 6px;
-      border-radius: 6px;
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-      transition: background 0.2s, color 0.2s;
-    }
-
-    .logout-icon-btn:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: #ffffff;
-    }
-
-    .logout-icon-btn svg {
-      width: 16px;
-      height: 16px;
+      padding: 10px 14px;
     }
 
     /* ============ MAIN AREA ============ */
@@ -478,23 +521,171 @@ import { AuthService } from '../core/auth.service';
       border: 1.5px solid #ffffff;
     }
 
+    /* ============ USER DROPDOWN MENU ============ */
+    .user-menu-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
     .user-pill-btn {
-      width: 36px;
-      height: 36px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       background: #2e1850;
       color: #ffffff;
       font-size: 13px;
       font-weight: 700;
+      border: 2px solid transparent;
       display: grid;
       place-items: center;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(46, 24, 80, 0.2);
-      transition: transform 0.15s;
+      transition: all 0.15s ease;
+      outline: none;
     }
 
-    .user-pill-btn:hover {
+    .user-pill-btn:hover,
+    .user-pill-btn.active {
       transform: scale(1.05);
+      border-color: #8c68c4;
+      box-shadow: 0 0 0 3px rgba(107, 79, 163, 0.25);
+    }
+
+    .user-dropdown-card {
+      position: absolute;
+      top: calc(100% + 12px);
+      right: 0;
+      width: 196px;
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid #ede7f6;
+      box-shadow: 0 12px 32px rgba(35, 18, 60, 0.14), 0 4px 12px rgba(0, 0, 0, 0.05);
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      z-index: 1000;
+      animation: dropdownPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes dropdownPop {
+      from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      padding: 9px 12px;
+      border-radius: 9px;
+      text-decoration: none;
+      background: transparent;
+      border: none;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 14px;
+      font-weight: 500;
+      color: #2e263d;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      font-family: inherit;
+      text-align: left;
+    }
+
+    .dropdown-item:hover {
+      background: #f7f3fd;
+      color: #361759;
+    }
+
+    .dropdown-item .dropdown-icon {
+      width: 18px;
+      height: 18px;
+      color: #4b415a;
+      flex-shrink: 0;
+      transition: color 0.15s ease;
+    }
+
+    .dropdown-item:hover .dropdown-icon {
+      color: #361759;
+    }
+
+    .dropdown-label {
+      flex: 1;
+      line-height: 1;
+    }
+
+    /* Dark mode row */
+    .dark-mode-row {
+      justify-content: space-between;
+      user-select: none;
+    }
+
+    .dark-mode-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dropdown-switch {
+      width: 32px;
+      height: 18px;
+      border-radius: 999px;
+      background: #e5def0;
+      position: relative;
+      flex-shrink: 0;
+      transition: background 0.2s ease;
+    }
+
+    .dropdown-switch.on {
+      background: #361759;
+    }
+
+    .switch-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .dropdown-switch.on .switch-thumb {
+      transform: translateX(14px);
+    }
+
+    /* Sign out row (Red text & icon) */
+    .signout-item {
+      color: #ef4444 !important;
+      font-weight: 600;
+    }
+
+    .signout-item .signout-icon {
+      color: #ef4444 !important;
+    }
+
+    .signout-label {
+      color: #ef4444;
+    }
+
+    .signout-item:hover {
+      background: #fef2f2 !important;
+      color: #dc2626 !important;
+    }
+
+    .signout-item:hover .signout-icon {
+      color: #dc2626 !important;
     }
 
     /* Content Body */
@@ -511,36 +702,306 @@ import { AuthService } from '../core/auth.service';
       background: #d8cde9;
       border-radius: 6px;
     }
+
+    /* ============ SIGN OUT MODAL (Matches Image 3) ============ */
+    .signout-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      padding: 18px;
+    }
+
+    .signout-modal-card {
+      background: #ffffff;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 420px;
+      padding: 28px 28px 24px;
+      box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(226, 232, 240, 0.8);
+      display: flex;
+      flex-direction: column;
+      animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+
+    @keyframes modalPopIn {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-brand-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #361759;
+      margin-bottom: 20px;
+    }
+
+    .modal-brand-icon {
+      width: 22px;
+      height: 22px;
+      color: #361759;
+    }
+
+    .signout-icon-box {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: #ede6f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .signout-icon-box svg {
+      width: 24px;
+      height: 24px;
+      stroke: #361759;
+      stroke-width: 2.2;
+    }
+
+    .signout-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #261938;
+      margin: 0 0 8px;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .signout-desc {
+      font-size: 13.5px;
+      color: #6a617c;
+      line-height: 1.5;
+      margin: 0 0 18px;
+    }
+
+    .signout-user-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      border: 1.5px solid #d4c8e8;
+      border-radius: 14px;
+      background: #fbf9fd;
+      margin-bottom: 18px;
+    }
+
+    .signout-user-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: #361759;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .signout-user-meta {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      line-height: 1.3;
+    }
+
+    .user-card-name {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #261938;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-card-email {
+      font-size: 12.5px;
+      color: #6a617c;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .signout-bullet-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .signout-bullet-list li {
+      font-size: 13px;
+      color: #6a617c;
+      line-height: 1.45;
+      position: relative;
+      padding-left: 16px;
+    }
+
+    .signout-bullet-list li::before {
+      content: '•';
+      position: absolute;
+      left: 2px;
+      top: -1px;
+      font-size: 16px;
+      color: #8e7ea6;
+    }
+
+    .signout-btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-stay-signed-in {
+      width: 100%;
+      height: 46px;
+      background: #ffffff;
+      border: 1.5px solid #d4c8e8;
+      border-radius: 12px;
+      color: #361759;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-stay-signed-in:hover {
+      background: #fbf9fd;
+      border-color: #361759;
+    }
+
+    .btn-confirm-signout {
+      width: 100%;
+      height: 46px;
+      background: #361759;
+      border: none;
+      border-radius: 12px;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 14px rgba(54, 23, 89, 0.28);
+    }
+
+    .btn-confirm-signout svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .btn-confirm-signout:hover {
+      background: #4a2179;
+      transform: translateY(-1px);
+    }
   `,
 })
-export class MidwifeLayout {
+export class MidwifeLayout implements OnInit {
   auth = inject(AuthService);
   private router = inject(Router);
 
+  readonly showSignOutModal = signal(false);
+  readonly userMenuOpen = signal(false);
+  readonly isDarkMode = signal(false);
+
   readonly userInitials = computed(() => {
-    const email = this.auth.user()?.email ?? '';
-    if (!email) return 'MR';
-    const parts = email.split('@')[0].split(/[._-]/);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return email.slice(0, 2).toUpperCase();
+    return this.auth.userInitials() || 'MW';
+  });
+
+  readonly userEmail = computed(() => {
+    return this.auth.user()?.email || 'midwife@lyingincare.ph';
   });
 
   readonly userName = computed(() => {
-    const email = this.auth.user()?.email ?? '';
-    if (!email) return 'Midwife Maria';
-    const prefix = email.split('@')[0];
-    const clean = prefix.charAt(0).toUpperCase() + prefix.slice(1).replace(/[._-].*$/, '');
-    return `Midwife ${clean}`;
+    const name = this.auth.userFullName();
+    if (!name || name === 'Midwife') return 'Licensed Midwife';
+    if (name.toLowerCase().startsWith('midwife')) return name;
+    return `Midwife ${name}`;
   });
 
+  private navEnd = toSignal(
+    this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+  );
+
+  readonly currentUrl = signal(this.router.url);
+
+  constructor() {
+    this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd)).subscribe((e) => {
+      this.currentUrl.set(e.urlAfterRedirects || e.url);
+    });
+  }
+
+  ngOnInit(): void {
+    if (typeof localStorage !== 'undefined') {
+      const savedDark = localStorage.getItem('lcms_dark_mode') === 'true';
+      this.isDarkMode.set(savedDark);
+      this.applyTheme(savedDark);
+    }
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    if (this.userMenuOpen()) {
+      this.userMenuOpen.set(false);
+    }
+  }
+
+  toggleUserMenu(): void {
+    this.userMenuOpen.update((open) => !open);
+  }
+
+  closeUserMenu(): void {
+    this.userMenuOpen.set(false);
+  }
+
+  toggleDarkMode(): void {
+    const next = !this.isDarkMode();
+    this.isDarkMode.set(next);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lcms_dark_mode', String(next));
+    }
+    this.applyTheme(next);
+  }
+
+  private applyTheme(dark: boolean): void {
+    if (typeof document !== 'undefined') {
+      if (dark) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+    }
+  }
+
+  onSignOutClicked(): void {
+    this.closeUserMenu();
+    this.openSignOutModal();
+  }
+
   readonly pageTitle = computed(() => {
-    const url = this.router.url;
+    this.navEnd(); // triggers reactive recomputation on route changes
+    const url = this.router.url || this.currentUrl();
+    if (url.includes('/settings')) return 'Settings';
     if (url.includes('/register-patient') || url.includes('/patients/new')) return 'Register Patient';
     if (url.includes('/patients')) return 'Patients';
     if (url.includes('/appointments')) return 'Appointments';
-    if (url.includes('/availability')) return 'Availability';
     if (url.includes('/queue')) return 'Patient Queue';
     if (url.includes('/prenatal')) return 'Prenatal Records';
     if (url.includes('/delivery')) return 'Delivery Records';
@@ -551,4 +1012,17 @@ export class MidwifeLayout {
     if (url.includes('/statistics')) return 'Statistics';
     return 'Dashboard';
   });
+
+  openSignOutModal(): void {
+    this.showSignOutModal.set(true);
+  }
+
+  closeSignOutModal(): void {
+    this.showSignOutModal.set(false);
+  }
+
+  async confirmSignOut(): Promise<void> {
+    this.closeSignOutModal();
+    await this.auth.logout();
+  }
 }

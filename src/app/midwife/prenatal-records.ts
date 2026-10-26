@@ -148,10 +148,11 @@ import { PrenatalRecord, RecordsService } from '../core/records.service';
         </div>
       }
 
-      <!-- ==================== LOG PRENATAL VISIT MODAL ==================== -->
+      <!-- ==================== LOG PRENATAL VISIT WIZARD MODAL ==================== -->
       @if (showAddModal()) {
         <div class="modal-backdrop" (click)="closeAddModal()">
-          <div class="modal-dialog-card modal-lg" (click)="$event.stopPropagation()">
+          <div class="modal-dialog-card modal-lg wizard-modal-card" (click)="$event.stopPropagation()">
+            <!-- Modal Header -->
             <div class="modal-header">
               <div class="modal-title-row">
                 <div class="modal-icon tone-purple">
@@ -162,183 +163,358 @@ import { PrenatalRecord, RecordsService } from '../core/records.service';
                   <p class="modal-subtitle">Record clinical measurements, maternal vitals, and obstetric assessment.</p>
                 </div>
               </div>
-              <button type="button" class="btn-close-modal" (click)="closeAddModal()">✕</button>
+              <button type="button" class="btn-close-modal" (click)="closeAddModal()" title="Close dialog">✕</button>
             </div>
 
-            <form (ngSubmit)="submitPrenatalRecord()" class="modal-body-scroll">
-              <!-- Section 1: Patient Selection & Visit Details -->
-              <div class="form-section-title">1. Patient Identification & Visit Date</div>
-              <div class="form-row-2">
-                <div class="form-field">
-                  <label>Select Registered Patient <span class="req">*</span></label>
-                  <select [(ngModel)]="formPatientId" name="patientId" (change)="onPatientSelect()" required>
-                    <option value="" disabled>-- Choose patient from directory --</option>
-                    @for (p of patients(); track p.id) {
-                      <option [value]="p.id">{{ p.fullName }} ({{ p.contactNumber || p.email }})</option>
-                    }
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label>Visit Date <span class="req">*</span></label>
-                  <input type="date" [(ngModel)]="formDate" name="formDate" required />
-                </div>
+            <!-- Stepper Progress Bar -->
+            <div class="wizard-stepper-wrap">
+              <div class="wizard-stepper-bar">
+                @for (step of steps; track step.num) {
+                  <button
+                    type="button"
+                    class="step-item"
+                    [class.active]="currentStep() === step.num"
+                    [class.completed]="currentStep() > step.num"
+                    (click)="goToStep(step.num)"
+                    [attr.aria-current]="currentStep() === step.num ? 'step' : null"
+                  >
+                    <div class="step-circle">
+                      @if (currentStep() > step.num) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      } @else {
+                        <span>{{ step.num }}</span>
+                      }
+                    </div>
+                    <div class="step-label-group">
+                      <span class="step-num-text">Step {{ step.num }}</span>
+                      <strong class="step-title-text">{{ step.title }}</strong>
+                    </div>
+                  </button>
+                  @if (!$last) {
+                    <div class="step-connector" [class.filled]="currentStep() > step.num"></div>
+                  }
+                }
               </div>
+            </div>
 
-              <!-- Section 2: Gestational Age & Trimester -->
-              <div class="form-section-title">2. Gestational Timeline & Risk Classification</div>
-              <div class="form-row-3">
-                <div class="form-field">
-                  <label>Gestational Age (e.g. 24 weeks) <span class="req">*</span></label>
-                  <input type="text" [(ngModel)]="formGestationalAge" name="formGestationalAge" placeholder="24 weeks" required />
+            <!-- Modal Body (Step Specific Content) -->
+            <div class="wizard-step-body">
+              @if (stepError()) {
+                <div class="step-alert-banner" role="alert">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span>{{ stepError() }}</span>
                 </div>
+              }
 
-                <div class="form-field">
-                  <label>Trimester Stage</label>
-                  <select [(ngModel)]="formTrimester" name="formTrimester">
-                    <option value="1st Trimester">1st Trimester (Weeks 1-13)</option>
-                    <option value="2nd Trimester">2nd Trimester (Weeks 14-27)</option>
-                    <option value="3rd Trimester">3rd Trimester (Weeks 28-40+)</option>
-                  </select>
+              <!-- STEP 1: PATIENT IDENTIFICATION & VISIT DATE -->
+              @if (currentStep() === 1) {
+                <div class="wizard-step-pane">
+                  <div class="step-header-intro">
+                    <span class="step-badge">Section 1</span>
+                    <h3>Patient Identification & Visit Date</h3>
+                    <p>Select the registered patient from the directory and record the visit date.</p>
+                  </div>
+
+                  <div class="form-row-2">
+                    <div class="form-field">
+                      <label>Select Registered Patient <span class="req">*</span></label>
+                      <select [(ngModel)]="formPatientId" name="patientId" (change)="onPatientSelect()" required>
+                        <option value="" disabled>-- Choose patient from directory --</option>
+                        @for (p of patients(); track p.id) {
+                          <option [value]="p.id">{{ p.fullName }} ({{ p.contactNumber || p.email }})</option>
+                        }
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Visit Date <span class="req">*</span></label>
+                      <input type="date" [(ngModel)]="formDate" name="formDate" required />
+                    </div>
+                  </div>
+
+                  @if (selectedPatientObj(); as pt) {
+                    <div class="patient-preview-card">
+                      <div class="pt-avatar">{{ getInitials(pt.fullName) }}</div>
+                      <div class="pt-info">
+                        <div class="pt-title-row">
+                          <strong class="pt-name">{{ pt.fullName }}</strong>
+                          <span class="badge-status status-active">{{ pt.status || 'Active' }}</span>
+                          <span class="badge-risk" [ngClass]="'risk-' + getRiskSlug(pt.riskLevel)">{{ pt.riskLevel || 'Low risk' }}</span>
+                        </div>
+                        <div class="pt-meta-row">
+                          <span>Phone: <strong>{{ pt.contactNumber || '—' }}</strong></span>
+                          <span class="meta-dot">•</span>
+                          <span>Email: <strong>{{ pt.email || '—' }}</strong></span>
+                          <span class="meta-dot">•</span>
+                          <span>Blood: <strong>{{ pt.bloodType || 'Not recorded' }}</strong></span>
+                          <span class="meta-dot">•</span>
+                          <span>Obstetric: <strong>{{ pt.gravidaPara || 'G1P0' }}</strong></span>
+                          @if (pt.lmp) {
+                            <span class="meta-dot">•</span>
+                            <span>LMP: <strong>{{ pt.lmp | date: 'mediumDate' }}</strong></span>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="patient-select-hint">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      <span>Selecting a registered patient will automatically populate their baseline risk level and estimate gestational age based on their LMP or EDD.</span>
+                    </div>
+                  }
                 </div>
+              }
 
-                <div class="form-field">
-                  <label>Maternal Risk Level</label>
-                  <select [(ngModel)]="formRiskLevel" name="formRiskLevel">
-                    <option value="Low risk">Low Risk</option>
-                    <option value="Medium risk">Medium Risk</option>
-                    <option value="High risk">High Risk</option>
-                  </select>
+              <!-- STEP 2: GESTATIONAL TIMELINE & RISK -->
+              @if (currentStep() === 2) {
+                <div class="wizard-step-pane">
+                  <div class="step-header-intro">
+                    <span class="step-badge">Section 2</span>
+                    <h3>Gestational Timeline & Risk Classification</h3>
+                    <p>Verify or adjust the patient's gestational timeline, trimester stage, and risk category.</p>
+                  </div>
+
+                  <div class="form-row-3">
+                    <div class="form-field">
+                      <label>Gestational Age (e.g. 24 weeks) <span class="req">*</span></label>
+                      <input type="text" [(ngModel)]="formGestationalAge" name="formGestationalAge" placeholder="24 weeks" required />
+                    </div>
+
+                    <div class="form-field">
+                      <label>Trimester Stage</label>
+                      <select [(ngModel)]="formTrimester" name="formTrimester">
+                        <option value="1st Trimester">1st Trimester (Weeks 1-13)</option>
+                        <option value="2nd Trimester">2nd Trimester (Weeks 14-27)</option>
+                        <option value="3rd Trimester">3rd Trimester (Weeks 28-40+)</option>
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Maternal Risk Level</label>
+                      <select [(ngModel)]="formRiskLevel" name="formRiskLevel">
+                        <option value="Low risk">Low Risk</option>
+                        <option value="Medium risk">Medium Risk</option>
+                        <option value="High risk">High Risk</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="clinical-info-callout">
+                    <div class="callout-icon">💡</div>
+                    <div class="callout-body">
+                      <strong>Automated Gestational Calculation</strong>
+                      <p>Gestational age is pre-calculated from the patient's Last Menstrual Period (LMP). You can manually modify it if an ultrasound biometry report indicates an adjusted clinical gestational age.</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              }
 
-              <!-- Section 3: Physical & Obstetric Vitals -->
-              <div class="form-section-title">3. Physical & Obstetric Vitals</div>
-              <div class="form-row-4">
-                <div class="form-field">
-                  <label>Blood Pressure (mmHg) <span class="req">*</span></label>
-                  <input type="text" [(ngModel)]="formBp" name="formBp" placeholder="110/70" required />
+              <!-- STEP 3: PHYSICAL & OBSTETRIC VITALS -->
+              @if (currentStep() === 3) {
+                <div class="wizard-step-pane">
+                  <div class="step-header-intro">
+                    <span class="step-badge">Section 3</span>
+                    <h3>Physical & Obstetric Vitals</h3>
+                    <p>Record maternal physical parameters, fundal height, and fetal heart sounds.</p>
+                  </div>
+
+                  <div class="form-row-4">
+                    <div class="form-field">
+                      <label>Blood Pressure (mmHg) <span class="req">*</span></label>
+                      <input type="text" [(ngModel)]="formBp" name="formBp" placeholder="110/70" required />
+                    </div>
+
+                    <div class="form-field">
+                      <label>Maternal Weight (kg) <span class="req">*</span></label>
+                      <input type="number" step="0.1" [(ngModel)]="formWeightKg" name="formWeightKg" placeholder="58.5" required />
+                    </div>
+
+                    <div class="form-field">
+                      <label>Fundal Height (cm)</label>
+                      <input type="number" [(ngModel)]="formFundalHeightCm" name="formFundalHeightCm" placeholder="24" />
+                    </div>
+
+                    <div class="form-field">
+                      <label>Fetal Heart Rate (bpm)</label>
+                      <input type="number" [(ngModel)]="formFhr" name="formFhr" placeholder="140" />
+                    </div>
+                  </div>
+
+                  <div class="form-row-3" style="margin-top: 14px;">
+                    <div class="form-field">
+                      <label>Fetal Presentation / Lie</label>
+                      <select [(ngModel)]="formFetalPresentation" name="formFetalPresentation">
+                        <option value="Cephalic">Cephalic (Head-down)</option>
+                        <option value="Breech">Breech</option>
+                        <option value="Transverse">Transverse</option>
+                        <option value="Not palpable / Early">Not palpable / Early</option>
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Fetal Movement</label>
+                      <select [(ngModel)]="formFetalMovement" name="formFetalMovement">
+                        <option value="Active / Good">Active / Good</option>
+                        <option value="Decreased">Decreased</option>
+                        <option value="Not yet felt (<18w)">Not yet felt (&lt;18w)</option>
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Edema / Swelling</label>
+                      <select [(ngModel)]="formEdema" name="formEdema">
+                        <option value="None">None</option>
+                        <option value="Mild (Feet/Ankles)">Mild (Feet/Ankles)</option>
+                        <option value="Moderate">Moderate</option>
+                        <option value="Severe / Generalized">Severe / Generalized</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="vitals-reference-pill">
+                    <span>Clinical Reference: Normal Fetal Heart Rate is <strong>110 – 160 bpm</strong> · Normal BP &lt; <strong>120/80 mmHg</strong></span>
+                  </div>
                 </div>
+              }
 
-                <div class="form-field">
-                  <label>Maternal Weight (kg) <span class="req">*</span></label>
-                  <input type="number" step="0.1" [(ngModel)]="formWeightKg" name="formWeightKg" placeholder="58.5" required />
+              <!-- STEP 4: URINALYSIS & PRESCRIBED SUPPLEMENTS -->
+              @if (currentStep() === 4) {
+                <div class="wizard-step-pane">
+                  <div class="step-header-intro">
+                    <span class="step-badge">Section 4</span>
+                    <h3>Urinalysis & Prescribed Prenatal Supplements</h3>
+                    <p>Screen for proteinuria or glycosuria, log hemoglobin, and record micronutrient supplementation.</p>
+                  </div>
+
+                  <div class="form-row-3">
+                    <div class="form-field">
+                      <label>Urine Protein (Albumin)</label>
+                      <select [(ngModel)]="formUrineProtein" name="formUrineProtein">
+                        <option value="Negative">Negative</option>
+                        <option value="Trace">Trace</option>
+                        <option value="+1">+1</option>
+                        <option value="+2">+2 (Requires monitoring)</option>
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Urine Glucose</label>
+                      <select [(ngModel)]="formUrineGlucose" name="formUrineGlucose">
+                        <option value="Negative">Negative</option>
+                        <option value="+1">+1</option>
+                        <option value="+2">+2</option>
+                      </select>
+                    </div>
+
+                    <div class="form-field">
+                      <label>Hemoglobin (g/dL)</label>
+                      <input type="text" [(ngModel)]="formHemoglobin" name="formHemoglobin" placeholder="12.0 g/dL" />
+                    </div>
+                  </div>
+
+                  <div class="supplements-checks-wrap" style="margin-top: 14px;">
+                    <span class="supp-label">Supplements / Vaccines Administered This Visit:</span>
+                    <div class="checks-grid">
+                      <label class="check-box-item">
+                        <input type="checkbox" [(ngModel)]="suppFeFolate" name="suppFeFolate" />
+                        <span>Ferrous Sulfate + Folic Acid</span>
+                      </label>
+                      <label class="check-box-item">
+                        <input type="checkbox" [(ngModel)]="suppCalcium" name="suppCalcium" />
+                        <span>Calcium Carbonate</span>
+                      </label>
+                      <label class="check-box-item">
+                        <input type="checkbox" [(ngModel)]="suppTetanus" name="suppTetanus" />
+                        <span>Tetanus Toxoid (TT) Immunization</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
+              }
 
-                <div class="form-field">
-                  <label>Fundal Height (cm)</label>
-                  <input type="number" [(ngModel)]="formFundalHeightCm" name="formFundalHeightCm" placeholder="24" />
+              <!-- STEP 5: CLINICAL FINDINGS & MIDWIFE SIGN-OFF -->
+              @if (currentStep() === 5) {
+                <div class="wizard-step-pane">
+                  <div class="step-header-intro">
+                    <span class="step-badge">Section 5</span>
+                    <h3>Clinical Findings & Next Appointment</h3>
+                    <p>Document patient dietary advice, complaints, next scheduled visit, and midwife validation.</p>
+                  </div>
+
+                  <!-- Quick Clinical Summary Card -->
+                  <div class="wizard-summary-card">
+                    <div class="summary-head">
+                      <strong>Checkup Record Summary</strong>
+                      <span class="summary-patient">{{ selectedPatientObj()?.fullName || 'Selected Patient' }}</span>
+                    </div>
+                    <div class="summary-grid">
+                      <div class="summary-item">
+                        <span class="sum-lbl">Gestational Timeline</span>
+                        <strong class="sum-val">{{ formGestationalAge }} ({{ formTrimester }})</strong>
+                      </div>
+                      <div class="summary-item">
+                        <span class="sum-lbl">Risk Classification</span>
+                        <span class="badge-risk inline-risk" [ngClass]="'risk-' + getRiskSlug(formRiskLevel)">{{ formRiskLevel }}</span>
+                      </div>
+                      <div class="summary-item">
+                        <span class="sum-lbl">Vitals</span>
+                        <strong class="sum-val">BP {{ formBp }} · {{ formWeightKg }} kg · FHR {{ formFhr }} bpm</strong>
+                      </div>
+                      <div class="summary-item">
+                        <span class="sum-lbl">Urinalysis</span>
+                        <strong class="sum-val">Protein: {{ formUrineProtein }} · Glucose: {{ formUrineGlucose }}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-field" style="margin-top: 10px;">
+                    <label>Clinical Notes / Patient Complaints / Dietary Advice</label>
+                    <textarea [(ngModel)]="formNotes" name="formNotes" rows="2" style="height: 52px; min-height: 48px; resize: vertical;" placeholder="e.g. Normal maternal progression. Healthy fetal heart tones. Advised on kick counts and hydration."></textarea>
+                  </div>
+
+                  <div class="form-row-2" style="margin-top: 10px;">
+                    <div class="form-field">
+                      <label>Next Follow-Up Date</label>
+                      <input type="date" [(ngModel)]="formNextDate" name="formNextDate" />
+                    </div>
+
+                    <div class="form-field">
+                      <label>Attending Midwife <span class="req">*</span></label>
+                      <input type="text" [(ngModel)]="formMidwife" name="formMidwife" required />
+                    </div>
+                  </div>
                 </div>
+              }
+            </div>
 
-                <div class="form-field">
-                  <label>Fetal Heart Rate (bpm)</label>
-                  <input type="number" [(ngModel)]="formFhr" name="formFhr" placeholder="140" />
-                </div>
-              </div>
-
-              <div class="form-row-3">
-                <div class="form-field">
-                  <label>Fetal Presentation / Lie</label>
-                  <select [(ngModel)]="formFetalPresentation" name="formFetalPresentation">
-                    <option value="Cephalic">Cephalic (Head-down)</option>
-                    <option value="Breech">Breech</option>
-                    <option value="Transverse">Transverse</option>
-                    <option value="Not palpable / Early">Not palpable / Early</option>
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label>Fetal Movement</label>
-                  <select [(ngModel)]="formFetalMovement" name="formFetalMovement">
-                    <option value="Active / Good">Active / Good</option>
-                    <option value="Decreased">Decreased</option>
-                    <option value="Not yet felt (<18w)">Not yet felt (<18w)</option>
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label>Edema / Swelling</label>
-                  <select [(ngModel)]="formEdema" name="formEdema">
-                    <option value="None">None</option>
-                    <option value="Mild (Feet/Ankles)">Mild (Feet/Ankles)</option>
-                    <option value="Moderate">Moderate</option>
-                    <option value="Severe / Generalized">Severe / Generalized</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Section 4: Urinalysis & Supplements -->
-              <div class="form-section-title">4. Urinalysis & Prescribed Prenatal Supplements</div>
-              <div class="form-row-3">
-                <div class="form-field">
-                  <label>Urine Protein (Albumin)</label>
-                  <select [(ngModel)]="formUrineProtein" name="formUrineProtein">
-                    <option value="Negative">Negative</option>
-                    <option value="Trace">Trace</option>
-                    <option value="+1">+1</option>
-                    <option value="+2">+2 (Requires monitoring)</option>
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label>Urine Glucose</label>
-                  <select [(ngModel)]="formUrineGlucose" name="formUrineGlucose">
-                    <option value="Negative">Negative</option>
-                    <option value="+1">+1</option>
-                    <option value="+2">+2</option>
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label>Hemoglobin (g/dL)</label>
-                  <input type="text" [(ngModel)]="formHemoglobin" name="formHemoglobin" placeholder="12.0 g/dL" />
-                </div>
-              </div>
-
-              <div class="supplements-checks-wrap">
-                <span class="supp-label">Supplements / Vaccines Administered:</span>
-                <div class="checks-grid">
-                  <label class="check-box-item">
-                    <input type="checkbox" [(ngModel)]="suppFeFolate" name="suppFeFolate" />
-                    Ferrous Sulfate + Folic Acid
-                  </label>
-                  <label class="check-box-item">
-                    <input type="checkbox" [(ngModel)]="suppCalcium" name="suppCalcium" />
-                    Calcium Carbonate
-                  </label>
-                  <label class="check-box-item">
-                    <input type="checkbox" [(ngModel)]="suppTetanus" name="suppTetanus" />
-                    Tetanus Toxoid (TT) Immunization
-                  </label>
-                </div>
-              </div>
-
-              <!-- Section 5: Clinical Notes & Midwife Sign-off -->
-              <div class="form-section-title">5. Clinical Findings & Next Appointment</div>
-              <div class="form-field">
-                <label>Clinical Notes / Patient Complaints / Dietary Advice</label>
-                <textarea [(ngModel)]="formNotes" name="formNotes" rows="2" placeholder="e.g. Normal maternal progression. Healthy fetal heart tones. Advised on kick counts and hydration."></textarea>
-              </div>
-
-              <div class="form-row-2">
-                <div class="form-field">
-                  <label>Next Follow-Up Date</label>
-                  <input type="date" [(ngModel)]="formNextDate" name="formNextDate" />
-                </div>
-
-                <div class="form-field">
-                  <label>Attending Midwife <span class="req">*</span></label>
-                  <input type="text" [(ngModel)]="formMidwife" name="formMidwife" required />
-                </div>
-              </div>
-
-              <div class="modal-footer">
+            <!-- Wizard Footer Navigation -->
+            <div class="modal-footer wizard-footer">
+              <div class="footer-left">
                 <button type="button" class="btn-cancel" (click)="closeAddModal()">Cancel</button>
-                <button type="submit" class="btn-submit" [disabled]="saving()">
-                  {{ saving() ? 'Saving Visit Record...' : 'Save Prenatal Record' }}
-                </button>
               </div>
-            </form>
+
+              <div class="footer-right">
+                @if (currentStep() > 1) {
+                  <button type="button" class="btn-wizard-prev" (click)="prevStep()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+                    Previous
+                  </button>
+                }
+
+                @if (currentStep() < 5) {
+                  <button type="button" class="btn-wizard-next" (click)="nextStep()">
+                    Next Step
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                } @else {
+                  <button type="button" class="btn-submit" (click)="submitPrenatalRecord()" [disabled]="saving()">
+                    {{ saving() ? 'Saving Visit Record...' : 'Save Prenatal Record' }}
+                  </button>
+                }
+              </div>
+            </div>
           </div>
         </div>
       }
@@ -957,6 +1133,467 @@ import { PrenatalRecord, RecordsService } from '../core/records.service';
 
     .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
+    /* ==================== WIZARD STEPPER STYLES ==================== */
+    .wizard-modal-card {
+      max-width: 860px !important;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      max-height: 92vh;
+      overflow: hidden;
+    }
+
+    .wizard-stepper-wrap {
+      padding: 12px 18px;
+      background: #faf8fd;
+      border-bottom: 1px solid #efe8f8;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .wizard-stepper-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      text-align: left;
+      flex-shrink: 0;
+    }
+
+    .step-item:hover .step-circle {
+      border-color: #361759;
+    }
+
+    .step-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 12.5px;
+      font-weight: 700;
+      border: 1.8px solid #d4c8e8;
+      background: #ffffff;
+      color: #6b5b82;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
+    }
+
+    .step-circle svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .step-item.active .step-circle {
+      background: #361759;
+      border-color: #361759;
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(54, 23, 89, 0.28);
+      transform: scale(1.05);
+    }
+
+    .step-item.completed .step-circle {
+      background: #ede6f8;
+      border-color: #361759;
+      color: #361759;
+    }
+
+    .step-label-group {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+    }
+
+    .step-num-text {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #8c829e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .step-title-text {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #554a66;
+      white-space: nowrap;
+    }
+
+    .step-item.active .step-title-text {
+      color: #271442;
+      font-weight: 800;
+    }
+
+    .step-item.completed .step-title-text {
+      color: #361759;
+    }
+
+    .step-connector {
+      flex: 1 1 10px;
+      min-width: 8px;
+      height: 2px;
+      background: #e8dfef;
+      margin: 0 3px;
+      border-radius: 2px;
+      transition: background 0.3s ease;
+    }
+
+    .step-connector.filled {
+      background: #361759;
+    }
+
+    .wizard-step-body {
+      padding: 18px 24px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      flex: 1;
+      max-height: calc(88vh - 170px);
+    }
+
+    .wizard-step-pane {
+      animation: fadeInStep 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeInStep {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-header-intro {
+      margin-bottom: 12px;
+    }
+
+    .step-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: #ede6f8;
+      color: #4a287c;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-bottom: 4px;
+    }
+
+    .step-header-intro h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      color: #271442;
+    }
+
+    .step-header-intro p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: #7a7189;
+    }
+
+    .step-alert-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #be123c;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .step-alert-banner svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .patient-preview-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #fbf9fd;
+      border: 1.5px solid #ece4f5;
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-top: 14px;
+    }
+
+    .pt-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #361759;
+      color: #ffffff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 14px;
+      flex-shrink: 0;
+      box-shadow: 0 3px 8px rgba(54, 23, 89, 0.2);
+    }
+
+    .pt-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .pt-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pt-name {
+      font-size: 14.5px;
+      color: #271442;
+    }
+
+    .pt-meta-row {
+      font-size: 12px;
+      color: #695f77;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .meta-dot {
+      color: #b5a9c8;
+    }
+
+    .patient-select-hint {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f7f3fb;
+      border: 1px dashed #d8cde9;
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 12.5px;
+      color: #6b5c82;
+      margin-top: 14px;
+    }
+
+    .patient-select-hint svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      color: #6b4fa3;
+    }
+
+    .clinical-info-callout {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #fdfaf5;
+      border: 1px solid #fae8cc;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 16px;
+    }
+
+    .callout-icon {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .callout-body strong {
+      display: block;
+      font-size: 12.5px;
+      color: #78350f;
+      font-weight: 700;
+    }
+
+    .callout-body p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: #92400e;
+      line-height: 1.4;
+    }
+
+    .vitals-reference-pill {
+      background: #f4effa;
+      border-radius: 8px;
+      padding: 9px 13px;
+      font-size: 12px;
+      color: #4a287c;
+      margin-top: 14px;
+      border: 1px solid #e7ddf2;
+    }
+
+    .wizard-summary-card {
+      background: #fcfaff;
+      border: 1.5px solid #ebdff5;
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+
+    .summary-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #efe5f8;
+      padding-bottom: 5px;
+      margin-bottom: 7px;
+    }
+
+    .summary-head strong {
+      font-size: 12.5px;
+      color: #271442;
+    }
+
+    .summary-patient {
+      font-size: 12px;
+      font-weight: 700;
+      color: #361759;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5px 12px;
+    }
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .sum-lbl {
+      font-size: 10.5px;
+      color: #7a7189;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+
+    .sum-val {
+      font-size: 12px;
+      color: #271442;
+    }
+
+    .inline-risk {
+      display: inline-block;
+      width: fit-content;
+      padding: 2px 8px;
+      font-size: 11px;
+    }
+
+    .wizard-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      border-top: 1px solid #ebe5f5;
+      background: #fbf9fd;
+    }
+
+    .footer-left, .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-indicator-pill {
+      background: #f0eaf8;
+      color: #4a287c;
+      padding: 5px 13px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-wizard-prev {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 999px;
+      border: 1px solid #d4c8e8;
+      background: #ffffff;
+      color: #361759;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-wizard-prev:hover {
+      background: #f3ecfb;
+      border-color: #361759;
+    }
+
+    .btn-wizard-prev svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .btn-wizard-next {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 20px;
+      border-radius: 999px;
+      border: none;
+      background: #361759;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(54, 23, 89, 0.25);
+      transition: all 0.15s ease;
+    }
+
+    .btn-wizard-next:hover {
+      background: #4a2178;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(54, 23, 89, 0.35);
+    }
+
+    .btn-wizard-next svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    @media (max-width: 680px) {
+      .step-title-text, .step-num-text {
+        display: none;
+      }
+      .wizard-footer {
+        flex-direction: column-reverse;
+        gap: 12px;
+        align-items: stretch;
+      }
+      .footer-left, .footer-center, .footer-right {
+        justify-content: center;
+      }
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* View Summary Sheet */
     .view-sheet-body {
       padding: 22px 24px;
@@ -1088,6 +1725,22 @@ export class PrenatalRecords implements OnInit {
   readonly showAddModal = signal(false);
   readonly viewingRecord = signal<PrenatalRecord | null>(null);
 
+  // Wizard state
+  readonly currentStep = signal(1);
+  readonly stepError = signal('');
+
+  readonly steps = [
+    { num: 1, title: 'Patient & Date' },
+    { num: 2, title: 'Gestation' },
+    { num: 3, title: 'Vitals' },
+    { num: 4, title: 'Urinalysis' },
+    { num: 5, title: 'Sign-off' },
+  ];
+
+  readonly selectedPatientObj = computed(() => {
+    return this.patients().find((p) => p.id === this.formPatientId) || null;
+  });
+
   // Add Form Model
   formPatientId = '';
   formDate = new Date().toISOString().split('T')[0];
@@ -1109,7 +1762,7 @@ export class PrenatalRecords implements OnInit {
   suppTetanus = false;
   formNotes = '';
   formNextDate = '';
-  formMidwife = 'Midwife Maria Santos, RM';
+  formMidwife = '';
 
   // Computed filtered records
   readonly filteredRecords = computed(() => {
@@ -1144,11 +1797,17 @@ export class PrenatalRecords implements OnInit {
   );
 
   async ngOnInit(): Promise<void> {
-    const u = this.auth.user();
-    if (u?.displayName) {
-      this.formMidwife = `${u.displayName}, RM`;
-    }
+    this.refreshAttendingMidwife();
     await this.loadAll();
+  }
+
+  private refreshAttendingMidwife(): void {
+    const name = this.auth.userFullName();
+    if (name && name !== 'Midwife') {
+      this.formMidwife = name.toLowerCase().startsWith('midwife') ? `${name}, RM` : `Midwife ${name}, RM`;
+    } else {
+      this.formMidwife = 'Licensed Midwife, RM';
+    }
   }
 
   async loadAll(): Promise<void> {
@@ -1200,16 +1859,97 @@ export class PrenatalRecords implements OnInit {
     else this.formTrimester = '3rd Trimester';
   }
 
+  validateCurrentStep(): boolean {
+    this.stepError.set('');
+    const step = this.currentStep();
+
+    if (step === 1) {
+      if (!this.formPatientId) {
+        this.stepError.set('Please select a registered patient from the directory.');
+        return false;
+      }
+      if (!this.formDate) {
+        this.stepError.set('Please enter a valid visit date.');
+        return false;
+      }
+    } else if (step === 2) {
+      if (!this.formGestationalAge || !this.formGestationalAge.trim()) {
+        this.stepError.set('Please enter gestational age (e.g. 24 weeks).');
+        return false;
+      }
+    } else if (step === 3) {
+      if (!this.formBp || !this.formBp.trim()) {
+        this.stepError.set('Please enter maternal blood pressure (e.g. 110/70).');
+        return false;
+      }
+      if (!this.formWeightKg || Number(this.formWeightKg) <= 0) {
+        this.stepError.set('Please enter a valid maternal weight in kg.');
+        return false;
+      }
+    } else if (step === 5) {
+      if (!this.formMidwife || !this.formMidwife.trim()) {
+        this.stepError.set('Please enter the attending midwife name.');
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  nextStep(): void {
+    if (!this.validateCurrentStep()) return;
+    if (this.currentStep() < 5) {
+      this.currentStep.update((s) => s + 1);
+      this.stepError.set('');
+    }
+  }
+
+  prevStep(): void {
+    if (this.currentStep() > 1) {
+      this.currentStep.update((s) => s - 1);
+      this.stepError.set('');
+    }
+  }
+
+  goToStep(stepNum: number): void {
+    if (stepNum === this.currentStep()) return;
+    if (stepNum < this.currentStep()) {
+      this.currentStep.set(stepNum);
+      this.stepError.set('');
+    } else {
+      if (this.validateCurrentStep()) {
+        this.currentStep.set(stepNum);
+        this.stepError.set('');
+      }
+    }
+  }
+
+  getInitials(name?: string): string {
+    if (!name) return 'PT';
+    return name
+      .split(' ')
+      .map((part) => part[0])
+      .filter(Boolean)
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
   openAddModal(): void {
+    this.currentStep.set(1);
+    this.stepError.set('');
     this.formDate = new Date().toISOString().split('T')[0];
     const next = new Date();
     next.setDate(next.getDate() + 28);
     this.formNextDate = next.toISOString().split('T')[0];
+    this.refreshAttendingMidwife();
     this.showAddModal.set(true);
   }
 
   closeAddModal(): void {
     this.showAddModal.set(false);
+    this.currentStep.set(1);
+    this.stepError.set('');
   }
 
   viewRecord(r: PrenatalRecord): void {
@@ -1217,8 +1957,10 @@ export class PrenatalRecords implements OnInit {
   }
 
   async submitPrenatalRecord(): Promise<void> {
+    if (!this.validateCurrentStep()) return;
     if (!this.formPatientId) {
-      alert('Please select a patient.');
+      this.currentStep.set(1);
+      this.stepError.set('Please select a patient.');
       return;
     }
 
@@ -1282,7 +2024,7 @@ export class PrenatalRecords implements OnInit {
     }
   }
 
-  getRiskSlug(r: string): string {
+  getRiskSlug(r?: string): string {
     return (r || 'low').toLowerCase().replace(/\s+/g, '-');
   }
 

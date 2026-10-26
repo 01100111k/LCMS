@@ -7,10 +7,16 @@ import { PatientList } from './midwife/patient-list';
 import { PatientForm } from './midwife/patient-form';
 import { AppointmentForm } from './midwife/appointment-form';
 import { AppointmentList } from './midwife/appointment-list';
+import { MidwifeAvailability } from './midwife/midwife-availability';
 import { PatientQueue } from './midwife/patient-queue';
 import { PrenatalRecords } from './midwife/prenatal-records';
 import { DeliveryRecords } from './midwife/delivery-records';
 import { PostpartumRecords } from './midwife/postpartum-records';
+import { PregnancyJourney } from './midwife/pregnancy-journey';
+import { HealthLibrary } from './midwife/health-library';
+import { Reports } from './midwife/reports';
+import { Statistics } from './midwife/statistics';
+import { Settings } from './midwife/settings';
 import { PatientPortal } from './patient/patient-portal';
 import { AdminDashboard } from './admin/admin-dashboard';
 
@@ -43,6 +49,11 @@ export const routes: Routes = [
       { path: 'prenatal', component: PrenatalRecords, title: 'Prenatal Records · Lying-In Care' },
       { path: 'delivery', component: DeliveryRecords, title: 'Delivery Records · Lying-In Care' },
       { path: 'postpartum', component: PostpartumRecords, title: 'Postpartum Records · Lying-In Care' },
+      { path: 'journey', component: PregnancyJourney, title: 'Pregnancy Journey · Lying-In Care' },
+      { path: 'library', component: HealthLibrary, title: 'Health Library · Lying-In Care' },
+      { path: 'reports', component: Reports, title: 'Reports · Lying-In Care' },
+      { path: 'statistics', component: Statistics, title: 'Statistics · Lying-In Care' },
+      { path: 'settings', component: Settings, title: 'Settings · Lying-In Care' },
     ],
   },
   { path: 'patient', component: PatientPortal, canActivate: [roleGuard('patient')], title: 'Patient Portal · Lying-In Care' },

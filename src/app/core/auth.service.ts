@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   createUserWithEmailAndPassword,
@@ -15,23 +15,99 @@ import { auth, db } from './firebase';
 
 export type Role = 'admin' | 'midwife' | 'patient';
 
+export interface UserProfileDoc {
+  role?: Role;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  prcLicense?: string;
+  contactNumber?: string;
+  [key: string]: unknown;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private router = inject(Router);
 
   readonly user = signal<User | null>(null);
+  readonly userProfile = signal<UserProfileDoc | null>(null);
   readonly role = signal<Role | null>(null);
   /** Resolves once Firebase has told us whether someone is already logged in. */
   readonly ready: Promise<void>;
   private version = 0;
 
+  readonly userFullName = computed(() => {
+    const u = this.user();
+    if (!u) return '';
+
+    // 1. Firebase Auth displayName
+    if (u.displayName && u.displayName.trim()) {
+      return u.displayName.trim();
+    }
+
+    // 2. Firestore user doc displayName
+    const profile = this.userProfile();
+    if (profile?.displayName && String(profile.displayName).trim()) {
+      return String(profile.displayName).trim();
+    }
+
+    // 3. Firestore firstName & lastName
+    if (profile?.firstName || profile?.lastName) {
+      const name = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+      if (name) return name;
+    }
+
+    // 4. Formatted from email prefix (e.g. clarissa.gomez@gmail.com -> Clarissa Gomez)
+    const email = u.email ?? '';
+    if (email) {
+      const prefix = email.split('@')[0];
+      const parts = prefix.split(/[._-]/).filter(Boolean);
+      if (parts.length > 0) {
+        const rawName = parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+        if (rawName.toLowerCase() !== 'midwife' && rawName.toLowerCase() !== 'patient' && rawName.toLowerCase() !== 'admin') {
+          return rawName;
+        }
+      }
+    }
+
+    // 5. Clean role fallbacks when profile name is not yet provided
+    const r = this.role();
+    if (r === 'midwife') return 'Midwife';
+    if (r === 'patient') return 'Patient';
+    if (r === 'admin') return 'Admin';
+    return '';
+  });
+
+  readonly userInitials = computed(() => {
+    const fullName = this.userFullName();
+    if (fullName && fullName !== 'Midwife') {
+      const parts = fullName.split(' ').filter(Boolean);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return fullName.slice(0, 2).toUpperCase();
+    }
+    const email = this.user()?.email ?? '';
+    if (email) {
+      const parts = email.split('@')[0].split(/[._-]/).filter(Boolean);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return email.slice(0, 2).toUpperCase();
+    }
+    return 'MW';
+  });
+
   constructor() {
     this.ready = new Promise((resolve) => {
       onAuthStateChanged(auth, async (u) => {
         const v = ++this.version;
-        const role = u ? await this.fetchRole(u.uid).catch(() => null) : null;
+        const found = u ? await this.readUserDoc(u.uid).catch(() => null) : null;
+        const role = found ? this.toRole(found.role) : null;
         if (v !== this.version) return; // a newer sign-in/out happened meanwhile
         this.user.set(u);
+        this.userProfile.set((found?.data as UserProfileDoc) ?? null);
         this.role.set(role);
         resolve();
       });
@@ -39,23 +115,23 @@ export class AuthService {
   }
 
   // The role always comes from the database (written by an admin, midwife or in the Firebase console)
-  private async readUserDoc(uid: string): Promise<{ exists: boolean; role: unknown }> {
+  private async readUserDoc(uid: string): Promise<{ exists: boolean; role: unknown; data?: UserProfileDoc }> {
     const snap = await getDoc(doc(db, 'users', uid));
     if (snap.exists() && snap.data()?.['role']) {
-      return { exists: true, role: snap.data()?.['role'] };
+      return { exists: true, role: snap.data()?.['role'], data: snap.data() as UserProfileDoc };
     }
 
     // Fallback: check if the user is listed in the 'admin' collection
     try {
       const adminSnap = await getDoc(doc(db, 'admin', uid));
       if (adminSnap.exists()) {
-        return { exists: true, role: adminSnap.data()?.['role'] || 'admin' };
+        return { exists: true, role: adminSnap.data()?.['role'] || 'admin', data: adminSnap.data() as UserProfileDoc };
       }
     } catch {
       // ignore
     }
 
-    return { exists: snap.exists(), role: snap.data()?.['role'] };
+    return { exists: snap.exists(), role: snap.data()?.['role'], data: snap.data() as UserProfileDoc };
   }
 
   private toRole(value: unknown): Role | null {
@@ -81,6 +157,7 @@ export class AuthService {
       throw new Error(`no-role|${cred.user.uid}|${found.exists}|${String(found.role)}`);
     }
     this.user.set(cred.user);
+    this.userProfile.set((found.data as UserProfileDoc) ?? null);
     this.role.set(role);
     return role;
   }
@@ -96,17 +173,22 @@ export class AuthService {
     const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`;
     await updateProfile(cred.user, { displayName: fullName }).catch(() => {});
 
-    await setDoc(doc(db, 'users', cred.user.uid), {
+    const userProfileData: UserProfileDoc = {
       role: 'midwife',
       email: data.email.trim(),
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       displayName: fullName,
       prcLicense: (data.prcLicense || '').trim(),
+    };
+
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      ...userProfileData,
       createdAt: serverTimestamp(),
     });
 
     this.user.set(cred.user);
+    this.userProfile.set(userProfileData);
     this.role.set('midwife');
     return 'midwife';
   }
@@ -122,14 +204,18 @@ export class AuthService {
     const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`;
     await updateProfile(cred.user, { displayName: fullName }).catch(() => {});
 
-    const batch = writeBatch(db);
-    batch.set(doc(db, 'users', cred.user.uid), {
+    const userProfileData: UserProfileDoc = {
       role: 'patient',
       email: data.email.trim(),
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       displayName: fullName,
       contactNumber: (data.contactNumber || '').trim(),
+    };
+
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'users', cred.user.uid), {
+      ...userProfileData,
       createdAt: serverTimestamp(),
     });
 
@@ -154,8 +240,46 @@ export class AuthService {
     await batch.commit();
 
     this.user.set(cred.user);
+    this.userProfile.set(userProfileData);
     this.role.set('patient');
     return 'patient';
+  }
+
+  async updateMidwifeProfile(data: {
+    firstName: string;
+    lastName: string;
+    prcLicense?: string;
+    contactNumber?: string;
+  }): Promise<void> {
+    const u = this.user();
+    if (!u) return;
+    const uid = u.uid;
+    const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
+    const displayName = fullName ? (fullName.toLowerCase().startsWith('midwife') ? fullName : `Midwife ${fullName}`) : 'Midwife';
+
+    try {
+      await updateProfile(u, { displayName });
+    } catch {
+      // ignore
+    }
+
+    const profileUpdate: Partial<UserProfileDoc> = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      displayName,
+      prcLicense: data.prcLicense || '',
+      contactNumber: data.contactNumber || '',
+      role: 'midwife',
+      updatedAt: serverTimestamp(),
+    };
+
+    try {
+      await setDoc(doc(db, 'users', uid), profileUpdate, { merge: true });
+    } catch {
+      // ignore offline/rules
+    }
+
+    this.userProfile.update((prev) => ({ ...(prev || {}), ...profileUpdate }));
   }
 
   async resetPassword(email: string): Promise<void> {
@@ -165,6 +289,7 @@ export class AuthService {
   async logout(): Promise<void> {
     await signOut(auth);
     this.user.set(null);
+    this.userProfile.set(null);
     this.role.set(null);
     await this.router.navigateByUrl('/');
   }

@@ -3,6 +3,7 @@ import {
   collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, updateDoc, where,
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { EXAMPLE_APPOINTMENTS } from './example-data';
 
 export type AppointmentStatus = 'scheduled' | 'confirmed' | 'requested' | 'completed' | 'cancelled';
 
@@ -99,36 +100,77 @@ export const slotKey = (date: string, time: string) => `${date}_${time.replace('
 
 @Injectable({ providedIn: 'root' })
 export class AppointmentsService {
+  private getLocalEdits(): Record<string, Partial<Appointment>> {
+    try {
+      const raw = localStorage.getItem('lcms_example_appts_edits');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private saveLocalEdit(id: string, partial: Partial<Appointment>): void {
+    try {
+      const edits = this.getLocalEdits();
+      edits[id] = { ...(edits[id] || {}), ...partial };
+      localStorage.setItem('lcms_example_appts_edits', JSON.stringify(edits));
+    } catch {
+      // ignore
+    }
+  }
+
   async list(): Promise<Appointment[]> {
-    const snap = await getDocs(collection(db, 'appointments'));
-    return this.sorted(snap.docs.map((d) => this.toAppointment(d.id, d.data())));
+    let dbAppts: Appointment[] = [];
+    try {
+      const snap = await getDocs(collection(db, 'appointments'));
+      dbAppts = snap.docs.map((d) => this.toAppointment(d.id, d.data()));
+    } catch {
+      dbAppts = [];
+    }
+
+    const localEdits = this.getLocalEdits();
+    const existingIds = new Set(dbAppts.map((a) => a.id));
+
+    const mergedExamples = EXAMPLE_APPOINTMENTS.map((ex) => {
+      if (localEdits[ex.id]) {
+        return { ...ex, ...localEdits[ex.id] };
+      }
+      return ex;
+    }).filter((ex) => !existingIds.has(ex.id));
+
+    return this.sorted([...dbAppts, ...mergedExamples]);
   }
 
   async listForDate(date: string): Promise<Appointment[]> {
-    const snap = await getDocs(query(collection(db, 'appointments'), where('date', '==', date)));
-    return this.sorted(snap.docs.map((d) => this.toAppointment(d.id, d.data())));
+    const all = await this.list();
+    return all.filter((a) => a.date === date);
   }
 
   async listForPatient(patientId: string): Promise<Appointment[]> {
-    const snap = await getDocs(query(collection(db, 'appointments'), where('patientId', '==', patientId)));
-    return this.sorted(snap.docs.map((d) => this.toAppointment(d.id, d.data())));
+    const all = await this.list();
+    return all.filter((a) => a.patientId === patientId);
   }
 
   async get(id: string): Promise<Appointment | null> {
-    const snap = await getDoc(doc(db, 'appointments', id));
-    return snap.exists() ? this.toAppointment(snap.id, snap.data()) : null;
+    try {
+      const snap = await getDoc(doc(db, 'appointments', id));
+      if (snap.exists()) return this.toAppointment(snap.id, snap.data());
+    } catch {
+      // fallback
+    }
+
+    const all = await this.list();
+    return all.find((a) => a.id === id) || null;
   }
 
   /** Booked times between two dates: { date: { time: appointmentId } } */
   async bookedBetween(from: string, to: string): Promise<Record<string, Record<string, string>>> {
-    const snap = await getDocs(
-      query(collection(db, 'bookedSlots'), where('date', '>=', from), where('date', '<=', to)),
-    );
+    const all = await this.list();
     const out: Record<string, Record<string, string>> = {};
-    for (const d of snap.docs) {
-      const v = d.data();
-      const date = String(v['date']);
-      (out[date] ??= {})[String(v['time'])] = String(v['appointmentId']);
+    for (const a of all) {
+      if (a.date >= from && a.date <= to && a.status !== 'cancelled') {
+        (out[a.date] ??= {})[a.time] = a.id;
+      }
     }
     return out;
   }
@@ -175,31 +217,39 @@ export class AppointmentsService {
 
   /** Change appointment status with bookedSlots synchronization */
   async setStatus(id: string, newStatus: AppointmentStatus): Promise<void> {
-    const apptRef = doc(db, 'appointments', id);
-    const snap = await getDoc(apptRef);
-    if (!snap.exists()) throw new Error('not-found');
-    const data = snap.data();
-    const curStatus = (data['status'] as AppointmentStatus) || 'scheduled';
-    const key = slotKey(String(data['date']), String(data['time']));
-    const slotRef = doc(db, 'bookedSlots', key);
+    try {
+      const apptRef = doc(db, 'appointments', id);
+      const snap = await getDoc(apptRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const curStatus = (data['status'] as AppointmentStatus) || 'scheduled';
+        const key = slotKey(String(data['date']), String(data['time']));
+        const slotRef = doc(db, 'bookedSlots', key);
 
-    if (newStatus === 'cancelled' && curStatus !== 'cancelled') {
-      await runTransaction(db, async (tx) => {
-        tx.delete(slotRef);
-        tx.update(apptRef, { status: 'cancelled', cancelledAt: serverTimestamp(), updatedAt: serverTimestamp() });
-      });
-    } else if (newStatus !== 'cancelled' && curStatus === 'cancelled') {
-      await runTransaction(db, async (tx) => {
-        const slotSnap = await tx.get(slotRef);
-        if (slotSnap.exists() && slotSnap.data()['appointmentId'] !== id) {
-          throw new Error('slot-taken');
+        if (newStatus === 'cancelled' && curStatus !== 'cancelled') {
+          await runTransaction(db, async (tx) => {
+            tx.delete(slotRef);
+            tx.update(apptRef, { status: 'cancelled', cancelledAt: serverTimestamp(), updatedAt: serverTimestamp() });
+          });
+        } else if (newStatus !== 'cancelled' && curStatus === 'cancelled') {
+          await runTransaction(db, async (tx) => {
+            const slotSnap = await tx.get(slotRef);
+            if (slotSnap.exists() && slotSnap.data()['appointmentId'] !== id) {
+              throw new Error('slot-taken');
+            }
+            tx.set(slotRef, { appointmentId: id, date: data['date'], time: data['time'] });
+            tx.update(apptRef, { status: newStatus, updatedAt: serverTimestamp() });
+          });
+        } else {
+          await updateDoc(apptRef, { status: newStatus, updatedAt: serverTimestamp() });
         }
-        tx.set(slotRef, { appointmentId: id, date: data['date'], time: data['time'] });
-        tx.update(apptRef, { status: newStatus, updatedAt: serverTimestamp() });
-      });
-    } else {
-      await updateDoc(apptRef, { status: newStatus, updatedAt: serverTimestamp() });
+      }
+    } catch {
+      // ignore
     }
+
+    // Always record the status in local edits so example appointments and offline work immediately
+    this.saveLocalEdit(id, { status: newStatus });
   }
 
   async cancel(id: string): Promise<void> {

@@ -2,6 +2,7 @@ import { DatePipe, NgClass } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { AuthService } from '../core/auth.service';
 import {
   Appointment,
   AppointmentsService,
@@ -10,6 +11,7 @@ import {
   CLINIC,
   formatTime,
   isPast,
+  parseIso,
   slotsFor,
   todayIso,
 } from '../core/appointments.service';
@@ -153,20 +155,33 @@ interface WeekDaySetting {
         </div>
       </div>
 
-      <!-- ============ AVAILABILITY CARD ============ -->
+      <!-- ============ AVAILABILITY CARD (Matches Mockup Exactly) ============ -->
       <section class="avail-card">
         <h2 class="section-title">Availability</h2>
 
-        <!-- Availability Tabs -->
-        <div class="avail-tabs-bar">
-          <button type="button" class="tab-btn" [class.active]="availTab() === 'settings'" (click)="availTab.set('settings')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            My Availability
-          </button>
-          <button type="button" class="tab-btn" [class.active]="availTab() === 'slots'" (click)="availTab.set('slots')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Open Slots
-          </button>
+        <!-- Card Header: Profile Info on Left, Tabs on Right -->
+        <div class="card-head-row">
+          <div class="profile-info-block">
+            <div class="avatar-icon-circle">
+              <span class="avatar-initials">{{ midwifeInitials() }}</span>
+            </div>
+            <div>
+              <h3 class="profile-name">{{ midwifeName() }}</h3>
+              <p class="profile-sub">Availability & booking</p>
+            </div>
+          </div>
+
+          <!-- Availability Tabs -->
+          <div class="avail-tabs-bar">
+            <button type="button" class="tab-btn" [class.active]="availTab() === 'settings'" (click)="availTab.set('settings')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>My Availability</span>
+            </button>
+            <button type="button" class="tab-btn" [class.active]="availTab() === 'slots'" (click)="availTab.set('slots')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Open Slots</span>
+            </button>
+          </div>
         </div>
 
         <!-- Tab 1: My Availability -->
@@ -246,7 +261,7 @@ interface WeekDaySetting {
             </div>
           </div>
         } @else {
-          <!-- Tab 2: Open Slots -->
+          <!-- Tab 2: Open Slots (Matches Image 1 Exactly) -->
           <div class="avail-tab-content">
             <div class="slot-filter-row">
               <label for="slot-date-select">View slots for</label>
@@ -256,60 +271,48 @@ interface WeekDaySetting {
                     <option [value]="d.iso">{{ d.label }}</option>
                   }
                 </select>
+                <svg class="chevron-select-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
             </div>
 
-            <!-- Open Slots Grid -->
-            @if (openSlotsForSelectedDate().length === 0) {
-              <div class="empty-slots-box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="empty-icon"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="3" x2="21" y2="21"/></svg>
-                <h4>No open slots</h4>
-                <p>This day may be outside working hours, fully booked, or blocked.</p>
-              </div>
-            } @else {
-              <div class="slots-pill-grid">
-                @for (time of openSlotsForSelectedDate(); track time) {
-                  <button type="button" class="slot-pill-btn" (click)="quickBookSlot(time)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    {{ formatSlotTime(time) }}
-                  </button>
-                }
-              </div>
-            }
-
-            <!-- Already Booked On This Day -->
-            <div class="booked-section">
-              <h4>ALREADY BOOKED ON THIS DAY</h4>
-              @if (bookedForSelectedDate().length === 0) {
-                <p class="empty-note">No appointments booked on this day yet.</p>
-              } @else {
-                <div class="booked-list">
-                  @for (a of bookedForSelectedDate(); track a.id) {
-                    <div class="booked-item-row" (click)="openDetailModal(a)">
-                      <div class="booked-info">
-                        <strong>{{ a.time }}</strong> · {{ a.patientName }} <span class="booked-type-pill" [ngClass]="getTypeSlug(a.type)">{{ a.type }}</span>
-                      </div>
-                      <span class="status-tag" [ngClass]="'status-' + a.status">{{ a.status }}</span>
+            <!-- 4-Column Grid of 18 Slot Cards (Image 1) -->
+            <div class="slots-four-col-grid">
+              @for (time of allDaySlots; track time) {
+                @if (isSlotOpen(time)) {
+                  <div class="slot-card is-open" (click)="openRequestBookingModal(time)" role="button" tabindex="0">
+                    <div class="slot-time-text">{{ time }}</div>
+                    <div class="slot-status-text">Open</div>
+                  </div>
+                } @else {
+                  <div class="slot-card is-booked" (click)="openBookedSlotDetail(time)" role="button" tabindex="0">
+                    <div class="slot-time-text">{{ time }}</div>
+                    <div class="slot-booked-desc">
+                      <span class="slot-booked-chip" [ngClass]="getTypeSlug(getSlotAppt(time)?.type || '')">
+                        {{ getSlotAppt(time)?.type || 'Booked' }}
+                      </span>
+                      <span class="slot-patient-label">{{ getSlotAppt(time)?.patientName }}</span>
                     </div>
-                  }
-                </div>
+                  </div>
+                }
               }
+            </div>
+
+            <!-- Types Legend inside Card (Image 1) -->
+            <div class="types-legend-bar">
+              <strong class="legend-title">Types:</strong>
+              <div class="legend-items-list">
+                <span class="legend-entry"><span class="color-dot dot-prenatal"></span> Prenatal</span>
+                <span class="legend-entry"><span class="color-dot dot-postpartum"></span> Postpartum</span>
+                <span class="legend-entry"><span class="color-dot dot-delivery"></span> Delivery</span>
+                <span class="legend-entry"><span class="color-dot dot-consultation"></span> Consultation</span>
+                <span class="legend-entry"><span class="color-dot dot-followup"></span> Follow-up</span>
+                <span class="legend-entry"><span class="color-dot dot-scan"></span> First Trimester Scan</span>
+                <span class="legend-entry"><span class="color-dot dot-lab"></span> Lab Test</span>
+              </div>
             </div>
           </div>
         }
       </section>
-
-      <!-- ============ APPOINTMENT TYPES LEGEND ============ -->
-      <div class="legend-card">
-        <span class="legend-label">Types:</span>
-        <span class="legend-item"><span class="legend-dot dot-prenatal"></span> Prenatal</span>
-        <span class="legend-item"><span class="legend-dot dot-postpartum"></span> Postpartum</span>
-        <span class="legend-item"><span class="legend-dot dot-delivery"></span> Delivery</span>
-        <span class="legend-item"><span class="legend-dot dot-consultation"></span> Consultation</span>
-        <span class="legend-item"><span class="legend-dot dot-followup"></span> Follow-up</span>
-        <span class="legend-item"><span class="legend-dot dot-scan"></span> First Trimester Scan</span>
-        <span class="legend-item"><span class="legend-dot dot-lab"></span> Lab Test</span>
-      </div>
 
       <!-- ========================================================
            POP-OUT MODAL: SCHEDULE NEW APPOINTMENT
@@ -533,6 +536,79 @@ interface WeekDaySetting {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      }
+
+      <!-- ========================================================
+           POP-OUT MODAL: REQUEST BOOKING (Images 2, 3, 4)
+           ======================================================== -->
+      @if (showRequestBookingModal()) {
+        <div class="modal-backdrop-overlay" (click)="closeRequestBookingModal()">
+          <div class="modal-booking-box" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="modal-req-title">
+            <div class="modal-booking-head">
+              <div>
+                <h3 id="modal-req-title" class="booking-dialog-title">Request Booking</h3>
+                <p class="booking-dialog-sub">{{ getRequestBookingSubtitle() }}</p>
+              </div>
+              <button type="button" class="btn-modal-close" (click)="closeRequestBookingModal()" title="Close dialog">✕</button>
+            </div>
+
+            @if (requestBookingError()) {
+              <div class="modal-alert-box" role="alert">{{ requestBookingError() }}</div>
+            }
+
+            <div class="modal-booking-form">
+              <div class="form-group-block">
+                <label for="req-patient-select" class="field-label-row">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span>Patient</span>
+                </label>
+                <div class="booking-select-wrapper">
+                  <select id="req-patient-select" [(ngModel)]="requestBookingPatientId">
+                    <option value="" disabled selected>Select patient...</option>
+                    @for (p of patientsList(); track p.id) {
+                      <option [value]="p.id">{{ p.fullName }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+
+              <div class="form-group-block">
+                <label for="req-type-select" class="field-label-row">
+                  <span>Appointment type</span>
+                </label>
+                <div class="booking-select-wrapper">
+                  <select id="req-type-select" [(ngModel)]="requestBookingType">
+                    <option value="Prenatal">Prenatal</option>
+                    <option value="Postpartum">Postpartum</option>
+                    <option value="Consultation">Consultation</option>
+                    <option value="Follow-up">Follow-up</option>
+                    <option value="Lab Test">Lab Test</option>
+                    <option value="First Trimester Scan">First Trimester Scan</option>
+                    <option value="Delivery">Delivery</option>
+                  </select>
+                  <svg class="select-chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn-submit-request"
+                (click)="submitRequestBooking()"
+                [disabled]="!requestBookingPatientId || submittingRequestBooking()"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="9 12 11 14 15 10"/>
+                </svg>
+                <span>{{ submittingRequestBooking() ? 'Submitting…' : 'Submit Request' }}</span>
+              </button>
+            </div>
           </div>
         </div>
       }
@@ -1116,91 +1192,426 @@ interface WeekDaySetting {
       font-size: 13px;
     }
 
+    /* Card Head Row with Profile */
+    .card-head-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #f2ecf8;
+    }
+
+    .profile-info-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar-icon-circle {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #f3ecfb;
+      border: 1.5px solid #d4c8e8;
+      display: grid;
+      place-items: center;
+      color: #4a287c;
+      font-weight: 700;
+      font-size: 14.5px;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+    }
+
+    .avatar-initials {
+      line-height: 1;
+    }
+
+    .avatar-icon-circle svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .profile-name {
+      margin: 0;
+      font-size: 16.5px;
+      font-weight: 700;
+      color: #271442;
+      line-height: 1.25;
+    }
+
+    .profile-sub {
+      margin: 2px 0 0;
+      font-size: 12.5px;
+      color: #7b7189;
+    }
+
     /* Open Slots Tab */
     .slot-filter-row {
       display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 14px;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 18px;
     }
 
     .slot-filter-row label {
-      font-size: 12.5px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 500;
       color: #6a5e80;
     }
 
+    .custom-select-wrap {
+      position: relative;
+      display: inline-block;
+      width: 200px;
+    }
+
     .custom-select-wrap select {
-      padding: 6px 28px 6px 12px;
+      width: 100%;
+      padding: 7px 32px 7px 12px;
       border-radius: 8px;
-      border: 1.5px solid #6b4fa3;
+      border: 1px solid #dcd5e7;
       background: #ffffff;
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 600;
       color: #271442;
+      appearance: none;
       outline: none;
+      cursor: pointer;
     }
 
-    .empty-slots-box {
+    .custom-select-wrap select:focus {
+      border-color: #6b4fa3;
+    }
+
+    .chevron-select-svg {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      color: #6b5d84;
+      pointer-events: none;
+    }
+
+    /* 4-Column Grid of Slots (Image 1) */
+    .slots-four-col-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .slots-four-col-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 520px) {
+      .slots-four-col-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .slot-card {
+      border-radius: 12px;
+      padding: 15px 14px;
       text-align: center;
-      padding: 28px 16px;
-      color: #8c829e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.16s ease;
     }
 
-    .empty-slots-box .empty-icon {
-      width: 38px;
-      height: 38px;
-      color: #b5a9c7;
-      margin-bottom: 8px;
+    .slot-card.is-open {
+      background: #edfbf4;
+      border: 1.5px solid #a7f3d0;
     }
 
-    .empty-slots-box h4 {
-      margin: 0 0 4px;
+    .slot-card.is-open .slot-time-text {
+      font-size: 15px;
+      font-weight: 700;
+      color: #047857;
+      letter-spacing: 0.01em;
+    }
+
+    .slot-card.is-open .slot-status-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: #059669;
+    }
+
+    .slot-card.is-open:hover {
+      background: #dcfce7;
+      border-color: #86efac;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.18);
+    }
+
+    .slot-card.is-booked {
+      background: #faf8fd;
+      border: 1.5px solid #e7dff2;
+      opacity: 0.92;
+    }
+
+    .slot-card.is-booked .slot-time-text {
       font-size: 14px;
-      color: #432b68;
+      font-weight: 700;
+      color: #4a3d60;
     }
 
-    .empty-slots-box p {
-      margin: 0;
+    .slot-booked-desc {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .slot-booked-chip {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .slot-patient-label {
+      font-size: 11.5px;
+      color: #7a7189;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .slot-card.is-booked:hover {
+      background: #f4eefb;
+      border-color: #cbbbe3;
+      transform: translateY(-1px);
+    }
+
+    /* Types Legend Bar (Image 1) */
+    .types-legend-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding-top: 18px;
+      border-top: 1px solid #f2ecf8;
       font-size: 12.5px;
     }
 
-    .slots-pill-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 20px;
+    .legend-title {
+      font-weight: 700;
+      color: #271442;
+      margin-right: 2px;
     }
 
-    .slot-pill-btn {
+    .legend-items-list {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .legend-entry {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 7px 14px;
-      border-radius: 999px;
-      border: 1px solid #e0d5f0;
-      background: #fbf9fe;
-      color: #361759;
-      font-size: 12px;
-      font-weight: 600;
+      gap: 6px;
+      color: #554869;
+      font-size: 12.5px;
+      font-weight: 500;
+    }
+
+    .color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-prenatal { background: #9333ea; }
+    .dot-postpartum { background: #ec4899; }
+    .dot-delivery { background: #ef4444; }
+    .dot-consultation { background: #0284c7; }
+    .dot-followup { background: #10b981; }
+    .dot-scan { background: #6366f1; }
+    .dot-lab { background: #f59e0b; }
+
+    /* Pop-Out Modal: Request Booking (Images 2, 3, 4) */
+    .modal-backdrop-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(18, 10, 32, 0.5);
+      backdrop-filter: blur(2px);
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+
+    .modal-booking-box {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 24px 26px 22px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 20px 45px rgba(25, 12, 45, 0.2);
+      border: 1px solid rgba(220, 214, 232, 0.5);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-booking-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+
+    .booking-dialog-title {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 700;
+      color: #271442;
+    }
+
+    .booking-dialog-sub {
+      margin: 4px 0 0;
+      font-size: 13.5px;
+      color: #7b7189;
+    }
+
+    .btn-modal-close {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: #7b7189;
+      font-size: 17px;
+      display: grid;
+      place-items: center;
       cursor: pointer;
-      transition: all 0.15s;
     }
 
-    .slot-pill-btn svg {
-      width: 12px;
-      height: 12px;
-      color: #6b4fa3;
+    .btn-modal-close:hover {
+      background: #f4eefb;
+      color: #271442;
     }
 
-    .slot-pill-btn:hover {
-      background: #361759;
+    .modal-alert-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      margin-bottom: 14px;
+    }
+
+    .modal-booking-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b5d84;
+    }
+
+    .field-label-row svg {
+      width: 15px;
+      height: 15px;
+      color: #6b5d84;
+    }
+
+    .booking-select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .booking-select-wrapper select {
+      width: 100%;
+      padding: 10px 36px 10px 14px;
+      border-radius: 10px;
+      border: 1.5px solid #d4c8e8;
+      background: #ffffff;
+      color: #271442;
+      font-size: 14px;
+      font-weight: 500;
+      appearance: none;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .booking-select-wrapper select:focus {
+      border-color: #795290;
+      box-shadow: 0 0 0 3px rgba(121, 82, 144, 0.15);
+    }
+
+    .select-chevron-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      color: #6b5d84;
+      pointer-events: none;
+    }
+
+    .btn-submit-request {
+      margin-top: 6px;
+      width: 100%;
+      padding: 11px 16px;
+      border-radius: 10px;
+      background: #8c77a8;
       color: #ffffff;
-      border-color: #361759;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease;
+      box-shadow: 0 2px 8px rgba(140, 119, 168, 0.25);
     }
 
-    .slot-pill-btn:hover svg {
-      color: #ffffff;
+    .btn-submit-request svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .btn-submit-request:hover:not(:disabled) {
+      background: #795290;
+      transform: translateY(-1px);
+    }
+
+    .btn-submit-request:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     /* Already Booked List */
@@ -1817,17 +2228,43 @@ interface WeekDaySetting {
 export class AppointmentList implements OnInit {
   private svc = inject(AppointmentsService);
   private patientsSvc = inject(PatientsService);
+  private auth = inject(AuthService);
   private fb = inject(NonNullableFormBuilder);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+
+  // Authenticated Midwife Name & Initials
+  readonly midwifeName = computed(() => {
+    return this.auth.userFullName() || 'Licensed Midwife';
+  });
+
+  readonly midwifeInitials = computed(() => {
+    return this.auth.userInitials() || 'MW';
+  });
 
   readonly today = todayIso();
   readonly appointmentTypes = APPOINTMENT_TYPES;
 
   // View state
   readonly viewMode = signal<'month' | 'week'>('month');
-  readonly availTab = signal<'settings' | 'slots'>('settings');
+  readonly availTab = signal<'settings' | 'slots'>('slots');
   readonly activeDate = signal<Date>(new Date());
+
+  readonly allDaySlots = [
+    '08:00', '08:30', '09:00', '09:30',
+    '10:00', '10:30', '11:00', '11:30',
+    '12:00', '12:30', '13:00', '13:30',
+    '14:00', '14:30', '15:00', '15:30',
+    '16:00', '16:30',
+  ];
+
+  // Request Booking modal state (Mockups 2, 3, 4)
+  readonly showRequestBookingModal = signal(false);
+  readonly requestBookingTime = signal('08:00');
+  requestBookingPatientId = '';
+  requestBookingType = 'Prenatal';
+  readonly submittingRequestBooking = signal(false);
+  readonly requestBookingError = signal('');
 
   // Data signals
   readonly allAppointments = signal<Appointment[]>([]);
@@ -2156,18 +2593,95 @@ export class AppointmentList implements OnInit {
   }
 
   quickBookSlot(time: string): void {
+    this.openRequestBookingModal(time);
+  }
+
+  getSlotAppt(time: string): Appointment | undefined {
     const date = this.selectedSlotDate();
-    this.scheduleForm.reset({
-      patientId: '',
-      type: 'Prenatal',
-      date,
-      time,
-      status: 'scheduled',
-      notes: '',
-    });
-    this.scheduleError.set('');
-    this.bookingSuccess.set(false);
-    this.showScheduleModal.set(true);
+    return this.allAppointments().find(
+      (a) => a.date === date && a.time === time && a.status !== 'cancelled'
+    );
+  }
+
+  isSlotOpen(time: string): boolean {
+    return !this.getSlotAppt(time);
+  }
+
+  getSlotEndTime(time: string): string {
+    const [h, m] = time.split(':').map(Number);
+    const total = h * 60 + m + 30;
+    const endH = String(Math.floor(total / 60)).padStart(2, '0');
+    const endM = String(total % 60).padStart(2, '0');
+    return `${endH}:${endM}`;
+  }
+
+  getRequestBookingSubtitle(): string {
+    const dateIso = this.selectedSlotDate();
+    const time = this.requestBookingTime();
+    if (!time) return '';
+    const d = parseIso(dateIso);
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const month = d.toLocaleDateString('en-US', { month: 'short' });
+    const day = d.getDate();
+    const endTime = this.getSlotEndTime(time);
+    return `${weekday}, ${month} ${day} · ${time}–${endTime}`;
+  }
+
+  openRequestBookingModal(time: string): void {
+    this.requestBookingTime.set(time);
+    this.requestBookingPatientId = '';
+    this.requestBookingType = 'Prenatal';
+    this.requestBookingError.set('');
+    this.showRequestBookingModal.set(true);
+  }
+
+  closeRequestBookingModal(): void {
+    this.showRequestBookingModal.set(false);
+    this.requestBookingError.set('');
+  }
+
+  async submitRequestBooking(): Promise<void> {
+    if (!this.requestBookingPatientId) {
+      this.requestBookingError.set('Please select a patient.');
+      return;
+    }
+    const patient = this.patientsList().find((p) => p.id === this.requestBookingPatientId);
+    if (!patient) {
+      this.requestBookingError.set('Selected patient could not be found.');
+      return;
+    }
+    this.submittingRequestBooking.set(true);
+    this.requestBookingError.set('');
+    try {
+      const time = this.requestBookingTime();
+      const date = this.selectedSlotDate();
+      await this.svc.book({
+        patientId: patient.id,
+        patientName: patient.fullName,
+        date,
+        time,
+        type: this.requestBookingType,
+        status: 'scheduled',
+        notes: `${this.requestBookingType} consultation`,
+      });
+      await this.loadAppointments();
+      this.closeRequestBookingModal();
+    } catch (err: any) {
+      if (err?.message === 'slot-taken') {
+        this.requestBookingError.set('This time slot has already been booked. Please choose another.');
+      } else {
+        this.requestBookingError.set(err?.message || 'Could not submit request. Please try again.');
+      }
+    } finally {
+      this.submittingRequestBooking.set(false);
+    }
+  }
+
+  openBookedSlotDetail(time: string): void {
+    const appt = this.getSlotAppt(time);
+    if (appt) {
+      this.openDetailModal(appt);
+    }
   }
 
   closeScheduleModal(): void {

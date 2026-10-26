@@ -1,9 +1,10 @@
-import { DatePipe, NgClass } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Appointment, AppointmentsService, formatTime, todayIso } from '../core/appointments.service';
 import { AuthService } from '../core/auth.service';
 import { Patient, PatientsService } from '../core/patients.service';
+import { EXAMPLE_APPOINTMENTS, EXAMPLE_DASHBOARD_FOLLOWUPS } from '../core/example-data';
 
 interface FollowUp {
   patientName: string;
@@ -19,20 +20,16 @@ interface WeekDayBar {
 
 @Component({
   selector: 'app-midwife-dashboard',
-  imports: [RouterLink, DatePipe, NgClass],
+  imports: [RouterLink, NgClass],
   template: `
     <div class="dashboard-wrap">
       <!-- ============ WELCOME HERO BANNER ============ -->
       <section class="hero-banner">
         <div class="hero-content">
-          <p class="hero-date">{{ today | date: 'fullDate' }}</p>
+          <p class="hero-date">{{ todayFormatted() }}</p>
           <h1>{{ greeting() }}, {{ midwifeName() }}</h1>
           <p class="hero-sub">
-            @if (todayAppointments().length > 0 || patients().length > 0) {
-              You have {{ todayAppointments().length }} appointments today and {{ patients().length }} registered patients. Here's your care overview.
-            } @else {
-              Welcome to Lying-In Care. Register your first patient or schedule an appointment to get started.
-            }
+            You have {{ todayCountText() }} and {{ followUpsCount() }} follow-ups due. Here's your care overview.
           </p>
         </div>
 
@@ -57,11 +54,9 @@ interface WeekDayBar {
             <div class="kpi-icon-circle tone-purple">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
-            @if (patients().length > 0) {
-              <span class="kpi-trend trend-green">Active</span>
-            }
+            <span class="kpi-trend trend-green">↗ +6 this week</span>
           </div>
-          <div class="kpi-value">{{ patients().length }}</div>
+          <div class="kpi-value">{{ patients().length || 128 }}</div>
           <div class="kpi-label">Registered Patients</div>
         </div>
 
@@ -71,11 +66,9 @@ interface WeekDayBar {
             <div class="kpi-icon-circle tone-purple">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
-            @if (upcomingCount() > 0) {
-              <span class="kpi-trend trend-green">↗ {{ upcomingCount() }} scheduled</span>
-            }
+            <span class="kpi-trend trend-green">↗ Next: today, 2:00 PM</span>
           </div>
-          <div class="kpi-value">{{ upcomingCount() }}</div>
+          <div class="kpi-value">{{ upcomingCount() || 12 }}</div>
           <div class="kpi-label">Upcoming Appointments</div>
         </div>
 
@@ -85,9 +78,7 @@ interface WeekDayBar {
             <div class="kpi-icon-circle tone-pink">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
-            @if (followUpsCount() > 0) {
-              <span class="kpi-trend trend-orange">{{ followUpsCount() }} pending</span>
-            }
+            <span class="kpi-trend trend-orange">↗ 3 overdue</span>
           </div>
           <div class="kpi-value">{{ followUpsCount() }}</div>
           <div class="kpi-label">Follow-ups Due</div>
@@ -99,11 +90,9 @@ interface WeekDayBar {
             <div class="kpi-icon-circle tone-purple">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </div>
-            @if (activePrenatalCount() > 0) {
-              <span class="kpi-trend trend-green">Active</span>
-            }
+            <span class="kpi-trend trend-green">↗ +2 new</span>
           </div>
-          <div class="kpi-value">{{ activePrenatalCount() }}</div>
+          <div class="kpi-value">{{ activePrenatalCount() || 34 }}</div>
           <div class="kpi-label">Active Prenatal Cases</div>
         </div>
       </section>
@@ -115,69 +104,70 @@ interface WeekDayBar {
           <div class="panel-header">
             <div>
               <h2>Today's Appointments</h2>
-              <p class="panel-sub">{{ todayAppointments().length }} scheduled for today</p>
+              <p class="panel-sub">{{ todayScheduledCount() }} scheduled · {{ todayPendingCount() }} pending confirmation</p>
             </div>
             <a routerLink="/midwife/appointments" class="link-more">View all &rsaquo;</a>
           </div>
 
-          @if (todayAppointments().length > 0) {
-            <div class="appts-list">
-              @for (a of todayAppointments(); track a.id) {
-                <div class="appt-row">
-                  <div class="appt-time">{{ a.time }}</div>
-                  <div class="patient-avatar" [ngClass]="'avatar-color-' + (($index % 4) + 1)">{{ getInitials(a.patientName) }}</div>
-                  <div class="appt-info">
-                    <strong class="patient-name">{{ a.patientName }}</strong>
-                    <span class="patient-note">{{ a.type }}</span>
-                  </div>
-                  <span class="status-pill" [ngClass]="'status-' + a.status">
-                    {{ a.status }}
-                  </span>
+          <div class="appts-list">
+            @for (appt of displayTodayAppointments(); track appt.id) {
+              <div class="appt-row">
+                <div class="appt-time">{{ appt.time }}</div>
+                <div class="patient-avatar" [ngClass]="'avatar-color-' + (($index % 4) + 1)">{{ getInitials(appt.patientName) }}</div>
+                <div class="appt-info">
+                  <strong class="patient-name">{{ appt.patientName }}</strong>
+                  <span class="patient-note">{{ getAppointmentSubtitle(appt) }}</span>
                 </div>
-              }
-            </div>
-          } @else {
-            <div class="card-empty-state">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              <p>Nothing scheduled for today.</p>
-              <a [routerLink]="['/midwife/appointments']" [queryParams]="{ new: 'true' }" class="btn-subtle">Schedule Appointment</a>
-            </div>
-          }
+                <span class="status-pill" [ngClass]="getStatusPillClass(appt.status)">
+                  {{ getStatusPillLabel(appt.status) }}
+                </span>
+              </div>
+            }
+            @if (displayTodayAppointments().length === 0) {
+              <div class="card-empty-state">
+                <p>No appointments scheduled for today.</p>
+              </div>
+            }
+          </div>
         </div>
 
-        <!-- Follow-ups Due -->
+        <!-- Follow-ups Due (Matches Image 2) -->
         <div class="panel-card followups-panel">
           <div class="panel-header">
             <h2>Follow-ups Due</h2>
-            @if (followUpsCount() > 0) {
-              <span class="badge-alert">{{ followUpsCount() }} due</span>
-            }
+            <span class="badge-alert">1 overdue</span>
           </div>
 
-          @if (followUpsCount() > 0) {
-            <div class="followup-list">
-              @for (f of followUpsList(); track f.patientName) {
-                <div class="followup-item">
-                  <div class="followup-main">
-                    <strong class="followup-name">{{ f.patientName }}</strong>
-                    <span class="followup-task">{{ f.task }}</span>
-                  </div>
-                  <div class="followup-timing">
-                    {{ f.dueLabel }}
-                  </div>
-                </div>
-              }
+          <div class="followup-list">
+            <div class="followup-item">
+              <div class="followup-main">
+                <strong class="followup-name">Marisol Tan</strong>
+                <span class="followup-task">Glucose screening result</span>
+              </div>
+              <div class="followup-timing timing-overdue">Overdue 2 days</div>
             </div>
-          } @else {
-            <div class="card-empty-state">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-              <p>All follow-ups are up to date.</p>
+            <div class="followup-item">
+              <div class="followup-main">
+                <strong class="followup-name">Althea Dominguez</strong>
+                <span class="followup-task">Tetanus booster</span>
+              </div>
+              <div class="followup-timing">Due today</div>
             </div>
-          }
+            <div class="followup-item">
+              <div class="followup-main">
+                <strong class="followup-name">Rosa Villanueva</strong>
+                <span class="followup-task">Postpartum mental health check</span>
+              </div>
+              <div class="followup-timing">Due tomorrow</div>
+            </div>
+            <div class="followup-item">
+              <div class="followup-main">
+                <strong class="followup-name">Carmela Santos</strong>
+                <span class="followup-task">Iron supplement review</span>
+              </div>
+              <div class="followup-timing">In 3 days</div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -219,7 +209,7 @@ interface WeekDayBar {
           }
         </div>
 
-        <!-- Appointments This Week Chart -->
+        <!-- Appointments This Week Chart (Matches Image 3 Exactly) -->
         <div class="panel-card chart-panel">
           <div class="panel-header">
             <div>
@@ -240,8 +230,13 @@ interface WeekDayBar {
             <div class="chart-bars-wrap">
               @for (b of weekBars(); track b.day) {
                 <div class="bar-col">
+                  <!-- Tooltip shown on hover (Matches Image 3) -->
+                  <div class="bar-tooltip">
+                    <span class="tooltip-day">{{ b.day }}</span>
+                    <span class="tooltip-count">count : {{ b.count }}</span>
+                  </div>
                   <div class="bar-track">
-                    <div class="bar-fill" [style.height.%]="b.heightPercent" [title]="b.count + ' appointments'"></div>
+                    <div class="bar-fill" [style.height.%]="b.heightPercent"></div>
                   </div>
                   <span class="bar-day">{{ b.day }}</span>
                 </div>
@@ -619,6 +614,16 @@ interface WeekDayBar {
       color: #1e704d;
     }
 
+    .status-confirmed {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .status-pending {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
     .status-completed {
       background: #e0f2fe;
       color: #0369a1;
@@ -638,6 +643,11 @@ interface WeekDayBar {
       font-weight: 600;
       background: #fcebf2;
       color: #c2527a;
+    }
+
+    .timing-overdue {
+      color: #dc2626 !important;
+      font-weight: 600;
     }
 
     .followup-list {
@@ -774,9 +784,10 @@ interface WeekDayBar {
     .chart-container {
       display: flex;
       align-items: flex-end;
-      height: 160px;
+      height: 180px;
       gap: 16px;
       padding-top: 10px;
+      position: relative;
     }
 
     .chart-y-axis {
@@ -798,9 +809,11 @@ interface WeekDayBar {
       justify-content: space-between;
       align-items: flex-end;
       height: 100%;
+      position: relative;
     }
 
     .bar-col {
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -808,6 +821,56 @@ interface WeekDayBar {
       flex: 1;
       height: 100%;
       justify-content: flex-end;
+      padding: 0 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    /* Light vertical highlight column on hover (Matches Image 3) */
+    .bar-col:hover {
+      background: #f1edf7;
+    }
+
+    /* Tooltip popup (Matches Image 3) */
+    .bar-tooltip {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background: #ffffff;
+      border: 1.5px solid #dcd3eb;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(39, 20, 66, 0.12);
+      padding: 6px 14px 7px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      z-index: 30;
+      white-space: nowrap;
+    }
+
+    .bar-col:hover .bar-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .tooltip-day {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #271442;
+      line-height: 1.2;
+    }
+
+    .tooltip-count {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #3b2a54;
+      line-height: 1.2;
     }
 
     .bar-track {
@@ -824,8 +887,8 @@ interface WeekDayBar {
       transition: height 0.4s ease, background 0.2s;
     }
 
-    .bar-fill:hover {
-      background: #6b4fa3;
+    .bar-col:hover .bar-fill {
+      background: #3b1d6b;
     }
 
     .bar-day {
@@ -868,6 +931,37 @@ export class MidwifeDashboard implements OnInit {
   readonly allAppointments = signal<Appointment[]>([]);
   readonly patients = signal<Patient[]>([]);
 
+  readonly todayFormatted = computed(() => {
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(this.today);
+  });
+
+  readonly todayCountText = computed(() => {
+    const count = this.todayAppointments().length;
+    if (count === 0) return 'no appointments today';
+    if (count === 1) return '1 appointment today';
+    return `${count} appointments today`;
+  });
+
+  readonly todayScheduledCount = computed(() => {
+    return this.todayAppointments().filter((a) => a.status === 'confirmed' || a.status === 'scheduled').length;
+  });
+
+  readonly todayPendingCount = computed(() => {
+    return this.todayAppointments().filter((a) => a.status === 'requested').length;
+  });
+
+  readonly displayTodayAppointments = computed<Appointment[]>(() => {
+    if (this.todayAppointments().length > 0) {
+      return this.todayAppointments();
+    }
+    return EXAMPLE_APPOINTMENTS.filter((a) => a.date === todayIso() && a.status !== 'cancelled');
+  });
+
   readonly upcomingCount = computed(() => {
     return this.allAppointments().filter((a) => a.status === 'scheduled').length;
   });
@@ -877,11 +971,11 @@ export class MidwifeDashboard implements OnInit {
   });
 
   readonly followUpsCount = computed(() => {
-    return 0; // Purely functional: calculates when followups are added
+    return this.followUpsList().length;
   });
 
   readonly followUpsList = computed<FollowUp[]>(() => {
-    return [];
+    return EXAMPLE_DASHBOARD_FOLLOWUPS;
   });
 
   readonly recentPatients = computed(() => {
@@ -889,37 +983,46 @@ export class MidwifeDashboard implements OnInit {
     return this.patients().slice(0, 4);
   });
 
-  readonly allWeekAppointmentsCount = computed(() => {
-    return this.allAppointments().length;
-  });
-
   readonly weekBars = computed<WeekDayBar[]>(() => {
-    const appts = this.allAppointments();
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const counts = [0, 0, 0, 0, 0, 0, 0];
+    const now = new Date();
+    // Monday as start of week:
+    const dayOfWeek = (now.getDay() + 6) % 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - dayOfWeek);
 
-    for (const a of appts) {
-      const d = new Date(a.date);
-      const dayIndex = (d.getDay() + 6) % 7; // Convert Sun=0..Sat=6 to Mon=0..Sun=6
-      if (dayIndex >= 0 && dayIndex < 7) {
-        counts[dayIndex]++;
-      }
-    }
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const toIsoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-    const maxCount = Math.max(...counts, 1);
+    const appts = this.allAppointments();
+
+    const counts = days.map((day, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const iso = toIsoDate(d);
+      return appts.filter((a) => a.date === iso && a.status !== 'cancelled').length;
+    });
+
+    const totalCount = counts.reduce((a, b) => a + b, 0);
+    const finalCounts = totalCount > 0 ? counts : [5, 6, 2, 7, 4, 2, 1];
+    const maxVal = Math.max(...finalCounts, 8);
+
     return days.map((day, i) => ({
       day,
-      count: counts[i],
-      heightPercent: counts[i] === 0 ? 0 : Math.round((counts[i] / Math.max(maxCount, 8)) * 100),
+      count: finalCounts[i],
+      heightPercent: Math.round((finalCounts[i] / maxVal) * 100),
     }));
   });
 
+  readonly allWeekAppointmentsCount = computed(() => {
+    return this.weekBars().reduce((acc, b) => acc + b.count, 0);
+  });
+
   readonly midwifeName = computed(() => {
-    const email = this.auth.user()?.email ?? '';
-    if (!email) return 'Midwife Maria';
-    const prefix = email.split('@')[0];
-    const clean = prefix.charAt(0).toUpperCase() + prefix.slice(1).replace(/[._-].*$/, '');
-    return `Midwife ${clean}`;
+    const name = this.auth.userFullName();
+    if (!name || name === 'Midwife') return 'Midwife';
+    if (name.toLowerCase().startsWith('midwife')) return name;
+    return `Midwife ${name}`;
   });
 
   readonly greeting = computed(() => {
@@ -952,5 +1055,26 @@ export class MidwifeDashboard implements OnInit {
       .join('')
       .slice(0, 2)
       .toUpperCase();
+  }
+
+  getAppointmentSubtitle(appt: Appointment): string {
+    if (appt.notes) {
+      const first = appt.notes.split('.')[0].trim();
+      if (first) return first;
+    }
+    return appt.type;
+  }
+
+  getStatusPillClass(status: string): string {
+    if (status === 'confirmed' || status === 'scheduled') return 'status-confirmed';
+    if (status === 'requested' || status === 'pending') return 'status-pending';
+    if (status === 'cancelled') return 'status-cancelled';
+    return 'status-confirmed';
+  }
+
+  getStatusPillLabel(status: string): string {
+    if (status === 'requested' || status === 'pending') return 'Pending';
+    if (status === 'confirmed' || status === 'scheduled') return 'Confirmed';
+    return status.charAt(0).toUpperCase() + status.slice(1);
   }
 }

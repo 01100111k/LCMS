@@ -511,3 +511,1742 @@ button, input, select, textarea {
     margin-bottom: 12px;
   }
 }
+
+/* ========================================================
+   GLOBAL DARK MODE THEME (100% Comprehensive Coverage)
+   ======================================================== */
+body.dark-mode {
+  --brand-900: #f5f1fc;
+  --brand-700: #c4b5fd;
+  --brand-600: #a881e6;
+  --brand-500: #7a5ba8;
+  --tint-100: #2f2545;
+  --tint-50: #261e38;
+  --ink: #f5f1fc;
+  --muted: #b7a8cf;
+  --line: #35284d;
+  --white: #1e172c;
+  --rose-100: #3d1522;
+  --rose-600: #fb7185;
+  --blue-100: #192744;
+  --blue-600: #60a5fa;
+
+  background-color: #120e1b !important;
+  color: #ede7f6 !important;
+}
+
+/* App layout, page containers, and top navigation */
+body.dark-mode app-midwife-layout,
+body.dark-mode .mw-app-layout,
+body.dark-mode .mw-main-area,
+body.dark-mode .mw-content-body,
+body.dark-mode .dashboard-wrap,
+body.dark-mode .directory-wrap,
+body.dark-mode .appt-page-wrap,
+body.dark-mode .queue-wrap,
+body.dark-mode .records-wrap,
+body.dark-mode .journey-wrap,
+body.dark-mode .library-wrap,
+body.dark-mode .reports-wrap,
+body.dark-mode .statistics-page-wrap,
+body.dark-mode .settings-wrap {
+  background-color: #120e1b !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .mw-sidebar {
+  background: #190e29 !important;
+  border-right: 1px solid #2d1d46 !important;
+}
+
+body.dark-mode .mw-sidebar .nav-item {
+  color: #c7badb !important;
+}
+
+body.dark-mode .mw-sidebar .nav-item:hover {
+  background: #2a1643 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .mw-sidebar .nav-item.active {
+  background: #3e1b65 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .mw-sidebar .sidebar-footer {
+  border-top: 1px solid #2d1d46 !important;
+}
+
+body.dark-mode .mw-top-bar {
+  background: #1b1427 !important;
+  border-bottom-color: #2e2340 !important;
+}
+
+body.dark-mode .top-bar-title {
+  color: #f5f0fc !important;
+}
+
+body.dark-mode .top-search input {
+  background: #231b33 !important;
+  border-color: #382c4f !important;
+  color: #f5f0fc !important;
+}
+
+body.dark-mode .top-search input::placeholder {
+  color: #837299 !important;
+}
+
+body.dark-mode .icon-round-btn {
+  background: #231b33 !important;
+  border-color: #382c4f !important;
+  color: #cbbee4 !important;
+}
+
+body.dark-mode .icon-round-btn:hover {
+  background: #2f2244 !important;
+  color: #ffffff !important;
+  border-color: #553e7a !important;
+}
+
+body.dark-mode .user-pill-btn {
+  background: #3e1c66 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .user-dropdown-card {
+  background: #1f172e !important;
+  border-color: #3a2e52 !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55) !important;
+}
+
+body.dark-mode .dropdown-item {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .dropdown-item .dropdown-icon {
+  color: #b7a4db !important;
+}
+
+body.dark-mode .dropdown-item:hover {
+  background: #2e2244 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .dropdown-switch {
+  background: #3b2c52 !important;
+}
+
+body.dark-mode .dropdown-switch.on {
+  background: #7a46ba !important;
+}
+
+body.dark-mode .dropdown-item.signout-item:hover {
+  background: #38151f !important;
+}
+
+/* ========================================================
+   CARDS, PANELS, CONTAINERS & HEADERS (NO MORE WHITE!)
+   ======================================================== */
+body.dark-mode .kpi-card,
+body.dark-mode .panel-card,
+body.dark-mode .recent-card,
+body.dark-mode .settings-card,
+body.dark-mode .settings-header-card,
+body.dark-mode .stats-header-card,
+body.dark-mode .reports-header-card,
+body.dark-mode .records-header-card,
+body.dark-mode .library-header-card,
+body.dark-mode .journey-header-card,
+body.dark-mode .dir-head,
+body.dark-mode .filter-bar,
+body.dark-mode .table-card,
+body.dark-mode .table-wrap,
+body.dark-mode .table-wrapper,
+body.dark-mode .table-container,
+body.dark-mode .table-container-card,
+body.dark-mode .data-table-wrap,
+body.dark-mode .report-content-card,
+body.dark-mode .summary-card,
+body.dark-mode .article-card,
+body.dark-mode .library-card,
+body.dark-mode .stat-card,
+body.dark-mode .metric-card,
+body.dark-mode .analytics-card,
+body.dark-mode .cal-card,
+body.dark-mode .avail-card,
+body.dark-mode .avail-main-card,
+body.dark-mode .day-setting-card,
+body.dark-mode .slot-card.is-booked,
+body.dark-mode .legend-card,
+body.dark-mode .queue-head-card,
+body.dark-mode .queue-stat-card,
+body.dark-mode .serving-hero-card,
+body.dark-mode .serving-empty-state,
+body.dark-mode .today-appointments-sync-card,
+body.dark-mode .waiting-list-panel,
+body.dark-mode .queue-ticket-card,
+body.dark-mode .empty-records-card,
+body.dark-mode .loading-state-card,
+body.dark-mode .empty-state,
+body.dark-mode .loading-state,
+body.dark-mode .patient-preview-card,
+body.dark-mode .wizard-summary-card,
+body.dark-mode .info-section-card,
+body.dark-mode .patient-stats-banner,
+body.dark-mode .sheet-kpi-banner,
+body.dark-mode .mother-picker-card,
+body.dark-mode .phase-card,
+body.dark-mode .edu-card,
+body.dark-mode .controls-card,
+body.dark-mode .no-results-card,
+body.dark-mode .card,
+body.dark-mode .mw-card,
+body.dark-mode .form-card,
+body.dark-mode .sheet-notes-box,
+body.dark-mode .article-callout-box,
+body.dark-mode .reference-box,
+body.dark-mode .step-flow-item,
+body.dark-mode .detail-reason-box {
+  background: #1e172c !important;
+  border-color: #332549 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28) !important;
+  color: #f5f1fc !important;
+}
+
+/* Patient Drawer */
+body.dark-mode .patient-drawer,
+body.dark-mode .drawer-header,
+body.dark-mode .drawer-content,
+body.dark-mode .drawer-body {
+  background: #1b1427 !important;
+  border-color: #332549 !important;
+  color: #f5f1fc !important;
+}
+
+/* Dashboard Hero Banner & Buttons */
+body.dark-mode .hero-banner {
+  background:
+    linear-gradient(to right, rgba(32, 14, 58, 0.92) 0%, rgba(48, 22, 85, 0.65) 100%),
+    url('/images/dashboard-banner-bg.png') center / cover no-repeat,
+    #25123d !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-mode .btn-hero-solid {
+  background: #6b4fa3 !important;
+  color: #ffffff !important;
+  border: 1px solid #8d72c4 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.dark-mode .btn-hero-solid:hover {
+  background: #7c5cb8 !important;
+  transform: translateY(-2px);
+}
+
+/* Headings & Text */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode .panel-header h2,
+body.dark-mode .kpi-value,
+body.dark-mode .appt-time,
+body.dark-mode .patient-name,
+body.dark-mode .followup-name,
+body.dark-mode .user-card-name,
+body.dark-mode .header-left h1,
+body.dark-mode strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .kpi-label,
+body.dark-mode .panel-sub,
+body.dark-mode .patient-note,
+body.dark-mode .followup-task,
+body.dark-mode .header-sub,
+body.dark-mode .dir-sub,
+body.dark-mode .user-email-sub,
+body.dark-mode .signout-desc,
+body.dark-mode .signout-user-meta .user-card-email,
+body.dark-mode .chart-y-axis span,
+body.dark-mode .bar-day,
+body.dark-mode .card-empty-state,
+body.dark-mode label,
+body.dark-mode small {
+  color: #b7a8cf !important;
+}
+
+/* Avatar Initials Circles (No light circles!) */
+body.dark-mode .avatar-color-1 {
+  background: #2f1d47 !important;
+  color: #c4b5fd !important;
+}
+body.dark-mode .avatar-color-2 {
+  background: #162c45 !important;
+  color: #7dd3fc !important;
+}
+body.dark-mode .avatar-color-3 {
+  background: #3b1627 !important;
+  color: #f472b6 !important;
+}
+body.dark-mode .avatar-color-4 {
+  background: #143521 !important;
+  color: #86efac !important;
+}
+
+/* Icon Pills & Tones */
+body.dark-mode .tone-purple,
+body.dark-mode [class*="tone-purple"] {
+  background: #2d1d46 !important;
+  color: #c4b5fd !important;
+}
+body.dark-mode .tone-pink,
+body.dark-mode [class*="tone-pink"] {
+  background: #3d1528 !important;
+  color: #f472b6 !important;
+}
+body.dark-mode .tone-teal,
+body.dark-mode [class*="tone-teal"] {
+  background: #153230 !important;
+  color: #5eead4 !important;
+}
+body.dark-mode .tone-blue,
+body.dark-mode [class*="tone-blue"] {
+  background: #162b45 !important;
+  color: #93c5fd !important;
+}
+body.dark-mode .tone-amber,
+body.dark-mode [class*="tone-amber"] {
+  background: #3b2812 !important;
+  color: #fcd34d !important;
+}
+body.dark-mode .tone-red,
+body.dark-mode [class*="tone-red"] {
+  background: #3d1419 !important;
+  color: #fca5a5 !important;
+}
+
+body.dark-mode .header-icon-pill,
+body.dark-mode .empty-icon-wrap,
+body.dark-mode .empty-icon-circle,
+body.dark-mode .avatar-icon-circle,
+body.dark-mode .reg-badge-icon,
+body.dark-mode .edit-badge-icon {
+  background: #2d1d46 !important;
+  color: #c4b5fd !important;
+}
+
+/* Rows, Lists & Separators */
+body.dark-mode .appt-row,
+body.dark-mode .followup-item,
+body.dark-mode .form-grid,
+body.dark-mode .booked-item-row,
+body.dark-mode .appt-sync-row,
+body.dark-mode .day-row-item,
+body.dark-mode .border-b,
+body.dark-mode hr {
+  border-bottom-color: #2e2243 !important;
+}
+
+body.dark-mode .recent-card {
+  background: #251c37 !important;
+  border-color: #382c4f !important;
+}
+
+body.dark-mode .recent-card:hover {
+  border-color: #7a50ba !important;
+  background: #2a203f !important;
+}
+
+body.dark-mode .recent-info strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .recent-info span {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .link-more {
+  color: #c4b5fd !important;
+}
+
+/* Secondary & Action Buttons */
+body.dark-mode .btn-secondary,
+body.dark-mode .btn-action.secondary,
+body.dark-mode .btn-hero-glass,
+body.dark-mode .btn-action-view,
+body.dark-mode .btn-view,
+body.dark-mode .btn-edit-row,
+body.dark-mode .btn-row-action,
+body.dark-mode .btn-clear-queue,
+body.dark-mode .btn-tv-mode,
+body.dark-mode .btn-skip-serving,
+body.dark-mode .btn-cancel,
+body.dark-mode .btn-cancel-modal,
+body.dark-mode .btn-close-done,
+body.dark-mode .btn-wizard-prev,
+body.dark-mode .nav-arrow-btn,
+body.dark-mode .btn-today,
+body.dark-mode .cat-tab-btn,
+body.dark-mode .tab-btn,
+body.dark-mode .btn-subtle {
+  background: #271d3a !important;
+  border-color: #40305d !important;
+  color: #f1ecf9 !important;
+}
+
+body.dark-mode .btn-secondary:hover,
+body.dark-mode .btn-action.secondary:hover,
+body.dark-mode .btn-hero-glass:hover,
+body.dark-mode .btn-action-view:hover,
+body.dark-mode .btn-view:hover,
+body.dark-mode .btn-edit-row:hover,
+body.dark-mode .btn-row-action:hover,
+body.dark-mode .btn-clear-queue:hover,
+body.dark-mode .btn-tv-mode:hover,
+body.dark-mode .btn-cancel:hover,
+body.dark-mode .btn-cancel-modal:hover,
+body.dark-mode .btn-close-done:hover,
+body.dark-mode .btn-wizard-prev:hover,
+body.dark-mode .nav-arrow-btn:hover,
+body.dark-mode .btn-today:hover,
+body.dark-mode .cat-tab-btn:hover,
+body.dark-mode .tab-btn:hover,
+body.dark-mode .btn-subtle:hover {
+  background: #33254b !important;
+  border-color: #634a8e !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-signout {
+  border-color: #40305d !important;
+  color: #ef4444 !important;
+  background: #271d3a !important;
+}
+
+body.dark-mode .btn-signout:hover {
+  background: #391924 !important;
+  border-color: #6e2738 !important;
+}
+
+/* Chart */
+body.dark-mode .chart-container {
+  background: transparent !important;
+}
+
+body.dark-mode .bar-track {
+  background: #2a1f3c !important;
+}
+
+body.dark-mode .bar-tooltip {
+  background: #2e2146 !important;
+  border-color: #48346c !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Form Controls & Filter Bars */
+body.dark-mode input[type="text"],
+body.dark-mode input[type="search"],
+body.dark-mode input[type="email"],
+body.dark-mode input[type="tel"],
+body.dark-mode input[type="date"],
+body.dark-mode input[type="time"],
+body.dark-mode input[type="number"],
+body.dark-mode input[type="password"],
+body.dark-mode select,
+body.dark-mode textarea,
+body.dark-mode .search-input-box,
+body.dark-mode .search-input-box input,
+body.dark-mode .search-input-wrap input,
+body.dark-mode .search-box,
+body.dark-mode .search-filter-box,
+body.dark-mode .select-wrapper select,
+body.dark-mode .filter-selects-group select,
+body.dark-mode .filter-select,
+body.dark-mode .period-select,
+body.dark-mode .duration-select,
+body.dark-mode .duration-select-pill select,
+body.dark-mode .custom-select-wrap select,
+body.dark-mode .booking-select-wrapper select,
+body.dark-mode .select-dropdown-container select,
+body.dark-mode .form-field input,
+body.dark-mode .form-field select,
+body.dark-mode .form-field textarea,
+body.dark-mode .form-group input,
+body.dark-mode .form-group select,
+body.dark-mode .form-group textarea {
+  background: #241b34 !important;
+  border-color: #3b2d55 !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #837299 !important;
+}
+
+body.dark-mode input:focus,
+body.dark-mode select:focus,
+body.dark-mode textarea:focus {
+  border-color: #8c68c4 !important;
+  box-shadow: 0 0 0 3px rgba(140, 104, 196, 0.28) !important;
+}
+
+body.dark-mode .search-input-box svg,
+body.dark-mode .funnel-icon {
+  color: #8c7ba2 !important;
+}
+
+/* Tables */
+body.dark-mode table,
+body.dark-mode .patient-table,
+body.dark-mode .clinical-table,
+body.dark-mode .data-table,
+body.dark-mode .completed-mini-table {
+  background: #1e172c !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode thead th,
+body.dark-mode .patient-table th,
+body.dark-mode .clinical-table th,
+body.dark-mode .data-table th,
+body.dark-mode .completed-mini-table th {
+  background: #261d38 !important;
+  color: #dfd4f2 !important;
+  border-bottom: 1px solid #382c50 !important;
+}
+
+body.dark-mode tbody td,
+body.dark-mode .patient-table td,
+body.dark-mode .clinical-table td,
+body.dark-mode .data-table td,
+body.dark-mode .completed-mini-table td {
+  border-bottom: 1px solid #2d2242 !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode tbody tr:hover td,
+body.dark-mode .patient-table tr:hover td,
+body.dark-mode .clinical-table tr:hover td,
+body.dark-mode .data-table tr:hover td {
+  background: #281f3b !important;
+}
+
+/* Modals & Dialogs */
+body.dark-mode .modal-backdrop,
+body.dark-mode .signout-modal-backdrop {
+  background: rgba(8, 4, 15, 0.78) !important;
+}
+
+body.dark-mode .modal-card,
+body.dark-mode .modal-dialog-card,
+body.dark-mode .detail-modal-card,
+body.dark-mode .signout-modal-card,
+body.dark-mode .wizard-card,
+body.dark-mode .modal-head,
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer,
+body.dark-mode .modal-view-footer,
+body.dark-mode .wizard-footer,
+body.dark-mode .modal-booking-box,
+body.dark-mode .modal-alert-box,
+body.dark-mode .wizard-stepper-wrap {
+  background: #1f172e !important;
+  border-color: #3b2d54 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .signout-user-card {
+  background: #271d3a !important;
+  border-color: #3b2d54 !important;
+}
+
+body.dark-mode .btn-stay-signed-in {
+  background: #271d3a !important;
+  border-color: #40305d !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .btn-stay-signed-in:hover {
+  background: #32254b !important;
+  border-color: #8c68c4 !important;
+}
+
+body.dark-mode .step-circle {
+  background: #2c1e42 !important;
+  border-color: #48346c !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .step-item.completed .step-circle {
+  background: #6b4fa3 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .step-badge,
+body.dark-mode .step-indicator-pill {
+  background: #2a1c40 !important;
+  color: #c4b5fd !important;
+  border-color: #42305e !important;
+}
+
+/* Badges & Status Pills */
+body.dark-mode .status-scheduled,
+body.dark-mode .pill-scheduled,
+body.dark-mode .type-prenatal,
+body.dark-mode .badge-in-queue {
+  background: rgba(20, 184, 166, 0.18) !important;
+  color: #2dd4bf !important;
+}
+
+body.dark-mode .status-confirmed,
+body.dark-mode .pill-confirmed,
+body.dark-mode .trend-green,
+body.dark-mode .status-active,
+body.dark-mode .risk-low,
+body.dark-mode .apgar-badge.is-good {
+  background: rgba(34, 197, 94, 0.18) !important;
+  color: #4ade80 !important;
+}
+
+body.dark-mode .status-pending,
+body.dark-mode .status-requested,
+body.dark-mode .pill-requested,
+body.dark-mode .trend-orange,
+body.dark-mode .risk-medium,
+body.dark-mode .apgar-badge.is-warning {
+  background: rgba(234, 179, 8, 0.18) !important;
+  color: #facc15 !important;
+}
+
+body.dark-mode .status-completed,
+body.dark-mode .type-consultation,
+body.dark-mode .gender-tag.is-male {
+  background: rgba(56, 189, 248, 0.18) !important;
+  color: #38bdf8 !important;
+}
+
+body.dark-mode .status-cancelled,
+body.dark-mode .pill-cancelled,
+body.dark-mode .status-inactive,
+body.dark-mode .is-disabled {
+  background: rgba(148, 163, 184, 0.18) !important;
+  color: #cbd5e1 !important;
+}
+
+body.dark-mode .badge-alert,
+body.dark-mode .timing-overdue,
+body.dark-mode .risk-high,
+body.dark-mode .priority-emergency,
+body.dark-mode .priority-high-risk {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #f87171 !important;
+}
+
+body.dark-mode .badge-prenatal {
+  background: rgba(168, 85, 247, 0.2) !important;
+  color: #c084fc !important;
+}
+
+body.dark-mode .badge-postpartum,
+body.dark-mode .status-postpartum,
+body.dark-mode .gender-tag.is-female {
+  background: rgba(244, 114, 182, 0.2) !important;
+  color: #f472b6 !important;
+}
+
+body.dark-mode .supp-tag,
+body.dark-mode .stage-tag,
+body.dark-mode .healing-pill,
+body.dark-mode .proto-tag,
+body.dark-mode .cat-pill,
+body.dark-mode .station-badge,
+body.dark-mode .ticket-tag-sm,
+body.dark-mode .ticket-badge-box,
+body.dark-mode .pulsing-live-badge,
+body.dark-mode .sub-counter {
+  background: #281d3c !important;
+  color: #dfd4f2 !important;
+  border-color: #3e2e5c !important;
+}
+
+/* Calendar & Availability Slots */
+body.dark-mode .cal-grid-wrapper,
+body.dark-mode .grid-header-row,
+body.dark-mode .cal-cell,
+body.dark-mode .month-cell,
+body.dark-mode .week-cell {
+  background: #1e172c !important;
+  border-color: #332549 !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .cal-cell.other-month {
+  background: #171122 !important;
+  color: #6d5e85 !important;
+}
+
+body.dark-mode .cal-cell:hover {
+  background: #281f3b !important;
+}
+
+body.dark-mode .day-setting-card {
+  background: #251c37 !important;
+  border-color: #382c4f !important;
+}
+
+body.dark-mode .slot-card.is-open {
+  background: #192a22 !important;
+  border-color: #276749 !important;
+  color: #68d391 !important;
+}
+
+body.dark-mode .slot-card.is-booked {
+  background: #251c37 !important;
+  border-color: #382c4f !important;
+  color: #b7a8cf !important;
+}
+
+/* Custom Dark Scrollbars */
+body.dark-mode *::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+body.dark-mode *::-webkit-scrollbar-track {
+  background: #140f1f;
+}
+
+body.dark-mode *::-webkit-scrollbar-thumb {
+  background: #3c2c54;
+  border-radius: 999px;
+}
+
+body.dark-mode *::-webkit-scrollbar-thumb:hover {
+  background: #5a3f82;
+}
+
+/* ========================================================
+   SPECIFIC DARK OVERRIDES FOR REPORTED SCREENS
+   ======================================================== */
+
+/* 1. Patient Queue (Image 1) */
+body.dark-mode .serving-hero-card {
+  background: #1e172c !important;
+  border-color: #332549 !important;
+}
+
+body.dark-mode .serving-ticket-body {
+  background: linear-gradient(135deg, #241a36 0%, #1c152a 100%) !important;
+  border: 2px solid #5d3896 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-mode .ticket-number-display {
+  color: #ffffff !important;
+}
+
+body.dark-mode .serving-patient-name {
+  color: #ffffff !important;
+}
+
+body.dark-mode .serving-service-pill {
+  background: #361759 !important;
+  color: #ede6f8 !important;
+}
+
+body.dark-mode .mini-vital {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5c !important;
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .mini-vital strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .today-appointments-sync-card {
+  background: #1e172c !important;
+  border-color: #332549 !important;
+}
+
+body.dark-mode .appt-sync-row {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+}
+
+body.dark-mode .appt-sync-row strong,
+body.dark-mode .appt-sync-row span {
+  color: #f1edfa !important;
+}
+
+/* 2. Clinical Checkup Modals: Prenatal, Delivery & Postpartum (Images 2, 3, 4) */
+body.dark-mode .patient-select-hint {
+  background: #251c37 !important;
+  border: 1px dashed #54397a !important;
+  color: #d1c5e6 !important;
+}
+
+body.dark-mode .patient-select-hint svg {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .patient-select-hint span {
+  color: #d1c5e6 !important;
+}
+
+body.dark-mode .step-alert-banner {
+  background: #281c3c !important;
+  border-color: #4b346e !important;
+  color: #d1c5e6 !important;
+}
+
+/* 3. Pregnancy Journey (Image 5) */
+body.dark-mode .journey-page-wrap {
+  background: #120e1b !important;
+}
+
+body.dark-mode .journey-header-card,
+body.dark-mode .patient-spotlight-card,
+body.dark-mode .kpi-glass-card,
+body.dark-mode .timeline-track-card,
+body.dark-mode .journey-content-card,
+body.dark-mode .journey-milestones-card {
+  background: #1e172c !important;
+  border-color: #332549 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28) !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .patient-spotlight-card {
+  border: 1px solid #332549 !important;
+}
+
+body.dark-mode .patient-hero-info h2 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .patient-avatar-circle {
+  background: #2e1c4a !important;
+  color: #c4b5fd !important;
+  border-color: #48346c !important;
+}
+
+body.dark-mode .kpi-glass-card {
+  border: 1px solid #332549 !important;
+}
+
+body.dark-mode .kpi-glass-card .kpi-label {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .kpi-glass-card .kpi-value {
+  color: #ffffff !important;
+}
+
+body.dark-mode .kpi-glass-card .kpi-hint {
+  color: #9f91b7 !important;
+}
+
+body.dark-mode .timeline-bar-wrapper {
+  background: transparent !important;
+}
+
+body.dark-mode .timeline-bar-track {
+  background: #2a1f3c !important;
+}
+
+body.dark-mode .pin-bubble {
+  background: #361759 !important;
+  color: #ffffff !important;
+  border: 1px solid #7c54b6 !important;
+}
+
+body.dark-mode .trimester-zones-bar {
+  background: #181124 !important;
+  border: 1px solid #332549 !important;
+}
+
+body.dark-mode .trimester-zones-bar .zone {
+  background: #221833 !important;
+  border: 1px solid #332549 !important;
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .trimester-zones-bar .zone.current-zone {
+  background: #2d1e47 !important;
+  border-color: #7b53b8 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .zone-title {
+  color: #ffffff !important;
+}
+
+body.dark-mode .zone-weeks {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .baby-growth-box,
+body.dark-mode .growth-desc-box,
+body.dark-mode .focus-item {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .baby-fruit-circle {
+  background: #2d1f46 !important;
+  border: 1px solid #48346c !important;
+}
+
+body.dark-mode .fruit-name {
+  color: #ffffff !important;
+}
+
+body.dark-mode .growth-stats-row {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .focus-icon {
+  background: #2d1d46 !important;
+}
+
+body.dark-mode .focus-text strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .focus-text span {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .milestone-tabs {
+  background: #181124 !important;
+  border: 1px solid #332549 !important;
+}
+
+body.dark-mode .m-tab {
+  color: #b7a8cf !important;
+  background: transparent !important;
+}
+
+body.dark-mode .m-tab.active {
+  background: #361759 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .milestone-item {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+}
+
+body.dark-mode .milestone-item strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .milestone-item p {
+  color: #b7a8cf !important;
+}
+
+/* 4. Health Library */
+body.dark-mode .library-page-wrap {
+  background: #120e1b !important;
+}
+
+body.dark-mode .library-header-card,
+body.dark-mode .controls-card,
+body.dark-mode .article-card,
+body.dark-mode .no-results-card {
+  background: #1e172c !important;
+  border: 1px solid #332549 !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .stat-bubble {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .stat-bubble strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .stat-bubble span {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .search-box {
+  background: #241b34 !important;
+  border: 1px solid #3b2d55 !important;
+}
+
+body.dark-mode .search-box input {
+  color: #f5f1fc !important;
+  background: transparent !important;
+}
+
+body.dark-mode .cat-tab-btn {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .cat-tab-btn.active,
+body.dark-mode .cat-tab-btn:hover {
+  background: #361759 !important;
+  color: #ffffff !important;
+  border-color: #6b4fa3 !important;
+}
+
+body.dark-mode .proto-einc {
+  background: #182822 !important;
+  border: 1.5px solid #23583f !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .proto-pph {
+  background: #33151b !important;
+  border: 1.5px solid #66222f !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .proto-danger {
+  background: #332210 !important;
+  border: 1.5px solid #664319 !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .article-title {
+  color: #ffffff !important;
+}
+
+body.dark-mode .article-summary {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .article-callout-box,
+body.dark-mode .step-flow-item,
+body.dark-mode .reference-box {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+/* 5. Reports */
+body.dark-mode .reports-page-wrap {
+  background: #120e1b !important;
+}
+
+body.dark-mode .reports-header-card,
+body.dark-mode .filter-controls-card,
+body.dark-mode .official-sheet-card {
+  background: #1e172c !important;
+  border: 1px solid #332549 !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .report-tabs {
+  background: #181124 !important;
+  border: 1px solid #332549 !important;
+}
+
+body.dark-mode .report-tabs .tab-btn {
+  color: #b7a8cf !important;
+  background: transparent !important;
+}
+
+body.dark-mode .report-tabs .tab-btn.active {
+  background: #361759 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .kpi-box {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+}
+
+body.dark-mode .kpi-k {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .kpi-v {
+  color: #ffffff !important;
+}
+
+body.dark-mode .official-letterhead {
+  border-bottom: 1px solid #332549 !important;
+}
+
+body.dark-mode .clinic-seal {
+  background: #2d1d46 !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .doc-title-text {
+  color: #ffffff !important;
+}
+
+body.dark-mode .doc-period-text {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .search-filter-box {
+  background: #241b34 !important;
+  border: 1px solid #3b2d55 !important;
+}
+
+body.dark-mode .search-filter-box input {
+  color: #f5f1fc !important;
+  background: transparent !important;
+}
+
+body.dark-mode .select-input {
+  background: #241b34 !important;
+  border: 1px solid #3b2d55 !important;
+  color: #f5f1fc !important;
+}
+
+/* 6. Statistics */
+body.dark-mode .statistics-page-wrap {
+  background: #120e1b !important;
+}
+
+body.dark-mode .stats-header-card,
+body.dark-mode .chart-panel-card,
+body.dark-mode .table-card {
+  background: #1e172c !important;
+  border: 1px solid #332549 !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .chart-header h2 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .chart-sub {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .kpi-main-val {
+  color: #ffffff !important;
+}
+
+body.dark-mode .kpi-progress-bar {
+  background: #2a1f3c !important;
+}
+
+body.dark-mode .bar-chart-container {
+  background: transparent !important;
+}
+
+body.dark-mode .grid-line {
+  border-top: 1px dashed #2b203d !important;
+}
+
+body.dark-mode .grid-line span {
+  color: #837299 !important;
+}
+
+body.dark-mode .month-label {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .stacked-risk-bar {
+  background: #2a1f3c !important;
+}
+
+body.dark-mode .risk-total-badge {
+  background: #2b1d42 !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .benchmark-item {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+}
+
+body.dark-mode .benchmark-item strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .benchmark-item span {
+  color: #b7a8cf !important;
+}
+
+/* ========================================================
+   HIGH-PRIORITY EYE-FRIENDLY & CONTRAST FIXES
+   ======================================================== */
+
+/* Fix Health Library Modal Text Visibility (Image 5: No more invisible/dark text!) */
+body.dark-mode .modal-dialog-card {
+  background: #1c152a !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .article-section h3 {
+  color: #ffffff !important;
+  border-bottom: 1px solid #36294e !important;
+}
+
+body.dark-mode .article-body-p {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .steps-flow-list {
+  background: transparent !important;
+}
+
+body.dark-mode .step-flow-item {
+  background: #251c37 !important;
+  border: 1px solid #3d2e58 !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .step-flow-item:hover {
+  background: #2a203f !important;
+  border-color: #553e7a !important;
+}
+
+body.dark-mode .flow-num {
+  background: #39225e !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .flow-text {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .counseling-list {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .counseling-list li {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .reference-box {
+  background: #251c37 !important;
+  border-left: 4px solid #7c54b6 !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .reference-box .ref-title {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .reference-box p {
+  color: #d8cde9 !important;
+}
+
+body.dark-mode .article-callout-box {
+  background: #251c37 !important;
+  border: 1px solid #3d2e58 !important;
+  border-left: 4px solid #6b4fa3 !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .article-callout-box strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .article-callout-box p {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .modal-cat-tag {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .modal-title-row h2 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-close-modal {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .btn-close-modal:hover {
+  background: #2f2244 !important;
+  color: #ffffff !important;
+}
+
+/* Fix Statistics: Midwife Workload & DOH Accreditation Cards (Image 1 & Image 4) */
+body.dark-mode .midwife-audit-card {
+  background: #1e172c !important;
+  border: 1px solid #332549 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28) !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .audit-card-header h3 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .audit-card-header .chart-sub {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .badge-midwives {
+  background: #2b1d42 !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .audit-table {
+  background: #1e172c !important;
+}
+
+body.dark-mode .audit-table th {
+  background: #261d38 !important;
+  color: #dfd4f2 !important;
+  border-bottom: 1px solid #382c50 !important;
+}
+
+body.dark-mode .audit-table td {
+  border-bottom: 1px solid #2d2242 !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .audit-table tr:hover td {
+  background: #281f3b !important;
+}
+
+body.dark-mode .midwife-name-cell .avatar-circle {
+  background: #361759 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .midwife-name-cell strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .midwife-name-cell .role-sub {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .badge-num.delivery {
+  background: rgba(34, 197, 94, 0.18) !important;
+  color: #4ade80 !important;
+}
+
+body.dark-mode .badge-num.prenatal {
+  background: rgba(168, 85, 247, 0.18) !important;
+  color: #c084fc !important;
+}
+
+body.dark-mode .badge-num.postpartum {
+  background: rgba(56, 189, 248, 0.18) !important;
+  color: #38bdf8 !important;
+}
+
+body.dark-mode .benchmarks-card {
+  background: #1e172c !important;
+  border: 1px solid #332549 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28) !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .bench-title-left h3 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .bench-title-left p {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .compliance-badge {
+  background: #143323 !important;
+  color: #4ade80 !important;
+  border: 1px solid #1c5237 !important;
+}
+
+body.dark-mode .benchmarks-grid {
+  background: transparent !important;
+}
+
+body.dark-mode .bench-item {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .bench-item:hover {
+  background: #2a203f !important;
+  border-color: #553e7a !important;
+}
+
+body.dark-mode .bench-icon.check {
+  background: rgba(34, 197, 94, 0.18) !important;
+  color: #4ade80 !important;
+}
+
+body.dark-mode .bench-content strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .bench-content p {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .bench-tag.success {
+  background: #2b1d42 !important;
+  color: #c4b5fd !important;
+  border: 1px solid #452e69 !important;
+}
+
+/* Statistics Infant Weight & Sex Cards (Image 1 & Image 4) */
+body.dark-mode .infant-weight-summary .summary-pill {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .pill-lbl {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .pill-val {
+  color: #ffffff !important;
+}
+
+body.dark-mode .gender-split-box {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+}
+
+body.dark-mode .gender-card {
+  background: #221831 !important;
+  border: 1px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .gender-card.female {
+  border-color: #5a263d !important;
+}
+
+body.dark-mode .gender-card.male {
+  border-color: #263d5a !important;
+}
+
+body.dark-mode .gender-val {
+  color: #ffffff !important;
+}
+
+body.dark-mode .gender-lbl {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .gender-divider {
+  background: #2d1e47 !important;
+  color: #c4b5fd !important;
+  border: 1px solid #48346c !important;
+}
+
+body.dark-mode .risk-legend-cards .risk-stat-item {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .risk-stat-item h4 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .risk-stat-item p {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .stat-count {
+  color: #ffffff !important;
+}
+
+body.dark-mode .stat-pct {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .risk-note-box {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+  color: #d1c5e6 !important;
+}
+
+body.dark-mode .risk-note-box svg {
+  color: #c4b5fd !important;
+}
+
+/* Fix Reports Official KPI Row (Image 2) */
+body.dark-mode .report-kpi-summary {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+}
+
+body.dark-mode .report-kpi-summary .kpi-box {
+  background: transparent !important;
+  border-right: 1px solid #382c4f !important;
+}
+
+body.dark-mode .report-kpi-summary .kpi-box:last-child {
+  border-right: none !important;
+}
+
+body.dark-mode .report-kpi-summary .kpi-k {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .report-kpi-summary .kpi-v {
+  color: #ffffff !important;
+}
+
+body.dark-mode .report-kpi-summary .tone-green {
+  color: #4ade80 !important;
+}
+
+body.dark-mode .report-kpi-summary .tone-purple {
+  color: #c084fc !important;
+}
+
+/* Fix Pregnancy Journey Checklist & Checkup History (Image 3) */
+body.dark-mode .milestone-card {
+  background: #251c37 !important;
+  border: 1.5px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .milestone-card.is-done {
+  background: #1b2923 !important;
+  border-color: #276749 !important;
+}
+
+body.dark-mode .m-title-row strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .m-desc {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .m-timing-tag {
+  background: #2d1d46 !important;
+  color: #c4b5fd !important;
+  border: 1px solid #48346c !important;
+}
+
+body.dark-mode .m-category-badge {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .m-req-pill {
+  background: #143323 !important;
+  color: #4ade80 !important;
+}
+
+body.dark-mode .m-checkbox {
+  background: #241b34 !important;
+  border: 1.5px solid #4e3a6c !important;
+}
+
+body.dark-mode .m-checkbox.checked {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+}
+
+body.dark-mode .checkup-history-card {
+  background: #1e172c !important;
+  border: 1px solid #332549 !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .no-records-box {
+  background: #221833 !important;
+  border: 1px dashed #4e3870 !important;
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .no-records-box h4 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .no-records-box p {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .no-records-box svg {
+  color: #c4b5fd !important;
+}
+
+/* ========================================================
+   ADDITIONAL TARGETED FIXES FOR BLOOD PRESSURE, TOGGLES & WIZARD NOTES
+   ======================================================== */
+
+/* 1. Blood Pressure & Monospace Table Pills (Image 1) */
+body.dark-mode .mono-badge {
+  background: #2a1f3c !important;
+  color: #c4b5fd !important;
+  border: 1px solid #48356c !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 2. Patient Check-In & Ticket Issuance Mode Toggle (Image 2) */
+body.dark-mode .pill-toggle-group {
+  background: #181124 !important;
+  border: 1px solid #3b2d55 !important;
+}
+
+body.dark-mode .pill-btn {
+  color: #b7a8cf !important;
+  background: transparent !important;
+}
+
+body.dark-mode .pill-btn.active {
+  background: #361759 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 3. Step-by-Step Wizard Clinical Reference Note (Image 3) */
+body.dark-mode .vitals-reference-pill {
+  background: #251c37 !important;
+  border: 1px solid #4d3674 !important;
+  color: #d8cde9 !important;
+}
+
+body.dark-mode .vitals-reference-pill strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .vitals-reference-pill span {
+  color: #d8cde9 !important;
+}
+
+body.dark-mode .step-alert-banner {
+  background: #251c37 !important;
+  border: 1px solid #4d3674 !important;
+  color: #d8cde9 !important;
+}
+
+body.dark-mode .wizard-summary-card {
+  background: #221833 !important;
+  border: 1.5px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .sheet-notes-box {
+  background: #221833 !important;
+  border: 1px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+/* 4. Statistics DOH Accreditation Card & Scorecard Items (Image 6) */
+body.dark-mode .benchmarks-card {
+  background: #1e172c !important;
+  border: 1px solid #332549 !important;
+  color: #f5f1fc !important;
+}
+
+body.dark-mode .benchmarks-card h3,
+body.dark-mode .benchmarks-header h3 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .benchmarks-card p,
+body.dark-mode .benchmarks-header p {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .benchmarks-grid .bench-item,
+body.dark-mode .bench-item {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .bench-item strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .bench-item p {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .bench-tag.success {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: #4ade80 !important;
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+}
+
+/* 5. Patient Queue: Serving Hero Card & Today's Appointments List (Image 5) */
+body.dark-mode .serving-hero-card .serving-ticket-body,
+body.dark-mode .serving-ticket-body {
+  background: linear-gradient(135deg, #241a36 0%, #1c152a 100%) !important;
+  border: 2px solid #5d3896 !important;
+  color: #ede7f6 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.dark-mode .serving-ticket-body .ticket-number-display {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .serving-ticket-body .serving-patient-name {
+  color: #ffffff !important;
+}
+
+body.dark-mode .serving-ticket-body .serving-service-pill {
+  background: #361759 !important;
+  color: #ede6f8 !important;
+}
+
+body.dark-mode .serving-ticket-body .serving-vitals-row .mini-vital,
+body.dark-mode .mini-vital {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5c !important;
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .mini-vital span {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .mini-vital strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .today-appointments-sync-card {
+  background: #1e172a !important;
+  border: 1px solid #382c4f !important;
+}
+
+body.dark-mode .today-appointments-sync-card h4 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .today-appointments-sync-card .sub-counter {
+  background: #2b1f40 !important;
+  color: #c4b5fd !important;
+  border: 1px solid #48356c !important;
+}
+
+body.dark-mode .today-appointments-sync-card .appt-sync-row,
+body.dark-mode .appt-sync-row {
+  background: #251c37 !important;
+  border: 1px solid #382c4f !important;
+}
+
+body.dark-mode .appt-sync-row strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .appt-sync-row span {
+  color: #b7a8cf !important;
+}
+
+
+
+
+
+
