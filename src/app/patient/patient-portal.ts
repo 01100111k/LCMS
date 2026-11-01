@@ -1,5 +1,5 @@
 import { DatePipe, NgClass } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../core/auth.service';
 import { Patient, PatientsService } from '../core/patients.service';
@@ -12,6 +12,7 @@ import {
   todayIso,
 } from '../core/appointments.service';
 import { DeliveryRecord, PostpartumRecord, RecordsService } from '../core/records.service';
+import { NotificationsService } from '../core/notifications.service';
 import { collection, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { db } from '../core/firebase';
 
@@ -38,9 +39,33 @@ export class PatientPortal implements OnInit {
   private patients = inject(PatientsService);
   private appointments = inject(AppointmentsService);
   private recordsSvc = inject(RecordsService);
+  private notifSvc = inject(NotificationsService);
 
   readonly todayIso = todayIso();
   readonly activeTab = signal<'overview' | 'appointments' | 'records' | 'guide' | 'profile'>('overview');
+
+  // Notifications State (Matches Image 4)
+  readonly notificationsOpen = signal(false);
+  readonly notifications = this.notifSvc.patientNotifications;
+  readonly unreadCount = this.notifSvc.patientUnreadCount;
+
+  toggleNotifications(): void {
+    this.notificationsOpen.update((v) => !v);
+  }
+
+  markAllRead(): void {
+    this.notifSvc.markAllPatientRead();
+  }
+
+  onNotificationClick(n: { id: string }): void {
+    this.notifSvc.markPatientItemRead(n.id);
+    this.notificationsOpen.set(false);
+  }
+
+  @HostListener('document:click')
+  onDocClick(): void {
+    this.notificationsOpen.set(false);
+  }
 
   // Patient profile state
   readonly profile = signal<Patient | null>(null);
@@ -100,6 +125,24 @@ export class PatientPortal implements OnInit {
     }
     return name.slice(0, 2).toUpperCase();
   });
+
+  readonly patientEmail = computed(() => this.auth.user()?.email || this.profile()?.email || '');
+
+  // Sign out confirmation modal (Matches Picture)
+  readonly showSignOutModal = signal(false);
+
+  openSignOutModal(): void {
+    this.showSignOutModal.set(true);
+  }
+
+  closeSignOutModal(): void {
+    this.showSignOutModal.set(false);
+  }
+
+  async confirmSignOut(): Promise<void> {
+    this.closeSignOutModal();
+    await this.auth.logout();
+  }
 
   // Gestational Age in weeks (computed from LMP or EDD)
   readonly gestationalWeek = computed(() => {

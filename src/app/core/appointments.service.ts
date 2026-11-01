@@ -1,8 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, updateDoc, where,
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { ActivityLogService } from './activity-log.service';
+import { AuthService } from './auth.service';
 import { EXAMPLE_APPOINTMENTS } from './example-data';
 
 export type AppointmentStatus = 'scheduled' | 'confirmed' | 'requested' | 'completed' | 'cancelled';
@@ -38,6 +40,11 @@ export interface Appointment {
   type: string;
   notes: string;
   status: AppointmentStatus;
+  service?: string;
+  midwifeName?: string;
+  assignedMidwifeId?: string | null;
+  midwifeId?: string | null;
+  createdBy?: string | null;
 }
 
 export interface Booking {
@@ -48,6 +55,10 @@ export interface Booking {
   type: string;
   notes: string;
   status?: AppointmentStatus;
+  service?: string;
+  midwifeName?: string;
+  assignedMidwifeId?: string | null;
+  midwifeId?: string | null;
 }
 
 // ---------- small date/time helpers (all in local time) ----------
@@ -100,6 +111,9 @@ export const slotKey = (date: string, time: string) => `${date}_${time.replace('
 
 @Injectable({ providedIn: 'root' })
 export class AppointmentsService {
+  private activityLog = inject(ActivityLogService);
+  private auth = inject(AuthService);
+
   private getLocalEdits(): Record<string, Partial<Appointment>> {
     try {
       const raw = localStorage.getItem('lcms_example_appts_edits');
@@ -119,26 +133,71 @@ export class AppointmentsService {
     }
   }
 
-  async list(): Promise<Appointment[]> {
-    let dbAppts: Appointment[] = [];
+  isMidwifeDemoUser(): boolean {
+    const email = auth.currentUser?.email?.toLowerCase();
+    if (email) return email === 'midwife@gmail.com' || email === 'midwife@lyingincare.ph';
     try {
-      const snap = await getDocs(collection(db, 'appointments'));
-      dbAppts = snap.docs.map((d) => this.toAppointment(d.id, d.data()));
-    } catch {
+      const cached = localStorage.getItem('lcms_cached_auth');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const ce = parsed?.email?.toLowerCase();
+        return ce === 'midwife@gmail.com' || ce === 'midwife@lyingincare.ph';
+      }
+    } catch {}
+    return false;
+  }
+
+  getCurrentRole(): string {
+    const r = this.auth.role();
+    if (r) return r;
+    try {
+      const cached = localStorage.getItem('lcms_cached_auth');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.role) return parsed.role;
+      }
+    } catch {}
+    const email = auth.currentUser?.email?.toLowerCase() || '';
+    if (email.startsWith('admin@')) return 'admin';
+    return 'midwife';
+  }
+
+  async list(): Promise<Appointment[]> {
+    const currentUid = auth.currentUser?.uid;
+    const role = this.getCurrentRole();
+    let dbAppts: Appointment[] = [];
+
+    try {
+      if (role === 'admin') {
+        // Admin sees all clinic appointments
+        const snap = await getDocs(collection(db, 'appointments'));
+        dbAppts = snap.docs.map((d) => this.toAppointment(d.id, d.data()));
+      } else if (role === 'patient' && currentUid) {
+        // Patient only sees their own appointments
+        const q = query(collection(db, 'appointments'), where('patientId', '==', currentUid));
+        const snap = await getDocs(q);
+        dbAppts = snap.docs.map((d) => this.toAppointment(d.id, d.data()));
+      } else if (currentUid) {
+        // Midwife only sees appointments assigned to her UID
+        const q = query(collection(db, 'appointments'), where('assignedMidwifeId', '==', currentUid));
+        const snap = await getDocs(q);
+        dbAppts = snap.docs.map((d) => this.toAppointment(d.id, d.data()));
+      }
+    } catch (e) {
+      console.warn('AppointmentsService.list error:', e);
       dbAppts = [];
     }
 
-    const localEdits = this.getLocalEdits();
-    const existingIds = new Set(dbAppts.map((a) => a.id));
+    if (this.isMidwifeDemoUser()) {
+      const localEdits = this.getLocalEdits();
+      const existingIds = new Set(dbAppts.map((a) => a.id));
+      const examples = EXAMPLE_APPOINTMENTS.map((a) => ({ ...a, ...(localEdits[a.id] || {}) })).filter(
+        (a) => !existingIds.has(a.id),
+      );
+      return this.sorted([...dbAppts, ...examples]);
+    }
 
-    const mergedExamples = EXAMPLE_APPOINTMENTS.map((ex) => {
-      if (localEdits[ex.id]) {
-        return { ...ex, ...localEdits[ex.id] };
-      }
-      return ex;
-    }).filter((ex) => !existingIds.has(ex.id));
-
-    return this.sorted([...dbAppts, ...mergedExamples]);
+    return this.sorted(dbAppts);
   }
 
   async listForDate(date: string): Promise<Appointment[]> {
@@ -147,8 +206,15 @@ export class AppointmentsService {
   }
 
   async listForPatient(patientId: string): Promise<Appointment[]> {
-    const all = await this.list();
-    return all.filter((a) => a.patientId === patientId);
+    try {
+      const q = query(collection(db, 'appointments'), where('patientId', '==', patientId));
+      const snap = await getDocs(q);
+      const list = snap.docs.map((d) => this.toAppointment(d.id, d.data()));
+      return this.sorted(list);
+    } catch {
+      const all = await this.list();
+      return all.filter((a) => a.patientId === patientId);
+    }
   }
 
   async get(id: string): Promise<Appointment | null> {
@@ -159,8 +225,15 @@ export class AppointmentsService {
       // fallback
     }
 
-    const all = await this.list();
-    return all.find((a) => a.id === id) || null;
+    if (this.isMidwifeDemoUser()) {
+      const found = EXAMPLE_APPOINTMENTS.find((a) => a.id === id);
+      if (found) {
+        const edits = this.getLocalEdits();
+        return { ...found, ...(edits[id] || {}) };
+      }
+    }
+
+    return null;
   }
 
   /** Booked times between two dates: { date: { time: appointmentId } } */
@@ -182,26 +255,55 @@ export class AppointmentsService {
   async book(b: Booking): Promise<string> {
     const slotRef = doc(db, 'bookedSlots', slotKey(b.date, b.time));
     const apptRef = doc(collection(db, 'appointments'));
+
+    const currentUid = auth.currentUser?.uid ?? null;
+    let assignedMidwifeId = b.assignedMidwifeId || b.midwifeId || null;
+    if (!assignedMidwifeId) {
+      if (this.getCurrentRole() === 'midwife') {
+        assignedMidwifeId = currentUid;
+      } else if (b.patientId) {
+        try {
+          const pSnap = await getDoc(doc(db, 'patients', b.patientId));
+          if (pSnap.exists()) {
+            const pData = pSnap.data();
+            assignedMidwifeId = pData['assignedMidwifeId'] || pData['midwifeId'] || null;
+          }
+        } catch {}
+      }
+    }
+
     await runTransaction(db, async (tx) => {
       if ((await tx.get(slotRef)).exists()) throw new Error('slot-taken');
       tx.set(slotRef, { appointmentId: apptRef.id, date: b.date, time: b.time });
       tx.set(apptRef, {
         ...b,
+        assignedMidwifeId,
+        midwifeId: assignedMidwifeId,
         status: b.status || 'scheduled',
         createdAt: serverTimestamp(),
-        createdBy: auth.currentUser?.uid ?? null,
+        createdBy: currentUid,
       });
     });
+
+    this.activityLog.logActivity({
+      userName: b.patientName || 'Patient',
+      userRole: 'patient',
+      userId: b.patientId,
+      activity: `Appointment booked for ${b.patientName} (${b.type}) on ${b.date} at ${b.time}`,
+    }).catch(() => undefined);
+
     return apptRef.id;
   }
 
   /** Reschedules and/or edits the details of a scheduled appointment. */
   async update(id: string, change: { date: string; time: string; type: string; notes: string }): Promise<void> {
+    let patientName = '';
     await runTransaction(db, async (tx) => {
       const apptRef = doc(db, 'appointments', id);
       const appt = await tx.get(apptRef);
       if (!appt.exists()) throw new Error('not-found');
       if (appt.data()['status'] === 'cancelled') throw new Error('not-scheduled');
+      patientName = appt.data()['patientName'] || '';
 
       const oldKey = slotKey(String(appt.data()['date']), String(appt.data()['time']));
       const newKey = slotKey(change.date, change.time);
@@ -213,15 +315,23 @@ export class AppointmentsService {
       }
       tx.update(apptRef, { ...change, updatedAt: serverTimestamp() });
     });
+
+    this.activityLog.logActivity({
+      userName: patientName || 'Patient',
+      userRole: 'midwife',
+      activity: `Appointment rescheduled to ${change.date} at ${change.time}${patientName ? ' (' + patientName + ')' : ''}`,
+    }).catch(() => undefined);
   }
 
   /** Change appointment status with bookedSlots synchronization */
   async setStatus(id: string, newStatus: AppointmentStatus): Promise<void> {
+    let patientName = '';
     try {
       const apptRef = doc(db, 'appointments', id);
       const snap = await getDoc(apptRef);
       if (snap.exists()) {
         const data = snap.data();
+        patientName = data['patientName'] || '';
         const curStatus = (data['status'] as AppointmentStatus) || 'scheduled';
         const key = slotKey(String(data['date']), String(data['time']));
         const slotRef = doc(db, 'bookedSlots', key);
@@ -246,6 +356,14 @@ export class AppointmentsService {
       }
     } catch {
       // ignore
+    }
+
+    if (newStatus === 'cancelled') {
+      this.activityLog.logActivity({
+        userName: patientName || 'Patient',
+        userRole: 'patient',
+        activity: `Appointment cancelled${patientName ? ' for ' + patientName : ''}`,
+      }).catch(() => undefined);
     }
 
     // Always record the status in local edits so example appointments and offline work immediately
@@ -278,6 +396,9 @@ export class AppointmentsService {
       type: s('type'),
       notes: s('notes'),
       status,
+      assignedMidwifeId: s('assignedMidwifeId') || s('midwifeId') || null,
+      midwifeId: s('midwifeId') || s('assignedMidwifeId') || null,
+      createdBy: s('createdBy') || null,
     };
   }
 

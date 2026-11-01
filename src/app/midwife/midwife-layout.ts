@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../core/auth.service';
+import { NotificationsService } from '../core/notifications.service';
 
 @Component({
   selector: 'app-midwife-layout',
@@ -137,13 +138,71 @@ import { AuthService } from '../core/auth.service';
               <input type="search" placeholder="Search patients, appointments..." aria-label="Search">
             </div>
 
-            <!-- Notifications -->
-            <button type="button" class="icon-round-btn" aria-label="Notifications" title="Notifications">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-              <span class="bell-dot"></span>
-            </button>
+            <!-- Notifications (Matches Image 4) -->
+            <div class="notifications-wrapper" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                class="icon-round-btn notifications-btn"
+                [class.active]="notificationsOpen()"
+                (click)="toggleNotifications()"
+                aria-label="Notifications"
+                title="Notifications"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                @if (unreadCount() > 0) {
+                  <span class="bell-dot"></span>
+                }
+              </button>
+
+              @if (notificationsOpen()) {
+                <div class="notifications-dropdown-card">
+                  <div class="notif-header">
+                    <h3 class="notif-title">Notifications</h3>
+                    <button type="button" class="btn-mark-all-read" (click)="markAllRead()">Mark all read</button>
+                  </div>
+
+                  <div class="notif-content">
+                    @if (notifications().length === 0) {
+                      <!-- Caught Up Empty State (Matches Image 4) -->
+                      <div class="notif-caught-up">
+                        <div class="caught-up-icon-wrap">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                          </svg>
+                        </div>
+                        <h4>You're all caught up</h4>
+                        <p>Activity from appointments, patient updates, and clinical notifications will appear here.</p>
+                      </div>
+                    } @else {
+                      <div class="notif-list">
+                        @for (n of notifications(); track n.id) {
+                          <div class="notif-item" [class.unread]="!n.read" (click)="onNotificationClick(n)">
+                            <div class="notif-icon-circle">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                              </svg>
+                            </div>
+                            <div class="notif-item-body">
+                              <strong class="notif-item-title">{{ n.title }}</strong>
+                              <p class="notif-item-message">{{ n.message }}</p>
+                              <span class="notif-item-time">{{ n.time }}</span>
+                            </div>
+                            @if (!n.read) {
+                              <span class="notif-unread-dot"></span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
 
             <!-- User Menu Container & Dropdown Popover (Matches Screenshot) -->
             <div class="user-menu-wrapper" (click)="$event.stopPropagation()">
@@ -211,11 +270,11 @@ import { AuthService } from '../core/auth.service';
         </main>
       </div>
 
-      <!-- ============ SIGN OUT CONFIRMATION MODAL (Matches Image 3) ============ -->
+      <!-- ============ SIGN OUT CONFIRMATION MODAL (Matches Picture) ============ -->
       @if (showSignOutModal()) {
         <div class="signout-modal-backdrop" (click)="closeSignOutModal()">
           <div class="signout-modal-card" (click)="$event.stopPropagation()">
-            <!-- Brand Badge -->
+            <!-- Brand Header -->
             <div class="modal-brand-header">
               <svg viewBox="0 0 48 48" class="modal-brand-icon" aria-hidden="true">
                 <path d="M24 42S5 30.5 5 17.5A9.5 9.5 0 0 1 24 12.5 9.5 9.5 0 0 1 43 17.5C43 30.5 24 42 24 42z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
@@ -225,43 +284,45 @@ import { AuthService } from '../core/auth.service';
               <span>Lying-In Care</span>
             </div>
 
-            <!-- Red Logout Icon Box -->
-            <div class="signout-icon-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Logout Icon Badge -->
+            <div class="modal-logout-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16 17 21 12 16 7"/>
                 <line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
             </div>
 
-            <!-- Title & Notice -->
+            <!-- Title & Subtitle -->
             <h2 class="signout-title">Sign out?</h2>
             <p class="signout-desc">
               You are about to leave your midwife session. Unsaved changes on open pages may be lost.
             </p>
 
-            <!-- Midwife Account Profile Card -->
-            <div class="signout-user-card">
-              <div class="signout-user-avatar">{{ userInitials() }}</div>
-              <div class="signout-user-meta">
-                <strong class="user-card-name">{{ userName() }}</strong>
-                <span class="user-card-email">{{ userEmail() }}</span>
+            <!-- User Profile Box -->
+            <div class="modal-user-box">
+              <div class="modal-user-avatar">
+                {{ userInitials() }}
+              </div>
+              <div class="modal-user-info">
+                <span class="modal-user-name">{{ userName() || 'Licensed Midwife' }}</span>
+                <span class="modal-user-email">{{ userEmail() }}</span>
               </div>
             </div>
 
             <!-- Bullet Points -->
-            <ul class="signout-bullet-list">
+            <ul class="modal-bullet-list">
               <li>You will need your password to sign in again.</li>
               <li>Approval and attendance notifications still go to your clinic account when you return.</li>
             </ul>
 
-            <!-- Action Buttons -->
-            <div class="signout-btn-group">
+            <!-- Action Buttons (Vertical Stack) -->
+            <div class="signout-btn-stack">
               <button type="button" class="btn-stay-signed-in" (click)="closeSignOutModal()">
                 Stay signed in
               </button>
               <button type="button" class="btn-confirm-signout" (click)="confirmSignOut()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                   <polyline points="16 17 21 12 16 7"/>
                   <line x1="21" y1="12" x2="9" y2="12"/>
@@ -521,6 +582,192 @@ import { AuthService } from '../core/auth.service';
       border: 1.5px solid #ffffff;
     }
 
+    /* Notifications Dropdown (Matches Image 4) */
+    .notifications-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .icon-round-btn.notifications-btn.active {
+      background: #ede6f8;
+      color: #361759;
+      border-color: #6b4fa3;
+    }
+
+    .notifications-dropdown-card {
+      position: absolute;
+      top: 48px;
+      right: 0;
+      width: 340px;
+      background: #ffffff;
+      border: 1px solid #ebe5f5;
+      border-radius: 16px;
+      box-shadow: 0 12px 36px rgba(45, 20, 75, 0.14);
+      z-index: 1000;
+      overflow: hidden;
+      animation: notifDropIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes notifDropIn {
+      from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid #f0ecf6;
+    }
+
+    .notif-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      color: #271442;
+    }
+
+    .btn-mark-all-read {
+      background: transparent;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: #7b5cb8;
+      cursor: pointer;
+      padding: 3px 8px;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+
+    .btn-mark-all-read:hover {
+      background: #f4eefa;
+      color: #361759;
+    }
+
+    .notif-caught-up {
+      padding: 36px 20px 38px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .caught-up-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #f7f3fb;
+      color: #8c7ba8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .caught-up-icon-wrap svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .notif-caught-up h4 {
+      margin: 0 0 5px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #271442;
+    }
+
+    .notif-caught-up p {
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: #7a7189;
+      max-width: 260px;
+    }
+
+    .notif-list {
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .notif-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid #f4effa;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-align: left;
+    }
+
+    .notif-item:hover {
+      background: #faf7fd;
+    }
+
+    .notif-item.unread {
+      background: #fcfaff;
+    }
+
+    .notif-icon-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #ede6f7;
+      color: #361759;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .notif-icon-circle svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .notif-item-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .notif-item-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #271442;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .notif-item-message {
+      margin: 0;
+      font-size: 12px;
+      color: #655877;
+      line-height: 1.4;
+    }
+
+    .notif-item-time {
+      font-size: 11px;
+      color: #9a8fa8;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    .notif-unread-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #7b42bc;
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+
     /* ============ USER DROPDOWN MENU ============ */
     .user-menu-wrapper {
       position: relative;
@@ -708,30 +955,30 @@ import { AuthService } from '../core/auth.service';
       position: fixed;
       inset: 0;
       background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 99999;
-      padding: 18px;
+      padding: 16px;
     }
 
     .signout-modal-card {
       background: #ffffff;
-      border-radius: 24px;
+      border-radius: 28px;
       width: 100%;
-      max-width: 420px;
-      padding: 28px 28px 24px;
-      box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.28), 0 0 0 1px rgba(226, 232, 240, 0.8);
+      max-width: 375px;
+      padding: 24px 24px 26px;
+      box-shadow: 0 25px 50px -12px rgba(39, 20, 66, 0.28);
       display: flex;
       flex-direction: column;
-      animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       box-sizing: border-box;
     }
 
     @keyframes modalPopIn {
-      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      from { opacity: 0; transform: scale(0.96) translateY(6px); }
       to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
@@ -741,174 +988,164 @@ import { AuthService } from '../core/auth.service';
       gap: 8px;
       font-size: 14px;
       font-weight: 700;
-      color: #361759;
-      margin-bottom: 20px;
-    }
-
-    .modal-brand-icon {
-      width: 22px;
-      height: 22px;
-      color: #361759;
-    }
-
-    .signout-icon-box {
-      width: 46px;
-      height: 46px;
-      border-radius: 14px;
-      background: #ede6f8;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      color: #271442;
       margin-bottom: 16px;
     }
 
-    .signout-icon-box svg {
-      width: 24px;
-      height: 24px;
-      stroke: #361759;
-      stroke-width: 2.2;
+    .modal-brand-icon {
+      width: 20px;
+      height: 20px;
+      color: #271442;
+    }
+
+    .modal-logout-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #f1e9f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #271442;
+      margin-bottom: 16px;
+    }
+
+    .modal-logout-badge svg {
+      width: 22px;
+      height: 22px;
     }
 
     .signout-title {
       font-size: 26px;
-      font-weight: 800;
-      color: #261938;
+      font-weight: 700;
+      color: #1a0f2e;
       margin: 0 0 8px;
       letter-spacing: -0.02em;
-      line-height: 1.15;
+      line-height: 1.2;
     }
 
     .signout-desc {
       font-size: 13.5px;
-      color: #6a617c;
-      line-height: 1.5;
-      margin: 0 0 18px;
+      color: #6b637b;
+      line-height: 1.45;
+      margin: 0 0 16px;
     }
 
-    .signout-user-card {
+    .modal-user-box {
+      border: 1.5px solid #ece4f7;
+      border-radius: 16px;
+      padding: 11px 14px;
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 12px 14px;
-      border: 1.5px solid #d4c8e8;
-      border-radius: 14px;
-      background: #fbf9fd;
-      margin-bottom: 18px;
+      gap: 12px;
+      background: #faf7fd;
+      margin-bottom: 16px;
     }
 
-    .signout-user-avatar {
+    .modal-user-avatar {
       width: 42px;
       height: 42px;
       border-radius: 12px;
-      background: #361759;
+      background: #271442;
       color: #ffffff;
-      font-weight: 800;
       font-size: 15px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      letter-spacing: 0.5px;
     }
 
-    .signout-user-meta {
+    .modal-user-info {
       display: flex;
       flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
       min-width: 0;
-      line-height: 1.3;
     }
 
-    .user-card-name {
+    .modal-user-name {
       font-size: 14.5px;
       font-weight: 700;
-      color: #261938;
+      color: #1a0f2e;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .user-card-email {
+    .modal-user-email {
       font-size: 12.5px;
-      color: #6a617c;
+      color: #766d86;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .signout-bullet-list {
-      list-style: none;
-      padding: 0;
-      margin: 0 0 24px;
+    .modal-bullet-list {
+      margin: 0 0 22px 0;
+      padding-left: 18px;
+      color: #6b637b;
+      font-size: 13px;
+      line-height: 1.45;
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
 
-    .signout-bullet-list li {
-      font-size: 13px;
-      color: #6a617c;
-      line-height: 1.45;
-      position: relative;
-      padding-left: 16px;
+    .modal-bullet-list li {
+      margin: 0;
     }
 
-    .signout-bullet-list li::before {
-      content: '•';
-      position: absolute;
-      left: 2px;
-      top: -1px;
-      font-size: 16px;
-      color: #8e7ea6;
-    }
-
-    .signout-btn-group {
+    .signout-btn-stack {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      width: 100%;
     }
 
     .btn-stay-signed-in {
       width: 100%;
       height: 46px;
+      border-radius: 14px;
       background: #ffffff;
-      border: 1.5px solid #d4c8e8;
-      border-radius: 12px;
-      color: #361759;
-      font-size: 14px;
-      font-weight: 700;
+      border: 1.5px solid #dfd5ed;
+      color: #271442;
+      font-size: 14.5px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.15s ease;
     }
 
     .btn-stay-signed-in:hover {
-      background: #fbf9fd;
-      border-color: #361759;
+      background: #f7f3fb;
+      border-color: #cfbfdf;
     }
 
     .btn-confirm-signout {
       width: 100%;
       height: 46px;
-      background: #361759;
+      border-radius: 14px;
+      background: #271442;
       border: none;
-      border-radius: 12px;
       color: #ffffff;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
+      font-size: 14.5px;
+      font-weight: 600;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      cursor: pointer;
       transition: all 0.15s ease;
-      box-shadow: 0 4px 14px rgba(54, 23, 89, 0.28);
     }
 
     .btn-confirm-signout svg {
-      width: 17px;
-      height: 17px;
+      width: 18px;
+      height: 18px;
     }
 
     .btn-confirm-signout:hover {
-      background: #4a2179;
+      background: #3b1e63;
       transform: translateY(-1px);
     }
   `,
@@ -916,22 +1153,64 @@ import { AuthService } from '../core/auth.service';
 export class MidwifeLayout implements OnInit {
   auth = inject(AuthService);
   private router = inject(Router);
+  private notifSvc = inject(NotificationsService);
 
   readonly showSignOutModal = signal(false);
   readonly userMenuOpen = signal(false);
   readonly isDarkMode = signal(false);
+  readonly notificationsOpen = signal(false);
+
+  readonly notifications = this.notifSvc.midwifeNotifications;
+  readonly unreadCount = this.notifSvc.midwifeUnreadCount;
+
+  toggleNotifications(): void {
+    const next = !this.notificationsOpen();
+    this.notificationsOpen.set(next);
+    if (next) {
+      this.userMenuOpen.set(false);
+    }
+  }
+
+  markAllRead(): void {
+    this.notifSvc.markAllMidwifeRead();
+  }
+
+  onNotificationClick(n: { id: string; route?: string }): void {
+    this.notifSvc.markMidwifeItemRead(n.id);
+    this.notificationsOpen.set(false);
+    if (n.route) {
+      this.router.navigateByUrl(n.route);
+    }
+  }
+
+  @HostListener('document:click')
+  onDocClick(): void {
+    this.notificationsOpen.set(false);
+    this.userMenuOpen.set(false);
+  }
 
   readonly userInitials = computed(() => {
-    return this.auth.userInitials() || 'MW';
+    const email = this.auth.user()?.email?.toLowerCase() || '';
+    if (email === 'midwife@gmail.com' || email.includes('midwife')) return 'MI';
+    const initials = this.auth.userInitials();
+    if (initials && initials !== 'A' && initials !== 'AD') return initials;
+    return 'MI';
   });
 
   readonly userEmail = computed(() => {
-    return this.auth.user()?.email || 'midwife@lyingincare.ph';
+    return this.auth.user()?.email || 'midwife@gmail.com';
   });
 
   readonly userName = computed(() => {
+    const email = this.auth.user()?.email?.toLowerCase() || '';
+    if (email === 'midwife@gmail.com' || email === 'midwife@lyingincare.ph') {
+      return 'Licensed Midwife';
+    }
+    const role = this.auth.role();
     const name = this.auth.userFullName();
-    if (!name || name === 'Midwife') return 'Licensed Midwife';
+    if (role === 'admin' || !name || name.toLowerCase() === 'admin' || name === 'Midwife') {
+      return 'Licensed Midwife';
+    }
     if (name.toLowerCase().startsWith('midwife')) return name;
     return `Midwife ${name}`;
   });

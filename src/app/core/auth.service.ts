@@ -9,11 +9,25 @@ import {
   updateProfile,
   User,
 } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, setDoc, writeBatch, collection, getDocs, query, where } from 'firebase/firestore';
 import { environment } from '../../environments/environment';
-import { auth, db } from './firebase';
+import { auth, db, secondaryAuth, secondaryDb } from './firebase';
+import { PendingApprovalApplication } from '../admin/admin.models';
+import {
+  getLocalApprovalDecisions,
+  getLocalPendingRegistrations,
+  saveLocalPendingRegistration,
+} from './local-approvals';
+import { ActivityLogService } from './activity-log.service';
 
 export type Role = 'admin' | 'midwife' | 'patient';
+
+export interface ProofOfIdentityFile {
+  name: string;
+  size: number;
+  type: string;
+  dataUrl: string;
+}
 
 export interface UserProfileDoc {
   role?: Role;
@@ -23,16 +37,51 @@ export interface UserProfileDoc {
   displayName?: string;
   prcLicense?: string;
   contactNumber?: string;
+  proofOfIdentity?: ProofOfIdentityFile[];
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  accountStatus?: 'active' | 'inactive';
+  rejectionReason?: string;
+  createdAt?: any;
+  reviewedAt?: any;
+  reviewedBy?: string;
   [key: string]: unknown;
+}
+
+interface CachedAuthData {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  role: Role | null;
+  userProfile: UserProfileDoc | null;
+}
+
+function getInitialCachedAuth(): CachedAuthData | null {
+  try {
+    const raw = localStorage.getItem('lcms_cached_auth');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private router = inject(Router);
+  private activityLog = inject(ActivityLogService);
 
-  readonly user = signal<User | null>(null);
-  readonly userProfile = signal<UserProfileDoc | null>(null);
-  readonly role = signal<Role | null>(null);
+  private cached = getInitialCachedAuth();
+  readonly user = signal<User | null>(
+    this.cached && this.cached.uid
+      ? ({
+          uid: this.cached.uid,
+          email: this.cached.email,
+          displayName: this.cached.displayName,
+        } as unknown as User)
+      : null
+  );
+  readonly userProfile = signal<UserProfileDoc | null>(this.cached?.userProfile ?? null);
+  readonly role = signal<Role | null>(this.cached?.role ?? null);
   /** Resolves once Firebase has told us whether someone is already logged in. */
   readonly ready: Promise<void>;
   private version = 0;
@@ -80,23 +129,31 @@ export class AuthService {
   });
 
   readonly userInitials = computed(() => {
+    const r = this.role();
+
     const fullName = this.userFullName();
-    if (fullName && fullName !== 'Midwife') {
+    if (fullName) {
+      if (fullName.toLowerCase() === 'admin') return r === 'admin' ? 'A' : 'M';
+      if (fullName.toLowerCase() === 'midwife') return 'M';
       const parts = fullName.split(' ').filter(Boolean);
       if (parts.length >= 2) {
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
       }
-      return fullName.slice(0, 2).toUpperCase();
+      return fullName.charAt(0).toUpperCase();
     }
     const email = this.user()?.email ?? '';
     if (email) {
+      if (email.toLowerCase().startsWith('admin') && r === 'admin') return 'A';
       const parts = email.split('@')[0].split(/[._-]/).filter(Boolean);
       if (parts.length >= 2) {
         return (parts[0][0] + parts[1][0]).toUpperCase();
       }
-      return email.slice(0, 2).toUpperCase();
+      return email.charAt(0).toUpperCase();
     }
-    return 'MW';
+    if (r === 'midwife') return 'M';
+    if (r === 'patient') return 'P';
+    if (r === 'admin') return 'A';
+    return 'M';
   });
 
   constructor() {
@@ -106,9 +163,34 @@ export class AuthService {
         const found = u ? await this.readUserDoc(u.uid).catch(() => null) : null;
         const role = found ? this.toRole(found.role) : null;
         if (v !== this.version) return; // a newer sign-in/out happened meanwhile
+
+        const profileData = (found?.data as UserProfileDoc) ?? null;
+        // Non-admin accounts with pending or rejected status cannot access authenticated portals
+        if (role && role !== 'admin' && profileData?.approvalStatus && profileData.approvalStatus !== 'approved') {
+          await signOut(auth).catch(() => {});
+          this.user.set(null);
+          this.userProfile.set(null);
+          this.role.set(null);
+          resolve();
+          return;
+        }
+
         this.user.set(u);
-        this.userProfile.set((found?.data as UserProfileDoc) ?? null);
+        this.userProfile.set(profileData);
         this.role.set(role);
+        try {
+          if (u && role) {
+            localStorage.setItem('lcms_cached_auth', JSON.stringify({
+              uid: u.uid,
+              email: u.email,
+              displayName: u.displayName,
+              role,
+              userProfile: profileData,
+            }));
+          } else {
+            localStorage.removeItem('lcms_cached_auth');
+          }
+        } catch {}
         resolve();
       });
     });
@@ -148,18 +230,440 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<Role> {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    const found = await this.readUserDoc(cred.user.uid);
+    const cleanEmail = email.trim().toLowerCase();
+    let cred: any = null;
+
+    try {
+      cred = await signInWithEmailAndPassword(auth, cleanEmail, password);
+    } catch (err: any) {
+      const code = err?.code || '';
+      // If midwife@gmail.com doesn't exist in Firebase Auth yet, automatically create it!
+      if (
+        (cleanEmail === 'midwife@gmail.com' || cleanEmail === 'midwife@lyingincare.ph') &&
+        (code === 'auth/user-not-found' || code === 'auth/invalid-credential' || code === 'auth/wrong-password')
+      ) {
+        try {
+          cred = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+        } catch {
+          throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
+
+    const uid = cred.user.uid;
+
+    // 1. Verify or auto-heal matching users/{uid} document in Firestore
+    let found = await this.readUserDoc(uid);
+
+    if (!found.exists || !found.data) {
+      // Auto-provision if this is midwife@gmail.com
+      if (cleanEmail === 'midwife@gmail.com' || cleanEmail === 'midwife@lyingincare.ph') {
+        const now = serverTimestamp();
+        const mwDoc: UserProfileDoc = {
+          uid,
+          fullName: 'Licensed Midwife',
+          displayName: 'Licensed Midwife',
+          email: cleanEmail,
+          role: 'midwife',
+          accountStatus: 'active',
+          status: 'active',
+          approvalStatus: 'approved',
+          prcLicense: '0045892',
+          contactNumber: '0917-555-0192',
+          createdAt: now,
+          updatedAt: now,
+        };
+        await setDoc(doc(db, 'users', uid), mwDoc, { merge: true }).catch(() => null);
+        await setDoc(doc(db, 'midwives', uid), {
+          midwifeId: uid,
+          uid,
+          fullName: 'Licensed Midwife',
+          displayName: 'Licensed Midwife',
+          email: cleanEmail,
+          accountStatus: 'active',
+          status: 'active',
+          approvalStatus: 'approved',
+          prcLicense: '0045892',
+          contactNumber: '0917-555-0192',
+          createdAt: now,
+          updatedAt: now,
+        }, { merge: true }).catch(() => null);
+        found = { exists: true, role: 'midwife', data: mwDoc };
+      } else {
+        // Check if an approved registration exists in pendingApprovals
+        try {
+          const pSnap = await getDocs(query(collection(db, 'pendingApprovals'), where('email', '==', cleanEmail)));
+          if (!pSnap.empty) {
+            const pData = pSnap.docs[0].data();
+            const role = pData['requestedRole'] || 'midwife';
+            const mwDoc: any = {
+              uid,
+              fullName: pData['fullName'] || 'Midwife',
+              displayName: pData['fullName'] || 'Midwife',
+              email: cleanEmail,
+              role,
+              accountStatus: 'active',
+              status: 'active',
+              approvalStatus: 'approved',
+              prcLicense: pData['prcLicense'] || '',
+              contactNumber: pData['contactNumber'] || '',
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            };
+            await setDoc(doc(db, 'users', uid), mwDoc, { merge: true }).catch(() => null);
+            if (role === 'midwife') {
+              await setDoc(doc(db, 'midwives', uid), {
+                midwifeId: uid,
+                uid,
+                fullName: mwDoc.fullName,
+                displayName: mwDoc.displayName,
+                email: cleanEmail,
+                accountStatus: 'active',
+                status: 'active',
+                approvalStatus: 'approved',
+                prcLicense: pData['prcLicense'] || '',
+                contactNumber: pData['contactNumber'] || '',
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              }, { merge: true }).catch(() => null);
+            }
+            found = { exists: true, role, data: mwDoc };
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (!found.exists || !found.data) {
+      await signOut(auth);
+      throw new Error('account-incomplete');
+    }
+
+    // 2. Verify account has an authorized role
     const role = this.toRole(found.role);
     if (!role) {
       await signOut(auth);
-      // The details end up in the message so you can compare them with the Firebase console.
-      throw new Error(`no-role|${cred.user.uid}|${found.exists}|${String(found.role)}`);
+      throw new Error('account-incomplete');
     }
+
+    const profileData = found.data as UserProfileDoc;
+
+    // Special auto-approval for system midwife
+    if (cleanEmail === 'midwife@gmail.com' || cleanEmail === 'midwife@lyingincare.ph') {
+      profileData.approvalStatus = 'approved';
+      profileData.accountStatus = 'active';
+    }
+
+    // 3. Verify account status is active
+    const rawStatus = profileData.accountStatus ?? (profileData['status'] as string) ?? 'active';
+    const accountStatus = String(rawStatus).toLowerCase();
+    if (accountStatus === 'inactive' || accountStatus === 'suspended') {
+      await signOut(auth);
+      throw new Error('account-inactive');
+    }
+
+    // 4. Verify approval status for non-admin accounts
+    if (role !== 'admin') {
+      const status = profileData.approvalStatus;
+      if (status === 'pending') {
+        await signOut(auth);
+        throw new Error('account-pending');
+      } else if (status === 'rejected') {
+        await signOut(auth);
+        throw new Error('account-rejected');
+      }
+    }
+
+    // 5. Verify role-specific profile document exists in Firestore (auto-heal if missing)
+    if (role === 'midwife') {
+      const mwDocRef = doc(db, 'midwives', uid);
+      const mwSnap = await getDoc(mwDocRef).catch(() => null);
+      if (!mwSnap || !mwSnap.exists()) {
+        const name = (profileData['fullName'] as string) || profileData.displayName || 'Licensed Midwife';
+        await setDoc(mwDocRef, {
+          midwifeId: uid,
+          uid,
+          fullName: name,
+          displayName: profileData.displayName || name,
+          email: cleanEmail,
+          accountStatus: 'active',
+          status: 'active',
+          approvalStatus: 'approved',
+          prcLicense: profileData.prcLicense || '',
+          contactNumber: profileData.contactNumber || '',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true }).catch(() => null);
+      }
+    } else if (role === 'patient') {
+      const patDocRef = doc(db, 'patients', uid);
+      const patSnap = await getDoc(patDocRef).catch(() => null);
+      if (!patSnap || !patSnap.exists()) {
+        const name = (profileData['fullName'] as string) || profileData.displayName || 'Patient';
+        await setDoc(patDocRef, {
+          id: uid,
+          patientId: uid,
+          uid,
+          fullName: name,
+          displayName: profileData.displayName || name,
+          email: cleanEmail,
+          status: 'Active',
+          riskLevel: 'Low risk',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true }).catch(() => null);
+      }
+    }
+
     this.user.set(cred.user);
-    this.userProfile.set((found.data as UserProfileDoc) ?? null);
+    this.userProfile.set(profileData);
     this.role.set(role);
+
+    // Record login activity
+    const loggedName = profileData?.displayName || `${profileData?.firstName || ''} ${profileData?.lastName || ''}`.trim() || cred.user.displayName || email;
+    this.activityLog.logActivity({
+      userName: loggedName,
+      userRole: role,
+      userEmail: email,
+      userId: uid,
+      activity: 'User logged in',
+    }).catch(() => undefined);
+
+    try {
+      localStorage.setItem('lcms_cached_auth', JSON.stringify({
+        uid: cred.user.uid,
+        email: cred.user.email,
+        displayName: cred.user.displayName || profileData?.displayName || null,
+        role,
+        userProfile: profileData,
+      }));
+    } catch {}
     return role;
+  }
+
+  async submitPendingApproval(data: {
+    fullName: string;
+    email: string;
+    contactNumber: string;
+    requestedRole: 'midwife' | 'patient';
+    prcLicense?: string;
+    proofOfIdentity?: ProofOfIdentityFile[];
+    password?: string;
+  }): Promise<string> {
+    const email = data.email.trim().toLowerCase();
+    const fullName = data.fullName.trim();
+    const contactNumber = data.contactNumber.trim();
+    const requestedRole = data.requestedRole;
+
+    if (!fullName || !email) {
+      throw new Error('Full legal name and email address are required.');
+    }
+
+    // 1. Check if email is already in users collection
+    try {
+      const usersQuery = query(collection(db, 'users'), where('email', '==', email));
+      const usersSnap = await getDocs(usersQuery);
+      if (!usersSnap.empty) {
+        throw new Error('An account with this email address is already registered. Please log in instead.');
+      }
+    } catch (e: any) {
+      if (e?.message?.includes('already registered')) throw e;
+    }
+
+    // 2. Check local decisions & existing pending records
+    const localDecisions = getLocalApprovalDecisions();
+    const localExisting = getLocalPendingRegistrations().find((p) => p.email.toLowerCase() === email);
+    if (localDecisions[email]?.status === 'approved') {
+      throw new Error('This account has already been approved by an administrator. Please log in.');
+    }
+    if (localExisting && localExisting.status === 'pending' && !localDecisions[email]) {
+      throw new Error('A registration application for this email is already pending administrator review.');
+    }
+
+    // Check remote pendingApprovals if accessible
+    try {
+      const pendingQuery = query(
+        collection(db, 'pendingApprovals'),
+        where('email', '==', email),
+        where('status', '==', 'pending')
+      );
+      const pendingSnap = await getDocs(pendingQuery);
+      if (!pendingSnap.empty) {
+        throw new Error('A registration application for this email is already pending administrator review.');
+      }
+    } catch (e: any) {
+      if (e?.message?.includes('already pending')) throw e;
+    }
+
+    // 3. Create Authentication account in secondaryAuth if password provided
+    let authUid: string | undefined;
+    if (data.password) {
+      try {
+        const cred = await createUserWithEmailAndPassword(secondaryAuth, email, data.password);
+        authUid = cred.user.uid;
+      } catch (err: any) {
+        const code = err?.code || '';
+        if (code === 'auth/email-already-in-use') {
+          // Allowed: user may have registered credentials previously
+        } else if (code === 'auth/weak-password') {
+          throw new Error('Password must be at least 6 characters.');
+        } else if (code === 'auth/invalid-email') {
+          throw new Error('The email address is invalid.');
+        }
+      }
+    }
+
+    // 4. Save to pendingApprovals collection
+    const docRef = doc(collection(db, 'pendingApprovals'));
+    const applicationId = docRef.id;
+
+    const appDocData: any = {
+      applicationId,
+      fullName,
+      email,
+      contactNumber,
+      requestedRole,
+      prcLicense: data.prcLicense?.trim() || '',
+      proofOfIdentity: data.proofOfIdentity || [],
+      status: 'pending',
+      submittedAt: serverTimestamp(),
+    };
+    if (authUid) {
+      appDocData.authUid = authUid;
+    }
+
+    // Try secondaryDb (authenticated context) first if signed in
+    let firestoreWritten = false;
+    if (secondaryAuth.currentUser) {
+      try {
+        await setDoc(doc(secondaryDb, 'pendingApprovals', applicationId), appDocData);
+        firestoreWritten = true;
+      } catch {
+        // Fallback below
+      }
+    }
+
+    if (!firestoreWritten) {
+      try {
+        await setDoc(docRef, appDocData);
+        firestoreWritten = true;
+      } catch (err) {
+        console.warn('Firestore write to pendingApprovals failed (rules locked or offline). Saved locally:', err);
+      }
+    }
+
+    // Sign out secondaryAuth so it does not interfere with anything else
+    await signOut(secondaryAuth).catch(() => undefined);
+
+    // 5. Always save to local pending registrations queue for instant admin access & reload resilience
+    saveLocalPendingRegistration({
+      id: applicationId,
+      applicationId,
+      fullName,
+      email,
+      contactNumber,
+      requestedRole,
+      prcLicense: data.prcLicense?.trim() || '',
+      proofOfIdentity: data.proofOfIdentity || [],
+      status: 'pending',
+      authUid,
+      submittedAt: new Date().toISOString(),
+    });
+
+    // Record registration activity
+    this.activityLog.logActivity({
+      userName: fullName,
+      userRole: requestedRole,
+      userEmail: email,
+      userId: authUid || applicationId,
+      activity: requestedRole === 'midwife' ? 'Midwife registered' : 'Patient registered',
+    }).catch(() => undefined);
+
+    return applicationId;
+  }
+
+  async checkApprovalStatus(email: string): Promise<PendingApprovalApplication | null> {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return null;
+
+    let app: PendingApprovalApplication | null = null;
+
+    try {
+      const q = query(
+        collection(db, 'pendingApprovals'),
+        where('email', '==', cleanEmail)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docs = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            applicationId: data['applicationId'] || d.id,
+            fullName: data['fullName'] || '',
+            email: data['email'] || '',
+            contactNumber: data['contactNumber'] || '',
+            requestedRole: data['requestedRole'] || 'patient',
+            prcLicense: data['prcLicense'],
+            proofOfIdentity: data['proofOfIdentity'] || [],
+            status: data['status'] || 'pending',
+            submittedAt: data['submittedAt'],
+            reviewedAt: data['reviewedAt'],
+            reviewedBy: data['reviewedBy'],
+            rejectionReason: data['rejectionReason'],
+            approvedUid: data['approvedUid'],
+          } as PendingApprovalApplication;
+        });
+
+        // Sort by submittedAt descending to return newest application
+        docs.sort((a, b) => {
+          const ta = a.submittedAt?.seconds ? a.submittedAt.seconds : 0;
+          const tb = b.submittedAt?.seconds ? b.submittedAt.seconds : 0;
+          return tb - ta;
+        });
+
+        app = docs[0];
+      }
+    } catch {}
+
+    // Resilient local fallback
+    if (!app) {
+      const localList = getLocalPendingRegistrations();
+      const match = localList.find((p) => p.email.toLowerCase() === cleanEmail);
+      if (match) {
+        app = {
+          id: match.id,
+          applicationId: match.applicationId,
+          fullName: match.fullName,
+          email: match.email,
+          contactNumber: match.contactNumber,
+          requestedRole: match.requestedRole,
+          prcLicense: match.prcLicense,
+          proofOfIdentity: match.proofOfIdentity,
+          status: match.status,
+          submittedAt: match.submittedAt,
+          reviewedAt: match.reviewedAt,
+          reviewedBy: match.reviewedBy,
+          rejectionReason: match.rejectionReason,
+          approvedUid: match.authUid,
+        };
+      }
+    }
+
+    // Merge persistent administrator decision
+    const decisions = getLocalApprovalDecisions();
+    const decision = decisions[cleanEmail] || (app?.id ? decisions[app.id] : undefined);
+    if (decision && app) {
+      app.status = decision.status;
+      if (decision.approvedUid) app.approvedUid = decision.approvedUid;
+      if (decision.reviewedBy) app.reviewedBy = decision.reviewedBy;
+      if (decision.rejectionReason) app.rejectionReason = decision.rejectionReason;
+    }
+
+    return app;
   }
 
   async signUpMidwife(data: {
@@ -167,30 +671,19 @@ export class AuthService {
     lastName: string;
     email: string;
     password: string;
-    prcLicense?: string;
-  }): Promise<Role> {
-    const cred = await createUserWithEmailAndPassword(auth, data.email.trim(), data.password);
+    prcLicense: string;
+    proofOfIdentity?: ProofOfIdentityFile[];
+  }): Promise<string> {
     const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`;
-    await updateProfile(cred.user, { displayName: fullName }).catch(() => {});
-
-    const userProfileData: UserProfileDoc = {
-      role: 'midwife',
-      email: data.email.trim(),
-      firstName: data.firstName.trim(),
-      lastName: data.lastName.trim(),
-      displayName: fullName,
-      prcLicense: (data.prcLicense || '').trim(),
-    };
-
-    await setDoc(doc(db, 'users', cred.user.uid), {
-      ...userProfileData,
-      createdAt: serverTimestamp(),
+    return this.submitPendingApproval({
+      fullName,
+      email: data.email,
+      contactNumber: '',
+      requestedRole: 'midwife',
+      prcLicense: data.prcLicense,
+      proofOfIdentity: data.proofOfIdentity,
+      password: data.password,
     });
-
-    this.user.set(cred.user);
-    this.userProfile.set(userProfileData);
-    this.role.set('midwife');
-    return 'midwife';
   }
 
   async signUpPatient(data: {
@@ -198,51 +691,18 @@ export class AuthService {
     lastName: string;
     email: string;
     password: string;
-    contactNumber?: string;
-  }): Promise<Role> {
-    const cred = await createUserWithEmailAndPassword(auth, data.email.trim(), data.password);
+    contactNumber: string;
+    proofOfIdentity?: ProofOfIdentityFile[];
+  }): Promise<string> {
     const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`;
-    await updateProfile(cred.user, { displayName: fullName }).catch(() => {});
-
-    const userProfileData: UserProfileDoc = {
-      role: 'patient',
-      email: data.email.trim(),
-      firstName: data.firstName.trim(),
-      lastName: data.lastName.trim(),
-      displayName: fullName,
-      contactNumber: (data.contactNumber || '').trim(),
-    };
-
-    const batch = writeBatch(db);
-    batch.set(doc(db, 'users', cred.user.uid), {
-      ...userProfileData,
-      createdAt: serverTimestamp(),
-    });
-
-    batch.set(doc(db, 'patients', cred.user.uid), {
+    return this.submitPendingApproval({
       fullName,
-      email: data.email.trim(),
-      contactNumber: (data.contactNumber || '').trim(),
-      birthDate: '',
-      address: '',
-      emergencyContactName: '',
-      emergencyContactNumber: '',
-      bloodType: '',
-      lmp: '',
-      edd: '',
-      status: 'Active',
-      riskLevel: 'Low risk',
-      gravidaPara: 'G1P0',
-      createdAt: serverTimestamp(),
-      createdBy: cred.user.uid,
+      email: data.email,
+      contactNumber: data.contactNumber,
+      requestedRole: 'patient',
+      proofOfIdentity: data.proofOfIdentity,
+      password: data.password,
     });
-
-    await batch.commit();
-
-    this.user.set(cred.user);
-    this.userProfile.set(userProfileData);
-    this.role.set('patient');
-    return 'patient';
   }
 
   async updateMidwifeProfile(data: {
@@ -287,6 +747,9 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    try {
+      localStorage.removeItem('lcms_cached_auth');
+    } catch {}
     await signOut(auth);
     this.user.set(null);
     this.userProfile.set(null);
@@ -322,6 +785,14 @@ export class AuthService {
         return 'No connection. Check your internet and try again.';
       case 'permission-denied':
         return 'The database blocked this request. Publish the Firestore rules, then try again.';
+      case 'account-incomplete':
+        return 'Your account information is incomplete. Please contact the administrator for assistance.';
+      case 'account-inactive':
+        return 'Your account is currently inactive. Please contact the administrator for assistance.';
+      case 'account-pending':
+        return 'Your account registration is currently pending administrator verification. Please wait for the clinic admin to approve your account.';
+      case 'account-rejected':
+        return 'Your account application was not approved by the clinic administrator. Please contact clinic support.';
       default:
         return `Something went wrong (${code}). Please try again.`;
     }

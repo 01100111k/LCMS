@@ -1710,16 +1710,11 @@ export class Statistics implements OnInit {
       const delCount = dels.filter((d) => d.deliveryDateTime?.startsWith(monthPrefix)).length;
       const postCount = posts.filter((p) => p.visitDate?.startsWith(monthPrefix)).length;
 
-      // Ensure nice display baselines for prior months if sample data is concentrated in current month
-      const fallbackPr = [14, 18, 22, 19, 25, 23, 27, 26, 24, prCount || 16, 0, 0][idx];
-      const fallbackDel = [4, 5, 7, 6, 8, 7, 9, 8, 7, delCount || 6, 0, 0][idx];
-      const fallbackPost = [5, 6, 8, 7, 9, 8, 10, 9, 8, postCount || 7, 0, 0][idx];
-
       return {
         month: m,
-        prenatal: prCount > 0 ? prCount : fallbackPr,
-        delivery: delCount > 0 ? delCount : fallbackDel,
-        postpartum: postCount > 0 ? postCount : fallbackPost,
+        prenatal: prCount,
+        delivery: delCount,
+        postpartum: postCount,
       };
     });
   });
@@ -1732,15 +1727,13 @@ export class Statistics implements OnInit {
     let macro = 0;
 
     dels.forEach((d) => {
-      const w = d.birthWeightGrams || 3150;
+      const w = d.birthWeightGrams;
+      if (!w) return;
       if (w < 2500) low++;
       else if (w >= 4000) macro++;
       else normal++;
     });
 
-    if (dels.length === 0) {
-      return { low: 1, normal: 8, macro: 0 };
-    }
     return { low, normal, macro };
   });
 

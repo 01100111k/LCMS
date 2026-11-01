@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { AuthService } from '../core/auth.service';
+import { auth } from '../core/firebase';
 import { MidwifeLayout } from './midwife-layout';
 
 @Component({
@@ -9,29 +11,6 @@ import { MidwifeLayout } from './midwife-layout';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="settings-wrap">
-      <!-- Header -->
-      <div class="settings-header-card">
-        <div class="header-left">
-          <div class="header-icon-pill">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-          </div>
-          <div>
-            <h1>Settings</h1>
-            <p class="header-sub">Manage your midwife profile and account preferences.</p>
-          </div>
-        </div>
-        <button type="button" class="btn-signout" (click)="triggerSignOut()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          <span>Sign out</span>
-        </button>
-      </div>
 
       <!-- Success Notification -->
       @if (saveSuccess()) {
@@ -109,6 +88,23 @@ import { MidwifeLayout } from './midwife-layout';
           </div>
         </div>
       </div>
+
+      <!-- 3. Account & Security Section -->
+      <div class="settings-card">
+        <h3 class="section-title">Account & Security</h3>
+        <div class="account-sec-row">
+          <div>
+            <strong>Password</strong>
+            <p class="account-sub">Send a reset link to your email address ({{ userEmail }}).</p>
+          </div>
+          <button type="button" class="btn-reset-pw" (click)="resetPassword()" [disabled]="resetEmailSent()">
+            {{ resetEmailSent() ? 'Reset Link Sent ✓' : 'Reset Password' }}
+          </button>
+        </div>
+        @if (resetMessage()) {
+          <p class="reset-feedback-msg" [class.text-error]="resetError()">{{ resetMessage() }}</p>
+        }
+      </div>
     </div>
   `,
   styles: [
@@ -119,82 +115,6 @@ import { MidwifeLayout } from './midwife-layout';
         gap: 20px;
         padding-bottom: 40px;
         color: #261938;
-      }
-
-      /* Header Card */
-      .settings-header-card {
-        background: #ffffff;
-        border: 1px solid #ebe5f5;
-        border-radius: 16px;
-        padding: 20px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        box-shadow: 0 4px 16px rgba(54, 23, 89, 0.04);
-      }
-
-      .header-left {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-      }
-
-      .header-icon-pill {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        background: #ede6f8;
-        color: #361759;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-
-      .header-icon-pill svg {
-        width: 24px;
-        height: 24px;
-      }
-
-      .settings-header-card h1 {
-        font-size: 21px;
-        font-weight: 800;
-        color: #261938;
-        margin: 0 0 2px;
-        letter-spacing: -0.02em;
-      }
-
-      .header-sub {
-        font-size: 13px;
-        color: #6a617c;
-        margin: 0;
-      }
-
-      .btn-signout {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 8px 16px;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: 700;
-        background: #ede6f8;
-        color: #361759;
-        border: 1.5px solid #d4c8e8;
-        cursor: pointer;
-        transition: all 0.15s ease;
-      }
-
-      .btn-signout:hover {
-        background: #dfd4f2;
-        border-color: #361759;
-        transform: translateY(-1px);
-      }
-
-      .btn-signout svg {
-        width: 15px;
-        height: 15px;
       }
 
       /* Success Toast */
@@ -421,6 +341,60 @@ import { MidwifeLayout } from './midwife-layout';
       input:checked + .slider:before {
         transform: translateX(18px);
       }
+
+      /* Account & Security */
+      .account-sec-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding-top: 4px;
+      }
+
+      .account-sec-row strong {
+        font-size: 13.5px;
+        color: #261938;
+      }
+
+      .account-sub {
+        font-size: 12.5px;
+        color: #7a7189;
+        margin: 4px 0 0;
+      }
+
+      .btn-reset-pw {
+        padding: 8px 16px;
+        border: 1.5px solid #d4c8e8;
+        border-radius: 9px;
+        background: #ffffff;
+        color: #361759;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .btn-reset-pw:hover:not(:disabled) {
+        background: #f7f2fc;
+        border-color: #361759;
+      }
+
+      .btn-reset-pw:disabled {
+        opacity: 0.7;
+        cursor: default;
+      }
+
+      .reset-feedback-msg {
+        margin: 10px 0 0;
+        font-size: 12.5px;
+        color: #16a34a;
+        font-weight: 600;
+      }
+
+      .reset-feedback-msg.text-error {
+        color: #dc2626;
+      }
     `,
   ],
 })
@@ -429,6 +403,9 @@ export class Settings implements OnInit {
   private layout = inject(MidwifeLayout, { optional: true });
 
   readonly saveSuccess = signal(false);
+  readonly resetEmailSent = signal(false);
+  readonly resetMessage = signal('');
+  readonly resetError = signal(false);
 
   firstName = '';
   lastName = '';
@@ -438,6 +415,24 @@ export class Settings implements OnInit {
   autoFillMidwife = true;
   highRiskAlerts = true;
 
+  async resetPassword(): Promise<void> {
+    const email = this.auth.user()?.email;
+    if (!email) {
+      this.resetError.set(true);
+      this.resetMessage.set('No email found for the current account.');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      this.resetEmailSent.set(true);
+      this.resetError.set(false);
+      this.resetMessage.set(`Password reset link has been sent to ${email}. Please check your inbox.`);
+    } catch (e) {
+      this.resetError.set(true);
+      this.resetMessage.set(`Failed to send reset link: ${(e as Error).message}`);
+    }
+  }
+
   get userEmail(): string {
     return this.auth.user()?.email || 'midwife@lyingincare.ph';
   }
@@ -446,7 +441,7 @@ export class Settings implements OnInit {
     const fullName = `${this.firstName} ${this.lastName}`.trim();
     if (fullName) return `Midwife ${fullName}`;
     const authName = this.auth.userFullName();
-    if (authName && authName !== 'Midwife') {
+    if (authName && authName !== 'Midwife' && authName.toLowerCase() !== 'admin') {
       return authName.toLowerCase().startsWith('midwife') ? authName : `Midwife ${authName}`;
     }
     return 'Licensed Midwife';
@@ -458,7 +453,8 @@ export class Settings implements OnInit {
       const last = (this.lastName || '')[0] || '';
       if (first || last) return (first + last).toUpperCase();
     }
-    return this.auth.userInitials() || 'MW';
+    const init = this.auth.userInitials();
+    return (init && init !== 'A' && init !== 'AD') ? init : 'M';
   }
 
   ngOnInit(): void {
@@ -467,7 +463,7 @@ export class Settings implements OnInit {
     if (profile?.firstName || profile?.lastName) {
       this.firstName = profile.firstName || '';
       this.lastName = profile.lastName || '';
-    } else if (fullName && fullName !== 'Midwife') {
+    } else if (fullName && fullName !== 'Midwife' && fullName.toLowerCase() !== 'admin') {
       const parts = fullName.replace(/^Midwife\s+/i, '').trim().split(' ');
       this.firstName = parts[0] || '';
       this.lastName = parts.slice(1).join(' ') || '';

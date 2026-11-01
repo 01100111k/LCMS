@@ -41,19 +41,26 @@ interface TrimesterMilestone {
         </div>
 
         <div class="header-right">
-          <div class="patient-select-box">
-            <label for="journey-pt-select">Selected Mother:</label>
-            <select
-              id="journey-pt-select"
-              [ngModel]="selectedPatientId()"
-              (ngModelChange)="onSelectPatient($event)"
-              class="patient-dropdown"
-            >
-              @for (p of patients(); track p.id) {
-                <option [value]="p.id">{{ p.fullName }} ({{ p.status || 'Active' }} · {{ p.gestationalAge || 'Care' }})</option>
-              }
-            </select>
-          </div>
+          @if (patients().length > 0) {
+            <div class="patient-select-box">
+              <label for="journey-pt-select">Selected Mother:</label>
+              <select
+                id="journey-pt-select"
+                [ngModel]="selectedPatientId()"
+                (ngModelChange)="onSelectPatient($event)"
+                class="patient-dropdown"
+              >
+                @for (p of patients(); track p.id) {
+                  <option [value]="p.id">{{ p.fullName }} ({{ p.status || 'Active' }} · {{ p.gestationalAge || 'Care' }})</option>
+                }
+              </select>
+            </div>
+          } @else {
+            <a [routerLink]="['/midwife/patients']" [queryParams]="{ register: 'true' }" class="btn-spotlight-action primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Register First Patient
+            </a>
+          }
         </div>
       </div>
 
@@ -145,8 +152,8 @@ interface TrimesterMilestone {
             </div>
             <div class="kpi-meta">
               <span class="kpi-label">Latest Blood Pressure</span>
-              <strong class="kpi-value">{{ latestBp() || '110/70' }}</strong>
-              <small class="kpi-hint tone-success">Normotensive Range</small>
+              <strong class="kpi-value">{{ latestBp() || '—' }}</strong>
+              <small class="kpi-hint tone-success">{{ latestBp() ? 'Normotensive Range' : 'No vitals logged yet' }}</small>
             </div>
           </div>
 
@@ -464,9 +471,22 @@ interface TrimesterMilestone {
 
       } @else {
         <div class="empty-selection-card">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <h3>No Patient Selected</h3>
-          <p>Please select a patient from the dropdown above to view their maternal care journey.</p>
+          <div class="empty-journey-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </div>
+          @if (patients().length === 0) {
+            <h3>No Patients in Care Journey Yet</h3>
+            <p>Your maternal care directory is empty. Register a patient to begin tracking their pregnancy journey, trimester milestones, fetal growth, and clinical visits.</p>
+            <a [routerLink]="['/midwife/patients']" [queryParams]="{ register: 'true' }" class="btn-spotlight-action primary" style="margin-top: 14px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Register First Patient</span>
+            </a>
+          } @else {
+            <h3>No Patient Selected</h3>
+            <p>Please select a patient from the dropdown above to view their maternal care journey.</p>
+          }
         </div>
       }
     </div>
@@ -1343,6 +1363,22 @@ interface TrimesterMilestone {
     .h-midwife { color: #7a7189; }
     .h-next-date { color: #361759; }
 
+    .empty-journey-icon-wrap {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #f5f0fa;
+      color: #7b4eb2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 6px;
+    }
+    .empty-journey-icon-wrap svg {
+      width: 32px;
+      height: 32px;
+    }
+
     .empty-selection-card, .loading-state-card {
       background: #ffffff;
       border: 1px dashed #d8cde9;
@@ -1433,7 +1469,7 @@ export class PregnancyJourney implements OnInit {
 
   readonly currentWeeks = computed(() => {
     const pt = this.currentPatient();
-    if (!pt) return 20;
+    if (!pt) return 0;
 
     // Check latest prenatal record
     const latestPrenatal = this.patientPrenatals()[0];
@@ -1459,11 +1495,12 @@ export class PregnancyJourney implements OnInit {
       if (passed > 0) return Math.min(42, Math.max(1, Math.floor(passed / 7)));
     }
 
-    return 24;
+    return 0;
   });
 
   readonly currentTrimesterName = computed(() => {
     const w = this.currentWeeks();
+    if (w <= 0) return 'Gestational Assessment';
     if (w <= 13) return '1st Trimester';
     if (w <= 27) return '2nd Trimester';
     return '3rd Trimester';
@@ -1471,6 +1508,7 @@ export class PregnancyJourney implements OnInit {
 
   readonly progressPercent = computed(() => {
     const w = this.currentWeeks();
+    if (w <= 0) return 0;
     const pct = Math.round((w / 40) * 100);
     return Math.min(100, Math.max(0, pct));
   });
@@ -1489,6 +1527,15 @@ export class PregnancyJourney implements OnInit {
 
   readonly babySize = computed(() => {
     const w = this.currentWeeks();
+    if (w <= 0) {
+      return {
+        name: 'Awaiting Assessment',
+        icon: '🌱',
+        desc: 'Gestational age and fetal growth milestones will display after logging the patient’s LMP or first prenatal checkup.',
+        sizeCm: '—',
+        weightG: '—',
+      };
+    }
     if (w <= 8) {
       return {
         name: 'Raspberry',

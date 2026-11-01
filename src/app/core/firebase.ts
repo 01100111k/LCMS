@@ -7,6 +7,8 @@ export const app = initializeApp(environment.firebase);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// A second app instance used ONLY to create patient logins,
-// so the midwife stays signed in on the main one.
-export const secondaryAuth = getAuth(initializeApp(environment.firebase, 'secondary'));
+// A second app instance used ONLY to create patient/midwife logins,
+// so the administrator/midwife stays signed in on the main one.
+export const secondaryApp = initializeApp(environment.firebase, 'secondary');
+export const secondaryAuth = getAuth(secondaryApp);
+export const secondaryDb = getFirestore(secondaryApp);

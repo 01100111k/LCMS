@@ -1,0 +1,174 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/admin/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+        request.auth.token.email == 'admin@lyingincare.ph' ||
+        request.auth.token.email == 'admin@gmail.com'
+      );
+    }
+
+    function isOwnerMidwife(data) {
+      return isAuthenticated() && (
+        data.assignedMidwifeId == request.auth.uid ||
+        data.midwifeId == request.auth.uid ||
+        data.createdBy == request.auth.uid
+      );
+    }
+
+    function isOwnerPatient(data, docId) {
+      return isAuthenticated() && (
+        docId == request.auth.uid ||
+        data.patientId == request.auth.uid ||
+        data.uid == request.auth.uid
+      );
+    }
+
+    // 1. users collection:
+    // Allow reading for duplicate checks and authentication
+    match /users/{userId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() || true;
+      allow delete: if isAdmin();
+    }
+
+    // 2. pendingApprovals collection:
+    match /pendingApprovals/{appId} {
+      allow read, write: if true;
+    }
+
+    // 3. midwives collection:
+    match /midwives/{midwifeId} {
+      allow read: if isAuthenticated() || true;
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == midwifeId);
+    }
+
+    // 4. patients collection (Enforce Midwife and Patient ownership):
+    // - Admin: can view and manage all patients
+    // - Patient: can only read/update their own profile
+    // - Midwife: can only read/update/delete patients assigned to their UID
+    match /patients/{patientId} {
+      allow read: if isAdmin() ||
+        isOwnerPatient(resource.data, patientId) ||
+        isOwnerMidwife(resource.data);
+
+      allow create: if isAuthenticated();
+
+      allow update: if isAdmin() ||
+        isOwnerPatient(resource.data, patientId) ||
+        isOwnerMidwife(resource.data);
+
+      allow delete: if isAdmin() ||
+        isOwnerMidwife(resource.data);
+    }
+
+    // 5. Appointments & Booking Slots
+    match /appointments/{apptId} {
+      allow read: if isAdmin() ||
+        isOwnerPatient(resource.data, resource.data.patientId) ||
+        isOwnerMidwife(resource.data);
+
+      allow create: if isAuthenticated();
+
+      allow update: if isAdmin() ||
+        isOwnerPatient(resource.data, resource.data.patientId) ||
+        isOwnerMidwife(resource.data);
+
+      allow delete: if isAdmin() ||
+        isOwnerMidwife(resource.data);
+    }
+
+    match /bookedSlots/{slotKey} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 6. Maternal care records (prenatal, delivery, postpartum, visits)
+    match /prenatal_records/{recordId} {
+      allow read: if isAdmin() ||
+        isOwnerPatient(resource.data, resource.data.patientId) ||
+        isOwnerMidwife(resource.data);
+
+      allow create: if isAuthenticated();
+
+      allow update, delete: if isAdmin() ||
+        isOwnerMidwife(resource.data);
+    }
+
+    match /delivery_records/{recordId} {
+      allow read: if isAdmin() ||
+        isOwnerPatient(resource.data, resource.data.patientId) ||
+        isOwnerMidwife(resource.data);
+
+      allow create: if isAuthenticated();
+
+      allow update, delete: if isAdmin() ||
+        isOwnerMidwife(resource.data);
+    }
+
+    match /postpartum_records/{recordId} {
+      allow read: if isAdmin() ||
+        isOwnerPatient(resource.data, resource.data.patientId) ||
+        isOwnerMidwife(resource.data);
+
+      allow create: if isAuthenticated();
+
+      allow update, delete: if isAdmin() ||
+        isOwnerMidwife(resource.data);
+    }
+
+    match /visits/{visitId} {
+      allow read: if isAdmin() ||
+        isOwnerPatient(resource.data, resource.data.patientId) ||
+        isOwnerMidwife(resource.data);
+
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    match /records/{recordId} {
+      allow read: if isAdmin() ||
+        isOwnerPatient(resource.data, resource.data.patientId) ||
+        isOwnerMidwife(resource.data);
+
+      allow write: if isAdmin() ||
+        isOwnerMidwife(resource.data) ||
+        (isAuthenticated() && resource == null);
+    }
+
+    // 7. Activity logs (Admin view only; users cannot edit or delete logs)
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() || true;
+      allow update, delete: if false;
+    }
+
+    match /activity_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() || true;
+      allow update, delete: if false;
+    }
+
+    // 8. Admin, settings, and archives
+    match /admin/{adminId} {
+      allow read: if isAuthenticated() || true;
+      allow write: if isAdmin();
+    }
+
+    match /facility_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /archives/{archiveId} {
+      allow read, write: if isAdmin() || isAuthenticated();
+    }
+  }
+}

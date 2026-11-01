@@ -119,9 +119,9 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   readonly contact = {
-    email: 'lyingincare@system.com',
-    phone: '+63 912 345 6789',
-    address: 'Lying-In Care Center, Philippines',
+    email: 'info@lyingincare.ph',
+    phone: '+63 917 882 9901',
+    address: 'National Highway, Poblacion 2, Villanueva, Misamis Oriental',
   };
 
   private navObserver?: IntersectionObserver;

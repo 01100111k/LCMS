@@ -1337,8 +1337,14 @@ export class PatientQueue implements OnInit {
       // ignore
     }
 
-    // Default to the connected example queue tickets for today
-    this.queueList.set(EXAMPLE_QUEUE_TICKETS);
+    // If demo midwife and no queue has been recorded today, load example queue tickets
+    if (this.patientsSvc.isMidwifeDemoUser()) {
+      this.queueList.set(EXAMPLE_QUEUE_TICKETS);
+      return;
+    }
+
+    // Default to empty queue for the day
+    this.queueList.set([]);
   }
 
   clearAllQueue(): void {

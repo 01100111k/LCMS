@@ -2245,6 +2245,112 @@ body.dark-mode .appt-sync-row span {
   color: #b7a8cf !important;
 }
 
+/* 6. Settings Account & Security Card (Image 6) */
+body.dark-mode .account-sec-row strong {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .account-sub {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .btn-reset-pw {
+  background: #251c37 !important;
+  border-color: #48356c !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .btn-reset-pw:hover:not(:disabled) {
+  background: #361759 !important;
+  border-color: #7c4bb9 !important;
+  color: #ffffff !important;
+}
+
+/* 7. Archive Confirmation Modal & Buttons in Dark Mode */
+body.dark-mode .btn-row-action.btn-archive {
+  background: #2a2012 !important;
+  border-color: #5c4314 !important;
+  color: #fde68a !important;
+}
+
+body.dark-mode .btn-row-action.btn-archive:hover {
+  background: #3d2b0e !important;
+  border-color: #b45309 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .modal-confirm-card {
+  background: #1e172c !important;
+  border: 1px solid #3b2d55 !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45) !important;
+}
+
+body.dark-mode .confirm-modal-header {
+  background: #281d11 !important;
+  border-bottom: 1px solid #4a3411 !important;
+}
+
+body.dark-mode .confirm-icon-box {
+  background: #3d2810 !important;
+  color: #fbbf24 !important;
+}
+
+body.dark-mode .confirm-modal-header h3 {
+  color: #fef3c7 !important;
+}
+
+body.dark-mode .confirm-modal-sub {
+  color: #fde68a !important;
+}
+
+body.dark-mode .confirm-modal-body {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .confirm-modal-body strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .confirm-record-preview {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5c !important;
+}
+
+body.dark-mode .preview-chip {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .preview-chip strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .confirm-modal-footer {
+  background: #181124 !important;
+  border-top: 1px solid #312147 !important;
+}
+
+body.dark-mode .btn-confirm-cancel {
+  background: #251c37 !important;
+  border: 1px solid #48356c !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .btn-confirm-cancel:hover:not(:disabled) {
+  background: #361759 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-confirm-archive {
+  background: #d97706 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4) !important;
+}
+
+body.dark-mode .btn-confirm-archive:hover:not(:disabled) {
+  background: #b45309 !important;
+}
+
+
 
 
 

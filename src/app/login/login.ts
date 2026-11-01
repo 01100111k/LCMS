@@ -11,12 +11,14 @@ import {
 } from '@angular/core';
 import {
   AbstractControl,
+  FormsModule,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../core/auth.service';
+import { AuthService, ProofOfIdentityFile } from '../core/auth.service';
+import { PendingApprovalApplication } from '../admin/admin.models';
 
 /** All supported authentication views */
 export type AuthView =
@@ -24,11 +26,13 @@ export type AuthView =
   | 'role-select'
   | 'signup-midwife'
   | 'signup-patient'
+  | 'pending-approval'
+  | 'check-status'
   | 'start';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -52,6 +56,21 @@ export class Login implements OnInit, OnDestroy {
   readonly showSignupPassword = signal(false);
   readonly showConfirmPassword = signal(false);
 
+  // File Upload State for Proof of Identity
+  readonly attachedProofFiles = signal<ProofOfIdentityFile[]>([]);
+  readonly fileError = signal('');
+
+  // Pending Approval confirmation state
+  readonly pendingEmail = signal('');
+  readonly pendingRole = signal<'midwife' | 'patient'>('midwife');
+  readonly pendingName = signal('');
+
+  // Status check state
+  readonly statusEmail = signal('');
+  readonly statusResult = signal<PendingApprovalApplication | null>(null);
+  readonly statusSearched = signal(false);
+  readonly checkingStatus = signal(false);
+
   // Login Form
   readonly loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -63,7 +82,7 @@ export class Login implements OnInit, OnDestroy {
     firstName: ['', [Validators.required, Validators.minLength(2)]],
     lastName: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    roleExtra: [''], // PRC license (midwife) or Contact Number (patient)
+    roleExtra: ['', [Validators.required]], // PRC license (midwife) or Contact Number (patient)
     password: ['', [Validators.required, Validators.minLength(8)]],
     confirmPassword: ['', [Validators.required]],
   });
@@ -85,6 +104,7 @@ export class Login implements OnInit, OnDestroy {
     this.view.set(view);
     this.error.set('');
     this.info.set('');
+    this.fileError.set('');
     this.showLoginPassword.set(false);
     this.showSignupPassword.set(false);
     this.showConfirmPassword.set(false);
@@ -101,6 +121,61 @@ export class Login implements OnInit, OnDestroy {
 
   bad(c: AbstractControl): boolean {
     return c.touched && c.invalid;
+  }
+
+  async onFilesSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    this.fileError.set('');
+
+    const current = this.attachedProofFiles();
+    const newFiles = Array.from(input.files);
+
+    if (current.length + newFiles.length > 2) {
+      this.fileError.set('You can upload a maximum of 2 files.');
+      input.value = '';
+      return;
+    }
+
+    for (const file of newFiles) {
+      // Validate file size: max 400 KB (409,600 bytes)
+      if (file.size > 400 * 1024) {
+        this.fileError.set(`"${file.name}" exceeds 400 KB (${Math.round(file.size / 1024)} KB). Please choose a smaller photo or PDF.`);
+        input.value = '';
+        return;
+      }
+
+      // Read file as base64 data URL
+      try {
+        const dataUrl = await this.readFileAsDataUrl(file);
+        this.attachedProofFiles.update((prev) => [
+          ...prev,
+          {
+            name: file.name,
+            size: Math.round(file.size / 1024),
+            type: file.type || 'image/jpeg',
+            dataUrl,
+          },
+        ]);
+      } catch {
+        this.fileError.set(`Could not read file "${file.name}".`);
+      }
+    }
+    input.value = '';
+  }
+
+  removeFile(index: number): void {
+    this.attachedProofFiles.update((files) => files.filter((_, i) => i !== index));
+    this.fileError.set('');
+  }
+
+  private readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
   }
 
   async submitLogin(): Promise<void> {
@@ -130,6 +205,7 @@ export class Login implements OnInit, OnDestroy {
   async submitSignup(targetRole: 'midwife' | 'patient'): Promise<void> {
     this.error.set('');
     this.info.set('');
+    this.fileError.set('');
 
     if (this.signupForm.invalid) {
       this.signupForm.markAllAsTouched();
@@ -138,6 +214,17 @@ export class Login implements OnInit, OnDestroy {
     }
 
     const val = this.signupForm.getRawValue();
+
+    if (targetRole === 'midwife' && !val.roleExtra.trim()) {
+      this.error.set('Please enter your PRC License / Midwife ID.');
+      return;
+    }
+
+    if (targetRole === 'patient' && !val.roleExtra.trim()) {
+      this.error.set('Please enter your contact number.');
+      return;
+    }
+
     if (val.password !== val.confirmPassword) {
       this.signupForm.controls.confirmPassword.setErrors({ mismatch: true });
       this.error.set('Passwords do not match. Please re-enter.');
@@ -146,6 +233,11 @@ export class Login implements OnInit, OnDestroy {
 
     if (val.password.length < 8) {
       this.error.set('Password must be at least 8 characters long.');
+      return;
+    }
+
+    if (this.attachedProofFiles().length === 0) {
+      this.fileError.set('Proof of identity is required. Please upload at least 1 ID photo (PRC or valid Gov ID).');
       return;
     }
 
@@ -158,9 +250,8 @@ export class Login implements OnInit, OnDestroy {
           email: val.email,
           password: val.password,
           prcLicense: val.roleExtra,
+          proofOfIdentity: this.attachedProofFiles(),
         });
-        this.close();
-        await this.router.navigateByUrl('/midwife');
       } else {
         await this.auth.signUpPatient({
           firstName: val.firstName,
@@ -168,10 +259,20 @@ export class Login implements OnInit, OnDestroy {
           email: val.email,
           password: val.password,
           contactNumber: val.roleExtra,
+          proofOfIdentity: this.attachedProofFiles(),
         });
-        this.close();
-        await this.router.navigateByUrl('/patient');
       }
+
+      this.pendingEmail.set(val.email.trim());
+      this.pendingRole.set(targetRole);
+      this.pendingName.set(`${val.firstName.trim()} ${val.lastName.trim()}`);
+
+      // Reset form and files
+      this.signupForm.reset();
+      this.attachedProofFiles.set([]);
+
+      // Transition to pending approval state
+      this.go('pending-approval');
     } catch (e) {
       this.error.set(this.auth.errorMessage(e));
     } finally {
@@ -194,6 +295,52 @@ export class Login implements OnInit, OnDestroy {
       /* prevent email enumeration */
     }
     this.info.set('If that email has an account, a link to set a new password is on its way.');
+  }
+
+  async checkStatus(): Promise<void> {
+    this.error.set('');
+    this.statusResult.set(null);
+    this.statusSearched.set(false);
+    const email = this.statusEmail().trim();
+    if (!email) {
+      this.error.set('Please enter your registration email address.');
+      return;
+    }
+    this.checkingStatus.set(true);
+    try {
+      const res = await this.auth.checkApprovalStatus(email);
+      this.statusResult.set(res);
+      this.statusSearched.set(true);
+    } catch (e) {
+      this.error.set(this.auth.errorMessage(e));
+    } finally {
+      this.checkingStatus.set(false);
+    }
+  }
+
+  formatAppDate(dateVal: any): string {
+    if (!dateVal) return 'Recently';
+    try {
+      let d: Date;
+      if (typeof dateVal?.toDate === 'function') {
+        d = dateVal.toDate();
+      } else if (dateVal instanceof Date) {
+        d = dateVal;
+      } else if (dateVal.seconds) {
+        d = new Date(dateVal.seconds * 1000);
+      } else {
+        d = new Date(dateVal);
+      }
+      return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    } catch {
+      return 'Recently';
+    }
   }
 
   // Escape closes window; Tab loops inside

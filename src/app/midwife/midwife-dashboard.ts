@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { Appointment, AppointmentsService, formatTime, todayIso } from '../core/appointments.service';
 import { AuthService } from '../core/auth.service';
 import { Patient, PatientsService } from '../core/patients.service';
-import { EXAMPLE_APPOINTMENTS, EXAMPLE_DASHBOARD_FOLLOWUPS } from '../core/example-data';
+import { EXAMPLE_DASHBOARD_FOLLOWUPS } from '../core/example-data';
 
 interface FollowUp {
   patientName: string;
@@ -54,9 +54,11 @@ interface WeekDayBar {
             <div class="kpi-icon-circle tone-purple">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
-            <span class="kpi-trend trend-green">↗ +6 this week</span>
+            @if (patients().length > 0) {
+              <span class="kpi-trend trend-green">↗ Active</span>
+            }
           </div>
-          <div class="kpi-value">{{ patients().length || 128 }}</div>
+          <div class="kpi-value">{{ patients().length }}</div>
           <div class="kpi-label">Registered Patients</div>
         </div>
 
@@ -66,9 +68,11 @@ interface WeekDayBar {
             <div class="kpi-icon-circle tone-purple">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
-            <span class="kpi-trend trend-green">↗ Next: today, 2:00 PM</span>
+            @if (upcomingCount() > 0) {
+              <span class="kpi-trend trend-green">Scheduled</span>
+            }
           </div>
-          <div class="kpi-value">{{ upcomingCount() || 12 }}</div>
+          <div class="kpi-value">{{ upcomingCount() }}</div>
           <div class="kpi-label">Upcoming Appointments</div>
         </div>
 
@@ -78,7 +82,9 @@ interface WeekDayBar {
             <div class="kpi-icon-circle tone-pink">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
-            <span class="kpi-trend trend-orange">↗ 3 overdue</span>
+            @if (followUpsCount() > 0) {
+              <span class="kpi-trend trend-orange">Attention</span>
+            }
           </div>
           <div class="kpi-value">{{ followUpsCount() }}</div>
           <div class="kpi-label">Follow-ups Due</div>
@@ -90,9 +96,11 @@ interface WeekDayBar {
             <div class="kpi-icon-circle tone-purple">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </div>
-            <span class="kpi-trend trend-green">↗ +2 new</span>
+            @if (activePrenatalCount() > 0) {
+              <span class="kpi-trend trend-green">Prenatal</span>
+            }
           </div>
-          <div class="kpi-value">{{ activePrenatalCount() || 34 }}</div>
+          <div class="kpi-value">{{ activePrenatalCount() }}</div>
           <div class="kpi-label">Active Prenatal Cases</div>
         </div>
       </section>
@@ -131,42 +139,30 @@ interface WeekDayBar {
           </div>
         </div>
 
-        <!-- Follow-ups Due (Matches Image 2) -->
+        <!-- Follow-ups Due -->
         <div class="panel-card followups-panel">
           <div class="panel-header">
             <h2>Follow-ups Due</h2>
-            <span class="badge-alert">1 overdue</span>
+            @if (followUpsList().length > 0) {
+              <span class="badge-alert">{{ followUpsList().length }} due</span>
+            }
           </div>
 
           <div class="followup-list">
-            <div class="followup-item">
-              <div class="followup-main">
-                <strong class="followup-name">Marisol Tan</strong>
-                <span class="followup-task">Glucose screening result</span>
+            @for (f of followUpsList(); track f.patientName) {
+              <div class="followup-item">
+                <div class="followup-main">
+                  <strong class="followup-name">{{ f.patientName }}</strong>
+                  <span class="followup-task">{{ f.task }}</span>
+                </div>
+                <div class="followup-timing">{{ f.dueLabel }}</div>
               </div>
-              <div class="followup-timing timing-overdue">Overdue 2 days</div>
-            </div>
-            <div class="followup-item">
-              <div class="followup-main">
-                <strong class="followup-name">Althea Dominguez</strong>
-                <span class="followup-task">Tetanus booster</span>
+            }
+            @if (followUpsList().length === 0) {
+              <div class="card-empty-state">
+                <p>No follow-ups due.</p>
               </div>
-              <div class="followup-timing">Due today</div>
-            </div>
-            <div class="followup-item">
-              <div class="followup-main">
-                <strong class="followup-name">Rosa Villanueva</strong>
-                <span class="followup-task">Postpartum mental health check</span>
-              </div>
-              <div class="followup-timing">Due tomorrow</div>
-            </div>
-            <div class="followup-item">
-              <div class="followup-main">
-                <strong class="followup-name">Carmela Santos</strong>
-                <span class="followup-task">Iron supplement review</span>
-              </div>
-              <div class="followup-timing">In 3 days</div>
-            </div>
+            }
           </div>
         </div>
       </section>
@@ -956,10 +952,7 @@ export class MidwifeDashboard implements OnInit {
   });
 
   readonly displayTodayAppointments = computed<Appointment[]>(() => {
-    if (this.todayAppointments().length > 0) {
-      return this.todayAppointments();
-    }
-    return EXAMPLE_APPOINTMENTS.filter((a) => a.date === todayIso() && a.status !== 'cancelled');
+    return this.todayAppointments();
   });
 
   readonly upcomingCount = computed(() => {
@@ -975,7 +968,10 @@ export class MidwifeDashboard implements OnInit {
   });
 
   readonly followUpsList = computed<FollowUp[]>(() => {
-    return EXAMPLE_DASHBOARD_FOLLOWUPS;
+    if (this.patientsSvc.isMidwifeDemoUser()) {
+      return EXAMPLE_DASHBOARD_FOLLOWUPS;
+    }
+    return [];
   });
 
   readonly recentPatients = computed(() => {
@@ -1003,14 +999,12 @@ export class MidwifeDashboard implements OnInit {
       return appts.filter((a) => a.date === iso && a.status !== 'cancelled').length;
     });
 
-    const totalCount = counts.reduce((a, b) => a + b, 0);
-    const finalCounts = totalCount > 0 ? counts : [5, 6, 2, 7, 4, 2, 1];
-    const maxVal = Math.max(...finalCounts, 8);
+    const maxVal = Math.max(...counts, 8);
 
     return days.map((day, i) => ({
       day,
-      count: finalCounts[i],
-      heightPercent: Math.round((finalCounts[i] / maxVal) * 100),
+      count: counts[i],
+      heightPercent: maxVal > 0 ? Math.round((counts[i] / maxVal) * 100) : 0,
     }));
   });
 
@@ -1019,8 +1013,11 @@ export class MidwifeDashboard implements OnInit {
   });
 
   readonly midwifeName = computed(() => {
+    const role = this.auth.role();
     const name = this.auth.userFullName();
-    if (!name || name === 'Midwife') return 'Midwife';
+    if (role === 'admin' || !name || name.toLowerCase() === 'admin' || name === 'Midwife') {
+      return 'Midwife';
+    }
     if (name.toLowerCase().startsWith('midwife')) return name;
     return `Midwife ${name}`;
   });

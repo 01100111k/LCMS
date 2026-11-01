@@ -18,7 +18,14 @@ import { Reports } from './midwife/reports';
 import { Statistics } from './midwife/statistics';
 import { Settings } from './midwife/settings';
 import { PatientPortal } from './patient/patient-portal';
-import { AdminDashboard } from './admin/admin-dashboard';
+import { AdminLayout } from './admin/admin-layout';
+import { AdminOverview } from './admin/admin-overview';
+import { AdminMidwives } from './admin/admin-midwives';
+import { AdminPatients } from './admin/admin-patients';
+import { AdminPendingApprovals } from './admin/admin-pending-approvals';
+import { AdminActivityLogs } from './admin/admin-activity-logs';
+import { AdminArchives } from './admin/admin-archives';
+import { AdminAccount } from './admin/admin-account';
 
 export const routes: Routes = [
   { path: '', component: Landing, title: 'Lying-In Care Management System' },
@@ -27,9 +34,19 @@ export const routes: Routes = [
   { path: 'signup', component: Landing, data: { auth: 'role-select' }, canActivate: [guestGuard], title: 'Create Account · Lying-In Care' },
   {
     path: 'admin',
-    component: AdminDashboard,
+    component: AdminLayout,
     canActivate: [roleGuard('admin')],
-    title: 'Admin Portal · Lying-In Care',
+    children: [
+      { path: '', component: AdminOverview, title: 'Dashboard · Admin Portal' },
+      { path: 'midwives', component: AdminMidwives, title: 'Midwives · Admin Portal' },
+      { path: 'patients', component: AdminPatients, title: 'Patients · Admin Portal' },
+      { path: 'pending-approvals', component: AdminPendingApprovals, title: 'Pending Approvals · Admin Portal' },
+      { path: 'activity-logs', component: AdminActivityLogs, title: 'Activity Logs · Admin Portal' },
+      { path: 'archives', component: AdminArchives, title: 'Archives · Admin Portal' },
+      { path: 'settings', component: AdminAccount, title: 'Settings · Admin Portal' },
+      { path: 'account', redirectTo: 'settings', pathMatch: 'full' },
+      { path: 'users', redirectTo: 'pending-approvals', pathMatch: 'full' },
+    ],
   },
   {
     path: 'midwife',

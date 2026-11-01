@@ -25,6 +25,72 @@
           24/7 Hotline: (02) 8123-4567
         </a>
 
+        <!-- Notifications (Matches Image 4) -->
+        <div class="notifications-wrapper" (click)="$event.stopPropagation()">
+          <button
+            type="button"
+            class="icon-round-btn notifications-btn"
+            [class.active]="notificationsOpen()"
+            (click)="toggleNotifications()"
+            aria-label="Notifications"
+            title="Notifications"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            @if (unreadCount() > 0) {
+              <span class="bell-dot"></span>
+            }
+          </button>
+
+          @if (notificationsOpen()) {
+            <div class="notifications-dropdown-card">
+              <div class="notif-header">
+                <h3 class="notif-title">Notifications</h3>
+                <button type="button" class="btn-mark-all-read" (click)="markAllRead()">Mark all read</button>
+              </div>
+
+              <div class="notif-content">
+                @if (notifications().length === 0) {
+                  <!-- Caught Up Empty State (Matches Image 4) -->
+                  <div class="notif-caught-up">
+                    <div class="caught-up-icon-wrap">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                      </svg>
+                    </div>
+                    <h4>You're all caught up</h4>
+                    <p>Activity from appointments, prenatal schedule, and care advice will appear here.</p>
+                  </div>
+                } @else {
+                  <div class="notif-list">
+                    @for (n of notifications(); track n.id) {
+                      <div class="notif-item" [class.unread]="!n.read" (click)="onNotificationClick(n)">
+                        <div class="notif-icon-circle">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                          </svg>
+                        </div>
+                        <div class="notif-item-body">
+                          <strong class="notif-item-title">{{ n.title }}</strong>
+                          <p class="notif-item-message">{{ n.message }}</p>
+                          <span class="notif-item-time">{{ n.time }}</span>
+                        </div>
+                        @if (!n.read) {
+                          <span class="notif-unread-dot"></span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
         <!-- User Menu -->
         <div class="user-profile-menu">
           <div class="user-avatar-circle">
@@ -34,7 +100,7 @@
             <span class="user-name-text">{{ patientName() }}</span>
             <span class="user-role-label">Patient</span>
           </div>
-          <button type="button" class="btn-signout" (click)="auth.logout()" title="Log out">
+          <button type="button" class="btn-signout" (click)="openSignOutModal()" title="Log out">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
@@ -870,6 +936,70 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  }
+
+  <!-- ============ SIGN OUT CONFIRMATION MODAL (Matches Picture) ============ -->
+  @if (showSignOutModal()) {
+    <div class="signout-modal-backdrop" (click)="closeSignOutModal()">
+      <div class="signout-modal-card" (click)="$event.stopPropagation()">
+        <!-- Brand Header -->
+        <div class="modal-brand-header">
+          <svg viewBox="0 0 48 48" class="modal-brand-icon" aria-hidden="true">
+            <path d="M24 42S5 30.5 5 17.5A9.5 9.5 0 0 1 24 12.5 9.5 9.5 0 0 1 43 17.5C43 30.5 24 42 24 42z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M17 22c0-3.5 3-5.5 6-4.5 3 1 3.5 4.5 1.5 7s-5.5 3.5-7.5 1.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <circle cx="26.5" cy="26" r="2" fill="currentColor"/>
+          </svg>
+          <span>Lying-In Care</span>
+        </div>
+
+        <!-- Logout Icon Badge -->
+        <div class="modal-logout-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </div>
+
+        <!-- Title & Subtitle -->
+        <h2 class="signout-title">Sign out?</h2>
+        <p class="signout-desc">
+          You are about to leave your patient session. Unsaved changes on open pages may be lost.
+        </p>
+
+        <!-- User Profile Box -->
+        <div class="modal-user-box">
+          <div class="modal-user-avatar">
+            {{ userInitials() }}
+          </div>
+          <div class="modal-user-info">
+            <span class="modal-user-name">{{ patientName() }}</span>
+            <span class="modal-user-email">{{ patientEmail() }}</span>
+          </div>
+        </div>
+
+        <!-- Bullet Points -->
+        <ul class="modal-bullet-list">
+          <li>You will need your password to sign in again.</li>
+          <li>Appointment reminders and pregnancy updates still go to your clinic account when you return.</li>
+        </ul>
+
+        <!-- Action Buttons (Vertical Stack) -->
+        <div class="signout-btn-stack">
+          <button type="button" class="btn-stay-signed-in" (click)="closeSignOutModal()">
+            Stay signed in
+          </button>
+          <button type="button" class="btn-confirm-signout" (click)="confirmSignOut()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            <span>Sign out</span>
+          </button>
+        </div>
       </div>
     </div>
   }

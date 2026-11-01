@@ -1,7 +1,20 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { createUserWithEmailAndPassword, deleteUser, sendPasswordResetEmail, signOut } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, serverTimestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
 import { auth, db, secondaryAuth } from './firebase';
+import { ActivityLogService } from './activity-log.service';
+import { AuthService } from './auth.service';
 import { EXAMPLE_PATIENTS } from './example-data';
 
 export type PatientStatus = 'Active' | 'Postpartum' | 'Completed' | 'Inactive';
@@ -22,6 +35,9 @@ export interface PatientProfile {
   riskLevel?: RiskLevel;
   gravidaPara?: string;
   gestationalAge?: string;
+  assignedMidwifeId?: string | null;
+  midwifeId?: string | null;
+  createdBy?: string | null;
 }
 
 export interface Patient extends PatientProfile {
@@ -38,40 +54,146 @@ function generatePassword(length = 24): string {
 
 @Injectable({ providedIn: 'root' })
 export class PatientsService {
+  private activityLog = inject(ActivityLogService);
+  private auth = inject(AuthService);
+
   /**
-   * Creates the patient's login + profile, then emails an invitation so the patient
-   * sets their own password. The midwife stays signed in, and nobody ever sees a password.
+   * Registers a patient with full Firestore persistence.
+   * Automatically sets the logged-in Midwife's UID as assignedMidwifeId and midwifeId.
    */
-  async register(profile: PatientProfile): Promise<{ id: string; invited: boolean }> {
-    const cred = await createUserWithEmailAndPassword(secondaryAuth, profile.email, generatePassword());
-    const uid = cred.user.uid;
-    try {
-      const batch = writeBatch(db);
-      batch.set(doc(db, 'users', uid), { role: 'patient', email: profile.email });
-      batch.set(doc(db, 'patients', uid), {
-        ...profile,
+  async register(profile: PatientProfile, initialPassword?: string): Promise<{ id: string; invited: boolean }> {
+    const email = (profile.email || '').trim().toLowerCase();
+    const fullName = (profile.fullName || '').trim();
+
+    if (!fullName) {
+      throw new Error('Patient full legal name is required.');
+    }
+
+    const midwifeUid = profile.assignedMidwifeId || profile.midwifeId || auth.currentUser?.uid || null;
+
+    if (email) {
+      const password = initialPassword?.trim() || generatePassword();
+      const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+      const uid = cred.user.uid;
+
+      try {
+        const batch = writeBatch(db);
+
+        // 1. users collection doc
+        batch.set(doc(db, 'users', uid), {
+          uid,
+          fullName,
+          displayName: fullName,
+          email,
+          role: 'patient',
+          accountStatus: 'active',
+          approvalStatus: 'approved',
+          status: 'active',
+          contactNumber: profile.contactNumber || '',
+          assignedMidwifeId: midwifeUid,
+          midwifeId: midwifeUid,
+          createdBy: auth.currentUser?.uid ?? null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        // 2. patients collection doc
+        batch.set(doc(db, 'patients', uid), {
+          id: uid,
+          patientId: uid,
+          uid,
+          fullName,
+          displayName: fullName,
+          email,
+          birthDate: profile.birthDate || '',
+          dateOfBirth: profile.birthDate || '',
+          contactNumber: profile.contactNumber || '',
+          address: profile.address || '',
+          emergencyContactName: profile.emergencyContactName || '',
+          emergencyContactNumber: profile.emergencyContactNumber || '',
+          bloodType: profile.bloodType || 'O+',
+          lmp: profile.lmp || '',
+          edd: profile.edd || '',
+          status: profile.status || 'Active',
+          riskLevel: profile.riskLevel || 'Low risk',
+          gravidaPara: profile.gravidaPara || 'G1P0',
+          gestationalAge: profile.gestationalAge || '24 weeks',
+          assignedMidwifeId: midwifeUid,
+          midwifeId: midwifeUid,
+          createdBy: auth.currentUser?.uid ?? null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        await batch.commit();
+      } catch (e) {
+        // Remove the half-created login so the email can be used again.
+        await deleteUser(cred.user).catch(() => undefined);
+        throw e;
+      } finally {
+        await signOut(secondaryAuth).catch(() => undefined);
+      }
+
+      let invited = false;
+      if (!initialPassword) {
+        try {
+          await this.sendInvite(email);
+          invited = true;
+        } catch {
+          invited = false;
+        }
+      }
+
+      this.activityLog.logActivity({
+        userName: fullName,
+        userRole: 'patient',
+        userEmail: email,
+        userId: uid,
+        activity: `Patient registered: ${fullName}`,
+      }).catch(() => undefined);
+
+      return { id: uid, invited };
+    } else {
+      // Patient without login credentials (walk-in)
+      const docRef = doc(collection(db, 'patients'));
+      const patientId = docRef.id;
+
+      await setDoc(docRef, {
+        id: patientId,
+        patientId,
+        fullName,
+        displayName: fullName,
+        email: '',
+        birthDate: profile.birthDate || '',
+        dateOfBirth: profile.birthDate || '',
+        contactNumber: profile.contactNumber || '',
+        address: profile.address || '',
+        emergencyContactName: profile.emergencyContactName || '',
+        emergencyContactNumber: profile.emergencyContactNumber || '',
+        bloodType: profile.bloodType || 'O+',
+        lmp: profile.lmp || '',
+        edd: profile.edd || '',
         status: profile.status || 'Active',
         riskLevel: profile.riskLevel || 'Low risk',
         gravidaPara: profile.gravidaPara || 'G1P0',
-        createdAt: serverTimestamp(),
+        gestationalAge: profile.gestationalAge || '24 weeks',
+        assignedMidwifeId: midwifeUid,
+        midwifeId: midwifeUid,
         createdBy: auth.currentUser?.uid ?? null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
-      await batch.commit();
-    } catch (e) {
-      // Remove the half-created login so the email can be used again.
-      await deleteUser(cred.user).catch(() => undefined);
-      throw e;
-    } finally {
-      await signOut(secondaryAuth).catch(() => undefined);
-    }
 
-    let invited = true;
-    try {
-      await this.sendInvite(profile.email);
-    } catch {
-      invited = false;
+      this.activityLog.logActivity({
+        userName: fullName,
+        userRole: 'patient',
+        userEmail: '',
+        userId: patientId,
+        activity: `Patient registered: ${fullName}`,
+      }).catch(() => undefined);
+
+      return { id: patientId, invited: false };
     }
-    return { id: uid, invited };
   }
 
   /** Sends the "set your password" email (Firebase's password reset email). */
@@ -107,39 +229,100 @@ export class PatientsService {
     }
   }
 
-  async list(): Promise<Patient[]> {
-    const edits = this.getLocalEdits();
-    let dbPatients: Patient[] = [];
+  isMidwifeDemoUser(): boolean {
+    const email = auth.currentUser?.email?.toLowerCase();
+    if (email) return email === 'midwife@gmail.com' || email === 'midwife@lyingincare.ph';
     try {
-      const snap = await getDocs(collection(db, 'patients'));
-      dbPatients = snap.docs.map((d) => this.toPatient(d.id, d.data()));
-    } catch {
+      const cached = localStorage.getItem('lcms_cached_auth');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const ce = parsed?.email?.toLowerCase();
+        return ce === 'midwife@gmail.com' || ce === 'midwife@lyingincare.ph';
+      }
+    } catch {}
+    return false;
+  }
+
+  getCurrentRole(): string {
+    const r = this.auth.role();
+    if (r) return r;
+    try {
+      const cached = localStorage.getItem('lcms_cached_auth');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed?.role) return parsed.role;
+      }
+    } catch {}
+    const email = auth.currentUser?.email?.toLowerCase() || '';
+    if (email.startsWith('admin@')) return 'admin';
+    return 'midwife';
+  }
+
+  async list(): Promise<Patient[]> {
+    const currentUid = auth.currentUser?.uid;
+    const role = this.getCurrentRole();
+    let dbPatients: Patient[] = [];
+
+    try {
+      if (role === 'admin') {
+        // Admin sees all patients
+        const snap = await getDocs(collection(db, 'patients'));
+        dbPatients = snap.docs.map((d) => this.toPatient(d.id, d.data()));
+      } else if (currentUid) {
+        // Midwife: query ONLY patients assigned to this midwife's Firebase UID
+        const q = query(collection(db, 'patients'), where('assignedMidwifeId', '==', currentUid));
+        const snap = await getDocs(q);
+        dbPatients = snap.docs.map((d) => this.toPatient(d.id, d.data()));
+      }
+    } catch (e) {
+      console.warn('PatientsService.list query error:', e);
       dbPatients = [];
     }
 
-    const existingIds = new Set(dbPatients.map((p) => p.id));
-    const existingEmails = new Set(dbPatients.map((p) => p.email.toLowerCase()));
+    // Only the demo midwife account midwife@gmail.com sees the sample patients
+    if (this.isMidwifeDemoUser()) {
+      const localEdits = this.getLocalEdits();
+      const existingIds = new Set(dbPatients.map((p) => p.id));
+      const existingEmails = new Set(dbPatients.map((p) => p.email?.toLowerCase()).filter(Boolean));
 
-    const mergedExamples = EXAMPLE_PATIENTS.map((ex) => (edits[ex.id] ? edits[ex.id] : ex)).filter(
-      (ex) => !existingIds.has(ex.id) && !existingEmails.has(ex.email.toLowerCase()),
-    );
+      const examples = EXAMPLE_PATIENTS.map((p) => localEdits[p.id] || p).filter(
+        (p) => !existingIds.has(p.id) && !existingEmails.has(p.email.toLowerCase()),
+      );
+      return [...dbPatients, ...examples].sort((a, b) => a.fullName.localeCompare(b.fullName));
+    }
 
-    return [...dbPatients, ...mergedExamples].sort((a, b) => a.fullName.localeCompare(b.fullName));
+    return dbPatients.sort((a, b) => a.fullName.localeCompare(b.fullName));
   }
 
   async get(id: string): Promise<Patient | null> {
     try {
       const snap = await getDoc(doc(db, 'patients', id));
-      if (snap.exists()) return this.toPatient(snap.id, snap.data());
+      if (snap.exists()) {
+        const p = this.toPatient(snap.id, snap.data());
+        const role = this.getCurrentRole();
+        const currentUid = auth.currentUser?.uid;
+        // If a midwife attempts to access a patient directly, ensure they own it
+        if (role === 'midwife' && currentUid && !this.isMidwifeDemoUser()) {
+          const ownerMidwife = p.assignedMidwifeId || p.midwifeId || p.createdBy;
+          if (ownerMidwife && ownerMidwife !== currentUid) {
+            return null; // Denied: patient belongs to another midwife
+          }
+        }
+        return p;
+      }
     } catch {
-      // fallback to example patients
+      // ignore
     }
 
     const edits = this.getLocalEdits();
     if (edits[id]) return edits[id];
 
-    const found = EXAMPLE_PATIENTS.find((p) => p.id === id);
-    return found || null;
+    if (this.isMidwifeDemoUser()) {
+      const found = EXAMPLE_PATIENTS.find((p) => p.id === id);
+      if (found) return found;
+    }
+
+    return null;
   }
 
   async update(id: string, profile: PatientProfile): Promise<void> {
@@ -159,6 +342,13 @@ export class PatientsService {
       };
       this.saveLocalEdit(id, updated);
     }
+
+    this.activityLog.logActivity({
+      userName: profile.fullName || current?.fullName || 'Patient',
+      userRole: 'patient',
+      userId: id,
+      activity: `Patient information updated for ${profile.fullName || current?.fullName || id}`,
+    }).catch(() => undefined);
   }
 
   private toPatient(id: string, d: Record<string, unknown>): Patient {
@@ -177,9 +367,9 @@ export class PatientsService {
 
     return {
       id,
-      fullName: s('fullName'),
+      fullName: s('fullName') || s('displayName'),
       email: s('email'),
-      birthDate: s('birthDate'),
+      birthDate: s('birthDate') || s('dateOfBirth'),
       contactNumber: s('contactNumber'),
       address: s('address'),
       emergencyContactName: s('emergencyContactName'),
@@ -191,6 +381,9 @@ export class PatientsService {
       riskLevel: (s('riskLevel') as RiskLevel) || 'Low risk',
       gravidaPara: s('gravidaPara') || 'G1P0',
       gestationalAge: gestationalAge || '24 weeks',
+      assignedMidwifeId: s('assignedMidwifeId') || s('midwifeId') || s('createdBy') || null,
+      midwifeId: s('midwifeId') || s('assignedMidwifeId') || s('createdBy') || null,
+      createdBy: s('createdBy') || s('assignedMidwifeId') || s('midwifeId') || null,
     };
   }
 
@@ -201,6 +394,8 @@ export class PatientsService {
         return 'An account with this email already exists.';
       case 'auth/invalid-email':
         return 'Enter a valid email address.';
+      case 'auth/weak-password':
+        return 'Password must be at least 6 characters.';
       case 'auth/operation-not-allowed':
         return 'Email/Password sign-in is not turned on in Firebase Authentication.';
       case 'auth/too-many-requests':
@@ -210,7 +405,7 @@ export class PatientsService {
       case 'permission-denied':
         return "You don't have permission to do this. Check your Firestore rules.";
       default:
-        return 'Something went wrong. Please try again.';
+        return (e as { message?: string })?.message || 'Something went wrong. Please try again.';
     }
   }
 }

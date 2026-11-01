@@ -138,8 +138,12 @@ import { DeliveryRecord, RecordsService } from '../core/records.service';
                       <button type="button" class="btn-row-action" (click)="viewRecord(r)" title="View Birth Registry">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                       </button>
-                      <button type="button" class="btn-row-action btn-danger" (click)="deleteRecord(r)" title="Delete Delivery Record">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      <button type="button" class="btn-row-action btn-archive" (click)="confirmArchive(r)" title="Archive Delivery Record">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="21 8 21 21 3 21 3 8"/>
+                          <rect x="1" y="3" width="22" height="5"/>
+                          <line x1="10" y1="12" x2="14" y2="12"/>
+                        </svg>
                       </button>
                     </div>
                   </td>
@@ -624,6 +628,58 @@ import { DeliveryRecord, RecordsService } from '../core/records.service';
           </div>
         </div>
       }
+
+      <!-- ==================== ARCHIVE CONFIRMATION MODAL ==================== -->
+      @if (archivingRecord(); as recordToArchive) {
+        <div class="modal-backdrop" (click)="cancelArchive()">
+          <div class="modal-dialog-card modal-confirm-card" (click)="$event.stopPropagation()">
+            <div class="confirm-modal-header">
+              <div class="confirm-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="21 8 21 21 3 21 3 8"/>
+                  <rect x="1" y="3" width="22" height="5"/>
+                  <line x1="10" y1="12" x2="14" y2="12"/>
+                </svg>
+              </div>
+              <div>
+                <h3>Archive Delivery Record</h3>
+                <p class="confirm-modal-sub">Safely moves this birth registry record to archived clinical records.</p>
+              </div>
+            </div>
+
+            <div class="confirm-modal-body">
+              <p>
+                Are you sure you want to archive the delivery record for
+                <strong>{{ recordToArchive.patientName }}</strong>?
+              </p>
+              <div class="confirm-record-preview">
+                <div class="preview-chip"><span>Delivery Date/Time:</span> <strong>{{ recordToArchive.deliveryDateTime | date:'medium' }}</strong></div>
+                <div class="preview-chip"><span>Newborn Sex & Weight:</span> <strong>{{ recordToArchive.babySex }}, {{ recordToArchive.birthWeightGrams }} g</strong></div>
+                <div class="preview-chip"><span>Delivery Type:</span> <strong>{{ recordToArchive.deliveryType }}</strong></div>
+                <div class="preview-chip"><span>Attending Midwife:</span> <strong>{{ recordToArchive.attendingMidwife }}</strong></div>
+              </div>
+            </div>
+
+            <div class="confirm-modal-footer">
+              <button type="button" class="btn-confirm-cancel" (click)="cancelArchive()" [disabled]="archivingBusy()">
+                Cancel
+              </button>
+              <button type="button" class="btn-confirm-archive" (click)="executeArchive()" [disabled]="archivingBusy()">
+                @if (archivingBusy()) {
+                  Archiving...
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="21 8 21 21 3 21 3 8"/>
+                    <rect x="1" y="3" width="22" height="5"/>
+                    <line x1="10" y1="12" x2="14" y2="12"/>
+                  </svg>
+                  Archive Record
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -919,6 +975,18 @@ import { DeliveryRecord, RecordsService } from '../core/records.service';
 
     .btn-row-action:hover { background: #ede6f7; }
 
+    .btn-row-action.btn-archive {
+      color: #4a2179;
+      border-color: #dfd2f5;
+      background: #f6f0fd;
+    }
+
+    .btn-row-action.btn-archive:hover {
+      background: #ebe0fa;
+      border-color: #7b42bc;
+      color: #271242;
+    }
+
     .btn-row-action.btn-danger {
       color: #c92a42;
       border-color: #fecdd3;
@@ -927,6 +995,136 @@ import { DeliveryRecord, RecordsService } from '../core/records.service';
 
     .btn-row-action.btn-danger:hover { background: #fee2e2; }
     .btn-row-action svg { width: 14px; height: 14px; }
+
+    /* Modal Confirmation Dialog */
+    .modal-confirm-card {
+      max-width: 480px;
+      width: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #ffffff;
+      box-shadow: 0 20px 45px rgba(39, 20, 66, 0.22);
+      border: 1px solid #ede3f7;
+    }
+
+    .confirm-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 22px 24px;
+      background: linear-gradient(135deg, #fbf8fe 0%, #f4edfb 100%);
+      border-bottom: 1px solid #ede3f7;
+    }
+
+    .confirm-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #ede3f7;
+      color: #361759;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .confirm-icon-box svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .confirm-modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      color: #271242;
+    }
+
+    .confirm-modal-sub {
+      margin: 3px 0 0;
+      font-size: 12.5px;
+      color: #6b4fa3;
+    }
+
+    .confirm-modal-body {
+      padding: 22px 24px;
+      font-size: 14.5px;
+      line-height: 1.55;
+      color: #35254d;
+    }
+
+    .confirm-record-preview {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: #fdfcff;
+      border: 1px solid #ede3f7;
+      border-radius: 12px;
+    }
+
+    .preview-chip {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      color: #55476d;
+    }
+
+    .preview-chip strong {
+      color: #271242;
+    }
+
+    .confirm-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 24px;
+      background: #faf7fc;
+      border-top: 1px solid #ede3f7;
+    }
+
+    .btn-confirm-cancel {
+      padding: 9px 18px;
+      border: 1px solid #ded3eb;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #493b5e;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-confirm-cancel:hover:not(:disabled) {
+      background: #ede5f5;
+    }
+
+    .btn-confirm-archive {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 20px;
+      border: 0;
+      border-radius: 10px;
+      background: #361759;
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(54, 23, 89, 0.28);
+      transition: all 0.15s;
+    }
+
+    .btn-confirm-archive:hover:not(:disabled) {
+      background: #4a2179;
+      transform: translateY(-1px);
+    }
+
+    .btn-confirm-archive svg {
+      width: 16px;
+      height: 16px;
+    }
 
     /* Empty & Loading States */
     .empty-records-card, .loading-state-card {
@@ -1978,17 +2176,36 @@ export class DeliveryRecords implements OnInit {
     }
   }
 
-  async deleteRecord(r: DeliveryRecord): Promise<void> {
-    if (!r.id) return;
-    if (!confirm(`Are you sure you want to delete delivery record for ${r.patientName}?`)) return;
+  readonly archivingRecord = signal<DeliveryRecord | null>(null);
+  readonly archivingBusy = signal(false);
 
+  confirmArchive(r: DeliveryRecord): void {
+    this.archivingRecord.set(r);
+  }
+
+  cancelArchive(): void {
+    this.archivingRecord.set(null);
+  }
+
+  async executeArchive(): Promise<void> {
+    const r = this.archivingRecord();
+    if (!r || !r.id) return;
+
+    this.archivingBusy.set(true);
     try {
-      await this.recordsSvc.deleteDelivery(r.id);
-      this.triggerToast('Delivery record deleted.');
+      await this.recordsSvc.archiveDelivery(r.id);
+      this.triggerToast(`Delivery record for ${r.patientName} safely archived.`);
+      this.archivingRecord.set(null);
       await this.loadAll();
     } catch {
-      alert('Failed to delete delivery record.');
+      this.triggerToast('Failed to archive delivery record.');
+    } finally {
+      this.archivingBusy.set(false);
     }
+  }
+
+  async deleteRecord(r: DeliveryRecord): Promise<void> {
+    this.confirmArchive(r);
   }
 
   private triggerToast(msg: string): void {
