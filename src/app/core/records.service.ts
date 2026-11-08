@@ -136,37 +136,41 @@ export interface PostpartumRecord {
 export class RecordsService {
   private activityLog = inject(ActivityLogService);
   private auth = inject(AuthService);
-  private archivedPrenatalIds = new Set<string>();
-  private archivedDeliveryIds = new Set<string>();
-  private archivedPostpartumIds = new Set<string>();
+  private archivedPrenatalIds = new Set<string>(this.loadArchivedIds('prenatal'));
+  private archivedDeliveryIds = new Set<string>(this.loadArchivedIds('delivery'));
+  private archivedPostpartumIds = new Set<string>(this.loadArchivedIds('postpartum'));
+
+  private loadArchivedIds(category: string): string[] {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem(`lcms_archived_${category}_ids`);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private persistArchivedId(category: 'prenatal' | 'delivery' | 'postpartum', id: string): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const set = category === 'prenatal' ? this.archivedPrenatalIds : category === 'delivery' ? this.archivedDeliveryIds : this.archivedPostpartumIds;
+      set.add(id);
+      localStorage.setItem(`lcms_archived_${category}_ids`, JSON.stringify(Array.from(set)));
+    } catch {}
+  }
 
   isMidwifeDemoUser(): boolean {
     const email = auth.currentUser?.email?.toLowerCase();
     if (email) return email === 'midwife@gmail.com' || email === 'midwife@lyingincare.ph';
-    try {
-      const cached = localStorage.getItem('lcms_cached_auth');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        const ce = parsed?.email?.toLowerCase();
-        return ce === 'midwife@gmail.com' || ce === 'midwife@lyingincare.ph';
-      }
-    } catch {}
     return false;
   }
 
   getCurrentRole(): string {
     const r = this.auth.role();
     if (r) return r;
-    try {
-      const cached = localStorage.getItem('lcms_cached_auth');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed?.role) return parsed.role;
-      }
-    } catch {}
     const email = auth.currentUser?.email?.toLowerCase() || '';
     if (email.startsWith('admin@')) return 'admin';
-    return 'midwife';
+    return '';
   }
 
   // ==================== PRENATAL RECORDS ====================
@@ -253,13 +257,16 @@ export class RecordsService {
       this.activityLog.logActivity({
         userName: record.attendingMidwife || 'Midwife',
         userRole: 'midwife',
-        userId: record.patientId,
+        targetRecordId: docRef.id,
         activity: `Maternal care record added (Prenatal: ${record.patientName})`,
       }).catch(() => undefined);
 
       return docRef.id;
-    } catch {
-      return 'local-prenatal-' + Date.now();
+    } catch (err) {
+      if (this.isMidwifeDemoUser()) {
+        return 'local-prenatal-' + Date.now();
+      }
+      throw err;
     }
   }
 
@@ -272,16 +279,18 @@ export class RecordsService {
       this.activityLog.logActivity({
         userName: record.attendingMidwife || 'Midwife',
         userRole: 'midwife',
-        userId: record.patientId,
+        targetRecordId: id,
         activity: `Maternal care record updated (Prenatal: ${record.patientName || id})`,
       }).catch(() => undefined);
-    } catch {
-      // ignore
+    } catch (err) {
+      if (!this.isMidwifeDemoUser()) {
+        throw err;
+      }
     }
   }
 
   async archivePrenatal(id: string): Promise<void> {
-    this.archivedPrenatalIds.add(id);
+    this.persistArchivedId('prenatal', id);
     try {
       await updateDoc(doc(db, 'prenatal_records', id), {
         isArchived: true,
@@ -297,7 +306,7 @@ export class RecordsService {
   }
 
   async deletePrenatal(id: string): Promise<void> {
-    this.archivedPrenatalIds.add(id);
+    this.persistArchivedId('prenatal', id);
     try {
       await deleteDoc(doc(db, 'prenatal_records', id));
     } catch {
@@ -353,7 +362,7 @@ export class RecordsService {
   }
 
   async archiveDelivery(id: string): Promise<void> {
-    this.archivedDeliveryIds.add(id);
+    this.persistArchivedId('delivery', id);
     try {
       await updateDoc(doc(db, 'delivery_records', id), {
         isArchived: true,
@@ -369,7 +378,7 @@ export class RecordsService {
   }
 
   async deleteDelivery(id: string): Promise<void> {
-    this.archivedDeliveryIds.add(id);
+    this.persistArchivedId('delivery', id);
     try {
       await deleteDoc(doc(db, 'delivery_records', id));
     } catch {
@@ -403,13 +412,16 @@ export class RecordsService {
       this.activityLog.logActivity({
         userName: record.attendingMidwife || 'Midwife',
         userRole: 'midwife',
-        userId: record.patientId,
+        targetRecordId: docRef.id,
         activity: `Maternal care record added (Delivery: ${record.patientName})`,
       }).catch(() => undefined);
 
       return docRef.id;
-    } catch {
-      return 'local-delivery-' + Date.now();
+    } catch (err) {
+      if (this.isMidwifeDemoUser()) {
+        return 'local-delivery-' + Date.now();
+      }
+      throw err;
     }
   }
 
@@ -422,11 +434,13 @@ export class RecordsService {
       this.activityLog.logActivity({
         userName: record.attendingMidwife || 'Midwife',
         userRole: 'midwife',
-        userId: record.patientId,
+        targetRecordId: id,
         activity: `Maternal care record updated (Delivery: ${record.patientName || id})`,
       }).catch(() => undefined);
-    } catch {
-      // ignore
+    } catch (err) {
+      if (!this.isMidwifeDemoUser()) {
+        throw err;
+      }
     }
   }
 
@@ -492,13 +506,16 @@ export class RecordsService {
       this.activityLog.logActivity({
         userName: record.attendingMidwife || 'Midwife',
         userRole: 'midwife',
-        userId: record.patientId,
+        targetRecordId: docRef.id,
         activity: `Maternal care record added (Postpartum: ${record.patientName})`,
       }).catch(() => undefined);
 
       return docRef.id;
-    } catch {
-      return 'local-postpartum-' + Date.now();
+    } catch (err) {
+      if (this.isMidwifeDemoUser()) {
+        return 'local-postpartum-' + Date.now();
+      }
+      throw err;
     }
   }
 
@@ -511,16 +528,18 @@ export class RecordsService {
       this.activityLog.logActivity({
         userName: record.attendingMidwife || 'Midwife',
         userRole: 'midwife',
-        userId: record.patientId,
+        targetRecordId: id,
         activity: `Maternal care record updated (Postpartum: ${record.patientName || id})`,
       }).catch(() => undefined);
-    } catch {
-      // ignore
+    } catch (err) {
+      if (!this.isMidwifeDemoUser()) {
+        throw err;
+      }
     }
   }
 
   async archivePostpartum(id: string): Promise<void> {
-    this.archivedPostpartumIds.add(id);
+    this.persistArchivedId('postpartum', id);
     try {
       await updateDoc(doc(db, 'postpartum_records', id), {
         isArchived: true,
@@ -536,7 +555,7 @@ export class RecordsService {
   }
 
   async deletePostpartum(id: string): Promise<void> {
-    this.archivedPostpartumIds.add(id);
+    this.persistArchivedId('postpartum', id);
     try {
       await deleteDoc(doc(db, 'postpartum_records', id));
     } catch {

@@ -1,37 +1,41 @@
 import { Routes } from '@angular/router';
 import { Landing } from './landing/landing';
 import { guestGuard, roleGuard } from './core/guards';
-import { MidwifeLayout } from './midwife/midwife-layout';
-import { MidwifeDashboard } from './midwife/midwife-dashboard';
-import { PatientList } from './midwife/patient-list';
-import { PatientForm } from './midwife/patient-form';
-import { AppointmentForm } from './midwife/appointment-form';
-import { AppointmentList } from './midwife/appointment-list';
-import { MidwifeAvailability } from './midwife/midwife-availability';
-import { PatientQueue } from './midwife/patient-queue';
-import { PrenatalRecords } from './midwife/prenatal-records';
-import { DeliveryRecords } from './midwife/delivery-records';
-import { PostpartumRecords } from './midwife/postpartum-records';
-import { PregnancyJourney } from './midwife/pregnancy-journey';
-import { HealthLibrary } from './midwife/health-library';
-import { Reports } from './midwife/reports';
-import { Statistics } from './midwife/statistics';
-import { Settings } from './midwife/settings';
-import { PatientPortal } from './patient/patient-portal';
-import { AdminLayout } from './admin/admin-layout';
-import { AdminOverview } from './admin/admin-overview';
-import { AdminMidwives } from './admin/admin-midwives';
-import { AdminPatients } from './admin/admin-patients';
-import { AdminPendingApprovals } from './admin/admin-pending-approvals';
-import { AdminActivityLogs } from './admin/admin-activity-logs';
-import { AdminArchives } from './admin/admin-archives';
-import { AdminAccount } from './admin/admin-account';
+import {
+  MidwifeLayout,
+  MidwifeDashboard,
+  PatientList,
+  PatientForm,
+  AppointmentForm,
+  AppointmentList,
+  MidwifeAvailability,
+  PatientQueue,
+  PrenatalRecords,
+  DeliveryRecords,
+  PostpartumRecords,
+  PregnancyJourney,
+  HealthLibrary,
+  Reports,
+  Statistics,
+  Settings,
+} from './midwife';
+import { PatientPortal } from './patient';
+import {
+  AdminLayout,
+  AdminOverview,
+  AdminMidwives,
+  AdminPatients,
+  AdminPendingApprovals,
+  AdminActivityLogs,
+  AdminArchives,
+  AdminAccount,
+} from './admin';
 
 export const routes: Routes = [
   { path: '', component: Landing, title: 'Lying-In Care Management System' },
   // /login and /signup show the landing page with the auth modal open
-  { path: 'login', component: Landing, data: { auth: 'login' }, canActivate: [guestGuard], title: 'Log in · Lying-In Care' },
-  { path: 'signup', component: Landing, data: { auth: 'role-select' }, canActivate: [guestGuard], title: 'Create Account · Lying-In Care' },
+  { path: 'login', component: Landing, data: { auth: 'login' }, title: 'Log in · Lying-In Care' },
+  { path: 'signup', component: Landing, data: { auth: 'role-select' }, title: 'Create Account · Lying-In Care' },
   {
     path: 'admin',
     component: AdminLayout,

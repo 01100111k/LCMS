@@ -1,7 +1,7 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { addDoc, collection, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
-import { parseTimestamp } from '../admin/admin.models';
+import { auth, db } from './firebase';
+import { parseTimestamp } from '../admin/models/admin.models';
 
 export interface ActivityLogEntry {
   id?: string;
@@ -10,6 +10,7 @@ export interface ActivityLogEntry {
   userEmail?: string;
   userId?: string;
   activity: string;
+  targetRecordId?: string;
   timestamp?: any;
   createdAt?: any;
 }
@@ -26,7 +27,8 @@ export class ActivityLogService {
     this.initRealtimeListener();
   }
 
-  private initRealtimeListener(): void {
+  initRealtimeListener(): void {
+    if (this.unsubscribe) return;
     try {
       const logsCol = collection(db, 'activityLogs');
       this.unsubscribe = onSnapshot(
@@ -40,6 +42,7 @@ export class ActivityLogService {
               userRole: (data['userRole'] as 'admin' | 'midwife' | 'patient') || 'patient',
               userEmail: data['userEmail'] || '',
               userId: data['userId'] || '',
+              targetRecordId: data['targetRecordId'] || '',
               activity: data['activity'] || '',
               timestamp: data['timestamp'] || data['createdAt'],
               createdAt: data['createdAt'] || data['timestamp'],
@@ -58,19 +61,27 @@ export class ActivityLogService {
           this.error.set('');
         },
         (err) => {
-          console.warn('Activity logs realtime listener warning:', err);
           this.loading.set(false);
-          this.error.set(err?.message || 'Could not load real-time activity logs');
+          if (err?.code !== 'permission-denied') {
+            this.error.set(err?.message || 'Could not load real-time activity logs');
+          }
         }
       );
-    } catch (e: any) {
-      console.warn('Could not initialize activity logs listener:', e);
+    } catch {
       this.loading.set(false);
+    }
+  }
+
+  stopRealtimeListener(): void {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
     }
   }
 
   /**
    * Automatically records an activity to Firestore 'activityLogs' collection.
+   * Ensures User ID, User Name, User Role, Activity, Date/Time, and Target Record ID are saved.
    */
   async logActivity(entry: {
     userName: string;
@@ -78,18 +89,25 @@ export class ActivityLogService {
     activity: string;
     userEmail?: string;
     userId?: string;
+    targetRecordId?: string;
   }): Promise<void> {
     if (!entry.activity) return;
 
-    const docData = {
+    const currentUid = auth.currentUser?.uid;
+    const currentEmail = auth.currentUser?.email;
+
+    const docData: any = {
       userName: entry.userName.trim(),
       userRole: entry.userRole,
-      userEmail: entry.userEmail || '',
-      userId: entry.userId || '',
+      userEmail: entry.userEmail || currentEmail || '',
+      userId: entry.userId || currentUid || '',
       activity: entry.activity.trim(),
       timestamp: serverTimestamp(),
       createdAt: new Date().toISOString(),
     };
+    if (entry.targetRecordId) {
+      docData.targetRecordId = entry.targetRecordId;
+    }
 
     try {
       await addDoc(collection(db, 'activityLogs'), docData);

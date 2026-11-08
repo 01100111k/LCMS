@@ -481,8 +481,8 @@ input:focus {
 }
 
 input.bad {
-  border-color: #c2527a;
-  background: #fffbfe;
+  border-color: #e53e3e;
+  background: #fffbfa;
 }
 
 .pw { position: relative; }
@@ -514,8 +514,8 @@ input.bad {
 
 .field-error {
   margin-top: 5px;
-  font-size: 12px;
-  color: #a8335c;
+  font-size: 12.5px;
+  color: #e53e3e;
   font-weight: 500;
 }
 

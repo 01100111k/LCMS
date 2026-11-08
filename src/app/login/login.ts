@@ -18,7 +18,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService, ProofOfIdentityFile } from '../core/auth.service';
-import { PendingApprovalApplication } from '../admin/admin.models';
+import { PendingApprovalApplication } from '../admin/models/admin.models';
 
 /** All supported authentication views */
 export type AuthView =
@@ -183,7 +183,6 @@ export class Login implements OnInit, OnDestroy {
     this.info.set('');
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
-      this.error.set('Enter your email and password.');
       return;
     }
 

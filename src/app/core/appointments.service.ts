@@ -136,30 +136,15 @@ export class AppointmentsService {
   isMidwifeDemoUser(): boolean {
     const email = auth.currentUser?.email?.toLowerCase();
     if (email) return email === 'midwife@gmail.com' || email === 'midwife@lyingincare.ph';
-    try {
-      const cached = localStorage.getItem('lcms_cached_auth');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        const ce = parsed?.email?.toLowerCase();
-        return ce === 'midwife@gmail.com' || ce === 'midwife@lyingincare.ph';
-      }
-    } catch {}
     return false;
   }
 
   getCurrentRole(): string {
     const r = this.auth.role();
     if (r) return r;
-    try {
-      const cached = localStorage.getItem('lcms_cached_auth');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed?.role) return parsed.role;
-      }
-    } catch {}
     const email = auth.currentUser?.email?.toLowerCase() || '';
     if (email.startsWith('admin@')) return 'admin';
-    return 'midwife';
+    return '';
   }
 
   async list(): Promise<Appointment[]> {
@@ -289,6 +274,7 @@ export class AppointmentsService {
       userName: b.patientName || 'Patient',
       userRole: 'patient',
       userId: b.patientId,
+      targetRecordId: apptRef.id,
       activity: `Appointment booked for ${b.patientName} (${b.type}) on ${b.date} at ${b.time}`,
     }).catch(() => undefined);
 
@@ -319,6 +305,7 @@ export class AppointmentsService {
     this.activityLog.logActivity({
       userName: patientName || 'Patient',
       userRole: 'midwife',
+      targetRecordId: id,
       activity: `Appointment rescheduled to ${change.date} at ${change.time}${patientName ? ' (' + patientName + ')' : ''}`,
     }).catch(() => undefined);
   }
@@ -358,13 +345,12 @@ export class AppointmentsService {
       // ignore
     }
 
-    if (newStatus === 'cancelled') {
-      this.activityLog.logActivity({
-        userName: patientName || 'Patient',
-        userRole: 'patient',
-        activity: `Appointment cancelled${patientName ? ' for ' + patientName : ''}`,
-      }).catch(() => undefined);
-    }
+    this.activityLog.logActivity({
+      userName: patientName || 'Patient',
+      userRole: this.getCurrentRole() === 'admin' ? 'admin' : this.getCurrentRole() === 'midwife' ? 'midwife' : 'patient',
+      targetRecordId: id,
+      activity: `Appointment status updated to ${newStatus}${patientName ? ' for ' + patientName : ''}`,
+    }).catch(() => undefined);
 
     // Always record the status in local edits so example appointments and offline work immediately
     this.saveLocalEdit(id, { status: newStatus });

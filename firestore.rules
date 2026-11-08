@@ -7,13 +7,17 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function isAdmin() {
       return isAuthenticated() && (
-        exists(/databases/$(database)/documents/admin/$(request.auth.uid)) ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
         request.auth.token.email == 'admin@lyingincare.ph' ||
-        request.auth.token.email == 'admin@gmail.com'
+        request.auth.token.email == 'admin@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserData().role == 'admin') ||
+        exists(/databases/$(database)/documents/admin/$(request.auth.uid))
       );
     }
 
@@ -29,43 +33,108 @@ service cloud.firestore {
       return isAuthenticated() && (
         docId == request.auth.uid ||
         data.patientId == request.auth.uid ||
-        data.uid == request.auth.uid
+        data.uid == request.auth.uid ||
+        data.id == request.auth.uid ||
+        (request.auth.token.email != null && data.email == request.auth.token.email)
       );
     }
 
     // 1. users collection:
-    // Allow reading for duplicate checks and authentication
+    // - Admin: full access
+    // - User: can read own profile; can create own profile upon sign up (cannot make themselves admin);
+    //         can update own profile (CANNOT modify their role or approval status!)
+    // - Midwife: can read patient accounts (cannot read admin/midwife accounts); can link unassigned patients to their clinic
+    // - Non-admin cannot escalate role or approve themselves
     match /users/{userId} {
-      allow read: if true;
-      allow create, update: if isAuthenticated() || true;
+      allow read: if isAdmin() ||
+        (isAuthenticated() && request.auth.uid == userId) ||
+        (isAuthenticated() && (resource.data.assignedMidwifeId == request.auth.uid || resource.data.midwifeId == request.auth.uid || resource.data.createdBy == request.auth.uid)) ||
+        (isAuthenticated() && resource.data.role == 'patient');
+
+      allow create: if isAdmin() || (
+        isAuthenticated() &&
+        request.auth.uid == userId &&
+        (!('role' in request.resource.data) || request.resource.data.role != 'admin')
+      ) || (
+        isAuthenticated() &&
+        request.resource.data.role == 'patient' &&
+        (request.resource.data.assignedMidwifeId == request.auth.uid ||
+         request.resource.data.midwifeId == request.auth.uid ||
+         request.resource.data.createdBy == request.auth.uid)
+      );
+
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        request.auth.uid == userId &&
+        // Protect role from unauthorized elevation
+        (!('role' in request.resource.data) || request.resource.data.role == resource.data.role) &&
+        // Protect approvalStatus from self-approval
+        (!('approvalStatus' in request.resource.data) || request.resource.data.approvalStatus == resource.data.approvalStatus)
+      ) || (
+        isAuthenticated() &&
+        (resource.data.assignedMidwifeId == request.auth.uid || resource.data.midwifeId == request.auth.uid || resource.data.createdBy == request.auth.uid)
+      ) || (
+        isAuthenticated() &&
+        resource.data.role == 'patient' &&
+        (!('assignedMidwifeId' in resource.data) || resource.data.assignedMidwifeId == null || resource.data.assignedMidwifeId == '' || resource.data.assignedMidwifeId == request.auth.uid) &&
+        (request.resource.data.assignedMidwifeId == request.auth.uid || request.resource.data.midwifeId == request.auth.uid)
+      );
+
       allow delete: if isAdmin();
     }
 
     // 2. pendingApprovals collection:
+    // - Create: anyone can submit registration application
+    // - Read: Admin can read all; applicant can query their own by email or UID
+    // - Update: Admin can manage all; Midwife can link unassigned patient application
+    // - Delete: Only Admin
     match /pendingApprovals/{appId} {
-      allow read, write: if true;
+      allow create: if true;
+      allow read: if isAdmin() ||
+        (isAuthenticated() && (resource.data.authUid == request.auth.uid || resource.data.email == request.auth.token.email)) ||
+        (resource.data.email != null);
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        resource.data.requestedRole == 'patient' &&
+        (request.resource.data.assignedMidwifeId == request.auth.uid || request.resource.data.midwifeId == request.auth.uid)
+      );
+      allow delete: if isAdmin();
     }
 
     // 3. midwives collection:
+    // - Admin can manage all; midwives can view directory and edit their own record
     match /midwives/{midwifeId} {
-      allow read: if isAuthenticated() || true;
-      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == midwifeId);
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() || (isAuthenticated() && request.auth.uid == midwifeId);
+      allow delete: if isAdmin();
     }
 
-    // 4. patients collection (Enforce Midwife and Patient ownership):
+    // 4. patients collection:
     // - Admin: can view and manage all patients
-    // - Patient: can only read/update their own profile
-    // - Midwife: can only read/update/delete patients assigned to their UID
+    // - Midwife: can read, create, update, delete only their assigned patients; can read & link unassigned patients
+    // - Patient: can read and update only their own profile
     match /patients/{patientId} {
       allow read: if isAdmin() ||
         isOwnerPatient(resource.data, patientId) ||
-        isOwnerMidwife(resource.data);
+        isOwnerMidwife(resource.data) ||
+        (isAuthenticated() && (!('assignedMidwifeId' in resource.data) || resource.data.assignedMidwifeId == null || resource.data.assignedMidwifeId == ''));
 
-      allow create: if isAuthenticated();
+      allow create: if isAdmin() || (
+        isAuthenticated() && (
+          request.resource.data.assignedMidwifeId == request.auth.uid ||
+          request.resource.data.midwifeId == request.auth.uid ||
+          request.resource.data.createdBy == request.auth.uid ||
+          patientId == request.auth.uid ||
+          request.resource.data.uid == request.auth.uid
+        )
+      );
 
       allow update: if isAdmin() ||
         isOwnerPatient(resource.data, patientId) ||
-        isOwnerMidwife(resource.data);
+        isOwnerMidwife(resource.data) ||
+        (isAuthenticated() &&
+          (!('assignedMidwifeId' in resource.data) || resource.data.assignedMidwifeId == null || resource.data.assignedMidwifeId == '' || resource.data.assignedMidwifeId == request.auth.uid) &&
+          (request.resource.data.assignedMidwifeId == request.auth.uid || request.resource.data.midwifeId == request.auth.uid));
 
       allow delete: if isAdmin() ||
         isOwnerMidwife(resource.data);
@@ -91,13 +160,21 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    // 6. Maternal care records (prenatal, delivery, postpartum, visits)
+    // 6. Maternal care records (prenatal, delivery, postpartum, visits, records)
+    // - Admin: oversight over all records
+    // - Midwife: create and update only for their assigned patients
+    // - Patient: read-only access to their own records
     match /prenatal_records/{recordId} {
       allow read: if isAdmin() ||
         isOwnerPatient(resource.data, resource.data.patientId) ||
         isOwnerMidwife(resource.data);
 
-      allow create: if isAuthenticated();
+      allow create: if isAdmin() || (
+        isAuthenticated() && (
+          request.resource.data.assignedMidwifeId == request.auth.uid ||
+          request.resource.data.midwifeId == request.auth.uid
+        )
+      );
 
       allow update, delete: if isAdmin() ||
         isOwnerMidwife(resource.data);
@@ -108,7 +185,12 @@ service cloud.firestore {
         isOwnerPatient(resource.data, resource.data.patientId) ||
         isOwnerMidwife(resource.data);
 
-      allow create: if isAuthenticated();
+      allow create: if isAdmin() || (
+        isAuthenticated() && (
+          request.resource.data.assignedMidwifeId == request.auth.uid ||
+          request.resource.data.midwifeId == request.auth.uid
+        )
+      );
 
       allow update, delete: if isAdmin() ||
         isOwnerMidwife(resource.data);
@@ -119,7 +201,12 @@ service cloud.firestore {
         isOwnerPatient(resource.data, resource.data.patientId) ||
         isOwnerMidwife(resource.data);
 
-      allow create: if isAuthenticated();
+      allow create: if isAdmin() || (
+        isAuthenticated() && (
+          request.resource.data.assignedMidwifeId == request.auth.uid ||
+          request.resource.data.midwifeId == request.auth.uid
+        )
+      );
 
       allow update, delete: if isAdmin() ||
         isOwnerMidwife(resource.data);
@@ -130,7 +217,14 @@ service cloud.firestore {
         isOwnerPatient(resource.data, resource.data.patientId) ||
         isOwnerMidwife(resource.data);
 
-      allow create, update, delete: if isAuthenticated();
+      allow create, update: if isAdmin() || isOwnerMidwife(resource.data) || (
+        isAuthenticated() && (
+          request.resource.data.assignedMidwifeId == request.auth.uid ||
+          request.resource.data.midwifeId == request.auth.uid
+        )
+      );
+
+      allow delete: if isAdmin() || isOwnerMidwife(resource.data);
     }
 
     match /records/{recordId} {
@@ -138,37 +232,79 @@ service cloud.firestore {
         isOwnerPatient(resource.data, resource.data.patientId) ||
         isOwnerMidwife(resource.data);
 
-      allow write: if isAdmin() ||
-        isOwnerMidwife(resource.data) ||
-        (isAuthenticated() && resource == null);
+      allow create: if isAuthenticated() && (
+        isAdmin() ||
+        request.resource.data.assignedMidwifeId == request.auth.uid ||
+        request.resource.data.midwifeId == request.auth.uid
+      );
+
+      allow update, delete: if isAdmin() ||
+        isOwnerMidwife(resource.data);
     }
 
-    // 7. Activity logs (Admin view only; users cannot edit or delete logs)
+    // 7. Activity logs (Audit Logs)
+    // - Only Admins can view activity logs
+    // - Authenticated users can write log entries for legitimate actions
+    // - Ordinary users and attackers cannot update or delete existing logs
     match /activityLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if isAuthenticated() || true;
+      allow create: if isAuthenticated();
       allow update, delete: if false;
     }
 
     match /activity_logs/{logId} {
       allow read: if isAdmin();
-      allow create: if isAuthenticated() || true;
+      allow create: if isAuthenticated();
       allow update, delete: if false;
     }
 
     // 8. Admin, settings, and archives
     match /admin/{adminId} {
-      allow read: if isAuthenticated() || true;
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
     match /facility_settings/{settingId} {
-      allow read: if true;
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
     match /archives/{archiveId} {
-      allow read, write: if isAdmin() || isAuthenticated();
+      allow read, write: if isAdmin();
+    }
+
+    // 9. Notifications
+    // - Admin: can view and manage all notifications
+    // - Authenticated users: can read notifications targeted to them or their role, and update read status
+    // - Authenticated users: can create notifications
+    match /notifications/{notifId} {
+      allow read: if isAdmin() ||
+        (isAuthenticated() && (
+          resource.data.targetUserId == request.auth.uid ||
+          resource.data.userId == request.auth.uid ||
+          resource.data.targetRole == 'all' ||
+          (!('targetUserId' in resource.data) && !('targetRole' in resource.data)) ||
+          resource.data.targetRole == getUserData().role ||
+          (resource.data.targetRole == 'midwife' && exists(/databases/$(database)/documents/midwives/$(request.auth.uid)))
+        ));
+
+      allow create: if isAuthenticated();
+
+      allow update: if isAdmin() ||
+        (isAuthenticated() && (
+          resource.data.targetUserId == request.auth.uid ||
+          resource.data.userId == request.auth.uid ||
+          resource.data.targetRole == getUserData().role
+        ));
+
+      allow delete: if isAdmin() ||
+        (isAuthenticated() && resource.data.targetUserId == request.auth.uid);
+    }
+
+    // 10. Patient Queue Tickets
+    // - Daily outpatient consultation queue and triage tickets
+    match /queue_tickets/{ticketId} {
+      allow read, write: if isAuthenticated();
     }
   }
 }

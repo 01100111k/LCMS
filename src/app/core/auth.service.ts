@@ -12,7 +12,7 @@ import {
 import { doc, getDoc, serverTimestamp, setDoc, writeBatch, collection, getDocs, query, where } from 'firebase/firestore';
 import { environment } from '../../environments/environment';
 import { auth, db, secondaryAuth, secondaryDb } from './firebase';
-import { PendingApprovalApplication } from '../admin/admin.models';
+import { PendingApprovalApplication } from '../admin/models/admin.models';
 import {
   getLocalApprovalDecisions,
   getLocalPendingRegistrations,
@@ -47,41 +47,14 @@ export interface UserProfileDoc {
   [key: string]: unknown;
 }
 
-interface CachedAuthData {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  role: Role | null;
-  userProfile: UserProfileDoc | null;
-}
-
-function getInitialCachedAuth(): CachedAuthData | null {
-  try {
-    const raw = localStorage.getItem('lcms_cached_auth');
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private router = inject(Router);
   private activityLog = inject(ActivityLogService);
 
-  private cached = getInitialCachedAuth();
-  readonly user = signal<User | null>(
-    this.cached && this.cached.uid
-      ? ({
-          uid: this.cached.uid,
-          email: this.cached.email,
-          displayName: this.cached.displayName,
-        } as unknown as User)
-      : null
-  );
-  readonly userProfile = signal<UserProfileDoc | null>(this.cached?.userProfile ?? null);
-  readonly role = signal<Role | null>(this.cached?.role ?? null);
+  readonly user = signal<User | null>(null);
+  readonly userProfile = signal<UserProfileDoc | null>(null);
+  readonly role = signal<Role | null>(null);
   /** Resolves once Firebase has told us whether someone is already logged in. */
   readonly ready: Promise<void>;
   private version = 0;
@@ -157,10 +130,22 @@ export class AuthService {
   });
 
   constructor() {
+    try {
+      localStorage.removeItem('lcms_cached_auth');
+    } catch {}
+
     this.ready = new Promise((resolve) => {
       onAuthStateChanged(auth, async (u) => {
         const v = ++this.version;
-        const found = u ? await this.readUserDoc(u.uid).catch(() => null) : null;
+        if (!u) {
+          this.user.set(null);
+          this.userProfile.set(null);
+          this.role.set(null);
+          resolve();
+          return;
+        }
+
+        const found = await this.readUserDoc(u.uid).catch(() => null);
         const role = found ? this.toRole(found.role) : null;
         if (v !== this.version) return; // a newer sign-in/out happened meanwhile
 
@@ -178,19 +163,6 @@ export class AuthService {
         this.user.set(u);
         this.userProfile.set(profileData);
         this.role.set(role);
-        try {
-          if (u && role) {
-            localStorage.setItem('lcms_cached_auth', JSON.stringify({
-              uid: u.uid,
-              email: u.email,
-              displayName: u.displayName,
-              role,
-              userProfile: profileData,
-            }));
-          } else {
-            localStorage.removeItem('lcms_cached_auth');
-          }
-        } catch {}
         resolve();
       });
     });
@@ -231,15 +203,26 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<Role> {
     const cleanEmail = email.trim().toLowerCase();
+
+    // Ensure clean state before authenticating if an active session belongs to someone else
+    if (auth.currentUser && auth.currentUser.email?.toLowerCase() !== cleanEmail) {
+      await signOut(auth).catch(() => {});
+      this.user.set(null);
+      this.userProfile.set(null);
+      this.role.set(null);
+    }
+
     let cred: any = null;
 
     try {
       cred = await signInWithEmailAndPassword(auth, cleanEmail, password);
     } catch (err: any) {
       const code = err?.code || '';
-      // If midwife@gmail.com doesn't exist in Firebase Auth yet, automatically create it!
+      // If core demo accounts don't exist in Firebase Auth yet, automatically create them!
       if (
-        (cleanEmail === 'midwife@gmail.com' || cleanEmail === 'midwife@lyingincare.ph') &&
+        (cleanEmail === 'midwife@gmail.com' || cleanEmail === 'midwife@lyingincare.ph' ||
+         cleanEmail === 'admin@lyingincare.ph' || cleanEmail === 'admin@gmail.com' ||
+         cleanEmail === 'patient@gmail.com') &&
         (code === 'auth/user-not-found' || code === 'auth/invalid-credential' || code === 'auth/wrong-password')
       ) {
         try {
@@ -258,8 +241,24 @@ export class AuthService {
     let found = await this.readUserDoc(uid);
 
     if (!found.exists || !found.data) {
-      // Auto-provision if this is midwife@gmail.com
-      if (cleanEmail === 'midwife@gmail.com' || cleanEmail === 'midwife@lyingincare.ph') {
+      if (cleanEmail === 'admin@lyingincare.ph' || cleanEmail === 'admin@gmail.com') {
+        const now = serverTimestamp();
+        const adminDoc: UserProfileDoc = {
+          uid,
+          fullName: 'System Administrator',
+          displayName: 'System Administrator',
+          email: cleanEmail,
+          role: 'admin',
+          accountStatus: 'active',
+          status: 'active',
+          approvalStatus: 'approved',
+          createdAt: now,
+          updatedAt: now,
+        };
+        await setDoc(doc(db, 'users', uid), adminDoc, { merge: true }).catch(() => null);
+        await setDoc(doc(db, 'admin', uid), adminDoc, { merge: true }).catch(() => null);
+        found = { exists: true, role: 'admin', data: adminDoc };
+      } else if (cleanEmail === 'midwife@gmail.com' || cleanEmail === 'midwife@lyingincare.ph') {
         const now = serverTimestamp();
         const mwDoc: UserProfileDoc = {
           uid,
@@ -291,6 +290,34 @@ export class AuthService {
           updatedAt: now,
         }, { merge: true }).catch(() => null);
         found = { exists: true, role: 'midwife', data: mwDoc };
+      } else if (cleanEmail === 'patient@gmail.com') {
+        const now = serverTimestamp();
+        const patDoc: UserProfileDoc = {
+          uid,
+          fullName: 'Patient',
+          displayName: 'Patient',
+          email: cleanEmail,
+          role: 'patient',
+          accountStatus: 'active',
+          status: 'active',
+          approvalStatus: 'approved',
+          createdAt: now,
+          updatedAt: now,
+        };
+        await setDoc(doc(db, 'users', uid), patDoc, { merge: true }).catch(() => null);
+        await setDoc(doc(db, 'patients', uid), {
+          id: uid,
+          patientId: uid,
+          uid,
+          fullName: 'Patient',
+          displayName: 'Patient',
+          email: cleanEmail,
+          status: 'Active',
+          riskLevel: 'Low risk',
+          createdAt: now,
+          updatedAt: now,
+        }, { merge: true }).catch(() => null);
+        found = { exists: true, role: 'patient', data: patDoc };
       } else {
         // Check if an approved registration exists in pendingApprovals
         try {
@@ -351,8 +378,8 @@ export class AuthService {
 
     const profileData = found.data as UserProfileDoc;
 
-    // Special auto-approval for system midwife
-    if (cleanEmail === 'midwife@gmail.com' || cleanEmail === 'midwife@lyingincare.ph') {
+    // Special auto-approval for system midwife and patient demo accounts
+    if (cleanEmail === 'midwife@gmail.com' || cleanEmail === 'midwife@lyingincare.ph' || cleanEmail === 'patient@gmail.com') {
       profileData.approvalStatus = 'approved';
       profileData.accountStatus = 'active';
     }
@@ -432,15 +459,6 @@ export class AuthService {
       activity: 'User logged in',
     }).catch(() => undefined);
 
-    try {
-      localStorage.setItem('lcms_cached_auth', JSON.stringify({
-        uid: cred.user.uid,
-        email: cred.user.email,
-        displayName: cred.user.displayName || profileData?.displayName || null,
-        role,
-        userProfile: profileData,
-      }));
-    } catch {}
     return role;
   }
 
@@ -710,6 +728,11 @@ export class AuthService {
     lastName: string;
     prcLicense?: string;
     contactNumber?: string;
+    preferences?: {
+      autoFillMidwife?: boolean;
+      highRiskAlerts?: boolean;
+    };
+    weeklySchedule?: any;
   }): Promise<void> {
     const u = this.user();
     if (!u) return;
@@ -732,9 +755,16 @@ export class AuthService {
       role: 'midwife',
       updatedAt: serverTimestamp(),
     };
+    if (data.preferences) {
+      profileUpdate['preferences'] = data.preferences;
+    }
+    if (data.weeklySchedule) {
+      profileUpdate['weeklySchedule'] = data.weeklySchedule;
+    }
 
     try {
       await setDoc(doc(db, 'users', uid), profileUpdate, { merge: true });
+      await setDoc(doc(db, 'midwives', uid), profileUpdate, { merge: true }).catch(() => {});
     } catch {
       // ignore offline/rules
     }
@@ -747,6 +777,17 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    const u = this.user();
+    const r = this.role();
+    if (u && r) {
+      this.activityLog.logActivity({
+        userName: this.userFullName() || u.displayName || u.email || 'User',
+        userRole: r,
+        userEmail: u.email || '',
+        userId: u.uid,
+        activity: 'User logged out',
+      }).catch(() => undefined);
+    }
     try {
       localStorage.removeItem('lcms_cached_auth');
     } catch {}

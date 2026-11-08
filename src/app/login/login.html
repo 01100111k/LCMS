@@ -30,18 +30,22 @@
         <p class="sub">Log in to your account to continue.</p>
 
         <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" novalidate>
-          <label for="l-email">Email address</label>
+          <label for="l-email">Email Address</label>
           <input
             id="l-email"
             type="email"
             formControlName="email"
             autocomplete="email"
-            placeholder="you@example.com"
+            placeholder="you@gmail.com or admin email"
             data-autofocus
             [class.bad]="bad(loginForm.controls.email)"
           />
           @if (bad(loginForm.controls.email)) {
-            <p class="field-error">Enter a valid email address.</p>
+            @if (loginForm.controls.email.errors?.['required']) {
+              <p class="field-error">Email is required.</p>
+            } @else {
+              <p class="field-error">Enter a valid email address.</p>
+            }
           }
 
           <label for="l-pw">Password</label>
@@ -51,7 +55,7 @@
               [type]="showLoginPassword() ? 'text' : 'password'"
               formControlName="password"
               autocomplete="current-password"
-              placeholder="Your password"
+              placeholder="••••••••"
               [class.bad]="bad(loginForm.controls.password)"
             />
             <button
@@ -69,10 +73,9 @@
               </svg>
             </button>
           </div>
-
-          <div class="row-end">
-            <button type="button" class="link-btn" (click)="forgot()">Forgot password?</button>
-          </div>
+          @if (bad(loginForm.controls.password)) {
+            <p class="field-error">Password is required.</p>
+          }
 
           @if (error()) {
             <p class="msg msg--error" role="alert">{{ error() }}</p>
@@ -87,19 +90,17 @@
         </form>
 
         <p class="switch-text">
-          New here?
+          Don't have an account?
           <button type="button" class="link-btn" (click)="go('role-select')">
-            Create an account
+            Sign up
           </button>
         </p>
-        <p class="switch-text" style="margin-top: 8px;">
+        <p class="switch-text" style="margin-top: 10px;">
           Applied recently?
           <button type="button" class="link-btn" (click)="go('check-status')">
             Check Registration Status
           </button>
         </p>
-
-
       }
 
       <!-- ========================================================
@@ -214,7 +215,6 @@
             placeholder="midwife@gmail.com"
             [class.bad]="bad(signupForm.controls.email)"
           />
-          <p class="input-hint">Use your real @gmail.com address (6+ characters) so approval or rejection notices can reach your inbox.</p>
 
           <label for="m-pw">Password</label>
           <div class="pw">
@@ -269,7 +269,7 @@
           <!-- Proof of identity -->
           <div class="proof-section">
             <label class="proof-label">Proof of identity <span class="req-tag">(required)</span></label>
-            <p class="input-hint">Upload a PRC ID or valid government ID photo (JPG, PNG, or PDF — max 400 KB each, up to 2 files). Works on the free Firebase plan.</p>
+            <p class="input-hint">Upload a PRC ID or valid government ID photo (JPG, PNG, or PDF — max 400 KB each, up to 2 files).</p>
 
             <input
               #midwifeFileInput
@@ -387,7 +387,6 @@
             placeholder="patient@gmail.com"
             [class.bad]="bad(signupForm.controls.email)"
           />
-          <p class="input-hint">Use your real @gmail.com address (6+ characters) so approval or rejection notices can reach your inbox.</p>
 
           <label for="p-pw">Password</label>
           <div class="pw">
@@ -442,7 +441,7 @@
           <!-- Proof of identity -->
           <div class="proof-section">
             <label class="proof-label">Proof of identity <span class="req-tag">(required)</span></label>
-            <p class="input-hint">Upload a valid government ID or proof of identity photo (JPG, PNG, or PDF — max 400 KB each, up to 2 files). Works on the free Firebase plan.</p>
+            <p class="input-hint">Upload a valid government ID or proof of identity photo (JPG, PNG, or PDF — max 400 KB each, up to 2 files).</p>
 
             <input
               #patientFileInput

@@ -13,9 +13,4 @@ export const roleGuard = (role: Role): CanActivateFn => async () => {
   return router.createUrlTree([auth.homeRoute()]);
 };
 
-export const guestGuard: CanActivateFn = async () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-  await auth.ready;
-  return auth.user() && auth.role() ? router.createUrlTree([auth.homeRoute()]) : true;
-};
+export const guestGuard: CanActivateFn = () => true;

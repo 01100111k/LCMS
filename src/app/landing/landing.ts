@@ -89,32 +89,37 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
     {
       question: 'How does appointment scheduling work for prenatal checkups?',
       answer:
-        'Midwives and clinic staff can easily book appointments for registered patients via the interactive calendar. Patients can also coordinate their schedules through the patient portal. The system prevents double bookings and manages clinic working hours automatically.',
+        'Midwives and clinic staff can easily schedule checkups through an interactive calendar with conflict prevention that automatically locks booked slots to prevent double-booking. Expecting mothers can also book or request visits through the Patient Portal, and midwives can manage walk-ins and daily triage using the real-time Patient Queue.',
     },
     {
       question: 'Can expecting mothers access the portal on their smartphones?',
       answer:
-        'Yes! The system is fully responsive across mobile phones, tablets, and desktops. Expecting mothers can log in from any web browser to view upcoming appointments, visit history, and clinic updates without downloading an external app.',
+        'Yes! The Patient Portal is fully responsive on all smartphones, tablets, and computers. Expecting mothers can securely sign in from any web browser to check their Estimated Due Date (EDD) countdown, review upcoming appointments, follow their week-by-week Pregnancy Journey, and view clinic emergency hotlines.',
     },
     {
       question: 'How are appointment statuses (Scheduled, Confirmed, Cancelled, Completed) managed?',
       answer:
-        'Midwives can click any patient on the calendar to open an appointment status card. Statuses can be updated in real time between Requested, Scheduled, Confirmed, Completed, or Cancelled with automatic synchronization to Firebase.',
+        'Appointments transition dynamically in real time between Requested, Scheduled, Confirmed, Completed, and Cancelled. When an appointment is rescheduled or cancelled, the booking slot is immediately reopened for other patients. All updates synchronize with Cloud Firestore and are recorded in the clinic audit log.',
     },
     {
       question: 'Can midwives track medical history and prenatal milestones?',
       answer:
-        'Yes. Each patient has a dedicated profile that records gestational milestones, obstetrical history (Gravida, Para), Estimated Date of Delivery (EDD), vital signs, and personalized visit notes for every stage of pregnancy.',
+        'Yes. The system provides complete maternal care documentation across prenatal visits, delivery outcomes, and postpartum checkups. It automatically computes gestational age and EDD from the Last Menstrual Period (LMP), monitors vital signs and fetal heart rate (FHR), tracks obstetrical history (Gravida/Para), and powers an interactive Pregnancy Journey timeline.',
     },
     {
       question: 'Is patient medical data secure and confidential?',
       answer:
-        'Your health records are stored in secure cloud infrastructure with enterprise-level encryption, role-based access rules, and authenticated credentials so only authorized healthcare personnel and the patient can view records.',
+        'Yes. The system enforces strict Role-Based Access Control (RBAC) and patient data ownership via Firebase Authentication and Firestore Security Rules. Midwives can only access their assigned patients, patients can only access their own profile, data is protected by HTTPS and cloud encryption at rest, and an immutable audit log captures all clinical and administrative actions.',
     },
     {
       question: 'What user roles are available in the system?',
       answer:
-        'The system features two tailored portals: the Midwife Portal with clinical management tools, calendar controls, and patient registration, and the Patient Portal designed for mothers to view their care schedule.',
+        'The system features three distinct, secure portals: Administrator (manages staff accounts, reviews PRC midwife licenses and patient applications, audits activity logs, and manages clinic settings), Licensed Midwife (registers patients, documents prenatal/delivery/postpartum care, and manages calendars and queues), and Patient (tracks personal pregnancy progress and schedules visits).',
+    },
+    {
+      question: 'How does registration and account approval work?',
+      answer:
+        'Midwives and expecting mothers can sign up online by entering their details and uploading required proof of identity (such as a PRC license for midwives or a valid ID for patients). Clinic administrators review each application before granting portal access, and applicants can check their verification progress at any time using the Check Registration Status feature.',
     },
   ];
 
@@ -201,10 +206,6 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
 
   openAuth(view: AuthView): void {
     this.menuOpen.set(false);
-    if (this.auth.user() && this.auth.role()) {
-      void this.router.navigateByUrl(this.auth.homeRoute());
-      return;
-    }
     this.opener = document.activeElement as HTMLElement | null;
     this.authView.set(view);
   }

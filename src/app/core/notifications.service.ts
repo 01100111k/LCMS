@@ -1,4 +1,18 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
+import { auth, db } from './firebase';
 
 export interface ClinicNotification {
   id: string;
@@ -8,6 +22,9 @@ export interface ClinicNotification {
   read: boolean;
   route?: string;
   type?: 'approval' | 'appointment' | 'alert' | 'system' | 'patient';
+  targetUserId?: string | null;
+  targetRole?: 'admin' | 'midwife' | 'patient' | 'all';
+  createdAt?: any;
 }
 
 const DEFAULT_ADMIN_NOTIFS: ClinicNotification[] = [
@@ -19,6 +36,7 @@ const DEFAULT_ADMIN_NOTIFS: ClinicNotification[] = [
     read: false,
     route: '/admin/pending-approvals',
     type: 'approval',
+    targetRole: 'admin',
   },
   {
     id: 'admin-2',
@@ -28,6 +46,7 @@ const DEFAULT_ADMIN_NOTIFS: ClinicNotification[] = [
     read: false,
     route: '/admin/settings',
     type: 'system',
+    targetRole: 'admin',
   },
 ];
 
@@ -40,6 +59,7 @@ const DEFAULT_MIDWIFE_NOTIFS: ClinicNotification[] = [
     read: false,
     route: '/midwife/appointments',
     type: 'appointment',
+    targetRole: 'midwife',
   },
   {
     id: 'midwife-2',
@@ -49,6 +69,7 @@ const DEFAULT_MIDWIFE_NOTIFS: ClinicNotification[] = [
     read: false,
     route: '/midwife/postpartum',
     type: 'alert',
+    targetRole: 'midwife',
   },
   {
     id: 'midwife-3',
@@ -58,6 +79,7 @@ const DEFAULT_MIDWIFE_NOTIFS: ClinicNotification[] = [
     read: true,
     route: '/midwife/patients',
     type: 'patient',
+    targetRole: 'midwife',
   },
 ];
 
@@ -69,6 +91,7 @@ const DEFAULT_PATIENT_NOTIFS: ClinicNotification[] = [
     time: '2h ago',
     read: false,
     type: 'appointment',
+    targetRole: 'patient',
   },
   {
     id: 'patient-2',
@@ -77,15 +100,44 @@ const DEFAULT_PATIENT_NOTIFS: ClinicNotification[] = [
     time: '1d ago',
     read: true,
     type: 'alert',
+    targetRole: 'patient',
   },
 ];
+
+function formatTimeAgo(timestamp: any): string {
+  if (!timestamp) return 'Just now';
+  let date: Date;
+  if (timestamp instanceof Date) {
+    date = timestamp;
+  } else if (typeof timestamp.toDate === 'function') {
+    date = timestamp.toDate();
+  } else if (typeof timestamp === 'number') {
+    date = new Date(timestamp);
+  } else if (typeof timestamp === 'string') {
+    date = new Date(timestamp);
+  } else if (timestamp.seconds) {
+    date = new Date(timestamp.seconds * 1000);
+  } else {
+    return 'Just now';
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return 'Just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
 
 function loadFromStorage(key: string, defaults: ClinicNotification[]): ClinicNotification[] {
   if (typeof localStorage === 'undefined') return defaults;
   try {
     const raw = localStorage.getItem(key);
     if (raw === null) {
-      localStorage.setItem(key, JSON.stringify(defaults));
       return defaults;
     }
     return JSON.parse(raw);
@@ -133,10 +185,126 @@ export class NotificationsService {
     () => this.patientNotifications().filter((n) => !n.read).length
   );
 
+  private unsubscribe?: () => void;
+
+  constructor() {
+    this.initRealtimeListener();
+  }
+
+  initRealtimeListener(): void {
+    if (this.unsubscribe) return;
+    try {
+      const notifsCol = collection(db, 'notifications');
+      this.unsubscribe = onSnapshot(
+        notifsCol,
+        (snap) => {
+          if (snap.empty) return;
+          const currentUid = auth.currentUser?.uid;
+          const currentEmail = auth.currentUser?.email?.toLowerCase() || '';
+          const isAdmin = currentEmail.startsWith('admin@');
+
+          const allDbNotifs: ClinicNotification[] = snap.docs.map((d) => {
+            const data = d.data();
+            return {
+              id: d.id,
+              title: data['title'] || 'Notification',
+              message: data['message'] || '',
+              time: formatTimeAgo(data['createdAt'] || data['timestamp']),
+              read: !!data['read'],
+              route: data['route'],
+              type: data['type'] || 'system',
+              targetUserId: data['targetUserId'],
+              targetRole: data['targetRole'],
+              createdAt: data['createdAt'],
+            };
+          });
+
+          // Sort by newest
+          allDbNotifs.sort((a, b) => {
+            const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0;
+            const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0;
+            return timeB - timeA;
+          });
+
+          // 1. Admin notifications
+          const adminList = allDbNotifs.filter(
+            (n) => n.targetRole === 'admin' || n.targetRole === 'all' || !n.targetRole
+          );
+          if (adminList.length > 0) {
+            this.adminNotifications.set(adminList);
+            saveToStorage(this.adminStorageKey, adminList);
+          }
+
+          // 2. Midwife notifications
+          const midwifeList = allDbNotifs.filter((n) => {
+            if (n.targetUserId && n.targetUserId === currentUid) return true;
+            return n.targetRole === 'midwife' || n.targetRole === 'all';
+          });
+          if (midwifeList.length > 0) {
+            this.midwifeNotifications.set(midwifeList);
+            saveToStorage(this.midwifeStorageKey, midwifeList);
+          }
+
+          // 3. Patient notifications
+          const patientList = allDbNotifs.filter((n) => {
+            if (n.targetUserId && n.targetUserId === currentUid) return true;
+            return n.targetRole === 'patient';
+          });
+          if (patientList.length > 0) {
+            this.patientNotifications.set(patientList);
+            saveToStorage(this.patientStorageKey, patientList);
+          }
+        },
+        () => {
+          // Fallback to storage silently if offline or rules block
+        }
+      );
+    } catch {
+      // offline fallback
+    }
+  }
+
+  /**
+   * Creates a new notification in Firestore.
+   */
+  async createNotification(notif: {
+    title: string;
+    message: string;
+    type?: 'approval' | 'appointment' | 'alert' | 'system' | 'patient';
+    route?: string;
+    targetUserId?: string | null;
+    targetRole?: 'admin' | 'midwife' | 'patient' | 'all';
+  }): Promise<string> {
+    try {
+      const docRef = await addDoc(collection(db, 'notifications'), {
+        ...notif,
+        read: false,
+        createdAt: serverTimestamp(),
+        timestamp: serverTimestamp(),
+      });
+      return docRef.id;
+    } catch {
+      return 'local-notif-' + Date.now();
+    }
+  }
+
   // ==================== ADMIN ACTIONS ====================
   markAllAdminRead(): void {
-    this.adminNotifications.set([]);
-    saveToStorage(this.adminStorageKey, []);
+    const list = this.adminNotifications();
+    const updated = list.map((item) => ({ ...item, read: true }));
+    this.adminNotifications.set(updated);
+    saveToStorage(this.adminStorageKey, updated);
+
+    // Sync to Firestore
+    try {
+      const batch = writeBatch(db);
+      for (const item of list) {
+        if (!item.id.startsWith('admin-')) {
+          batch.update(doc(db, 'notifications', item.id), { read: true, updatedAt: serverTimestamp() });
+        }
+      }
+      batch.commit().catch(() => {});
+    } catch {}
   }
 
   markAdminItemRead(id: string): void {
@@ -145,12 +313,28 @@ export class NotificationsService {
       saveToStorage(this.adminStorageKey, updated);
       return updated;
     });
+
+    if (!id.startsWith('admin-')) {
+      updateDoc(doc(db, 'notifications', id), { read: true, updatedAt: serverTimestamp() }).catch(() => {});
+    }
   }
 
   // ==================== MIDWIFE ACTIONS ====================
   markAllMidwifeRead(): void {
-    this.midwifeNotifications.set([]);
-    saveToStorage(this.midwifeStorageKey, []);
+    const list = this.midwifeNotifications();
+    const updated = list.map((item) => ({ ...item, read: true }));
+    this.midwifeNotifications.set(updated);
+    saveToStorage(this.midwifeStorageKey, updated);
+
+    try {
+      const batch = writeBatch(db);
+      for (const item of list) {
+        if (!item.id.startsWith('midwife-')) {
+          batch.update(doc(db, 'notifications', item.id), { read: true, updatedAt: serverTimestamp() });
+        }
+      }
+      batch.commit().catch(() => {});
+    } catch {}
   }
 
   markMidwifeItemRead(id: string): void {
@@ -159,12 +343,28 @@ export class NotificationsService {
       saveToStorage(this.midwifeStorageKey, updated);
       return updated;
     });
+
+    if (!id.startsWith('midwife-')) {
+      updateDoc(doc(db, 'notifications', id), { read: true, updatedAt: serverTimestamp() }).catch(() => {});
+    }
   }
 
   // ==================== PATIENT ACTIONS ====================
   markAllPatientRead(): void {
-    this.patientNotifications.set([]);
-    saveToStorage(this.patientStorageKey, []);
+    const list = this.patientNotifications();
+    const updated = list.map((item) => ({ ...item, read: true }));
+    this.patientNotifications.set(updated);
+    saveToStorage(this.patientStorageKey, updated);
+
+    try {
+      const batch = writeBatch(db);
+      for (const item of list) {
+        if (!item.id.startsWith('patient-')) {
+          batch.update(doc(db, 'notifications', item.id), { read: true, updatedAt: serverTimestamp() });
+        }
+      }
+      batch.commit().catch(() => {});
+    } catch {}
   }
 
   markPatientItemRead(id: string): void {
@@ -173,6 +373,9 @@ export class NotificationsService {
       saveToStorage(this.patientStorageKey, updated);
       return updated;
     });
+
+    if (!id.startsWith('patient-')) {
+      updateDoc(doc(db, 'notifications', id), { read: true, updatedAt: serverTimestamp() }).catch(() => {});
+    }
   }
 }
-
