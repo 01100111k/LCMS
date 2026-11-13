@@ -309,32 +309,45 @@
         <!-- SUBPAGE: DASHBOARD                                       -->
         <!-- ======================================================== -->
         @if (activeTab() === 'dashboard') {
-          <div class="dashboard-page-wrap">
-            <!-- 1. Welcome Card -->
-            <section class="welcome-card">
-              <div class="welcome-left">
-                <span class="welcome-badge">Maternal Patient Portal</span>
-                <h1 class="welcome-title">{{ greeting() }}, {{ patientName() }}!</h1>
-                <p class="welcome-sub">
+          <div class="dashboard-wrap">
+            <!-- 1. Hero Banner (Lavender/Purple Maternal Theme) -->
+            <section class="hero-banner">
+              <div class="hero-content">
+                <div class="hero-tags">
+                  <span class="hero-pill-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                    Maternal Patient Portal
+                  </span>
+                  <span class="hero-date">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    {{ todayFormatted() }}
+                  </span>
+                </div>
+                <h1>{{ greeting() }}, {{ patientName() }}!</h1>
+                <p class="hero-sub">
                   Here is your maternal health summary, care schedule, and verified clinical records from your care team.
                 </p>
               </div>
 
-              <div class="welcome-right">
-                <div class="welcome-date-pill">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                  <span>{{ todayFormatted() }}</span>
-                </div>
-                <button type="button" class="btn-header-cta" (click)="openBookingModal()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <div class="hero-actions">
+                <button type="button" class="btn-hero-solid" (click)="openBookingModal()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>
                   Book Appointment
+                </button>
+                <button type="button" class="btn-hero-glass" (click)="switchTab('records')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  My Care Records
                 </button>
               </div>
             </section>
