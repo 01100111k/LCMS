@@ -1084,52 +1084,165 @@
                 </div>
               </div>
 
-              <!-- 4. Weekly Fetal Development Highlights -->
-              <div class="weekly-insights-card">
-                <div class="insights-head">
-                  <div class="insights-icon tone-purple">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <!-- 4. Two-Column Grid: Fetal Development & Clinical Care Focus -->
+              <div class="two-column-grid">
+                <!-- Left: Baby Development -->
+                <div class="journey-content-card">
+                  <div class="card-head-row">
+                    <div class="head-icon tone-pink">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3>Week {{ gestationalWeek() }} Fetal Development & Size</h3>
+                      <p>Anatomical growth comparison and physiological milestones.</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3>Baby's Development at Week {{ gestationalWeek() }}</h3>
-                    <p class="insights-sub">Evidence-based developmental milestones</p>
+
+                  <div class="baby-growth-box">
+                    <div class="baby-fruit-circle">
+                      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#be185d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                      </svg>
+                    </div>
+                    <div class="baby-growth-details">
+                      <span class="fruit-label">Approximate Size Comparison</span>
+                      <strong class="fruit-name">{{ babySize().name }}</strong>
+                      <div class="growth-stats-row">
+                        <span>Estimated Length: <strong>{{ babySize().sizeCm }}</strong></span>
+                        <span class="sep-bullet">•</span>
+                        <span>Estimated Weight: <strong>{{ babySize().weightG }}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="growth-desc-box">
+                    <h4>Developmental Highlights this Week:</h4>
+                    <p>{{ babySize().desc }}</p>
                   </div>
                 </div>
-                <p class="development-text">{{ weeklyDevelopmentNote() }}</p>
+
+                <!-- Right: Midwife Clinical Focus -->
+                <div class="journey-content-card">
+                  <div class="card-head-row">
+                    <div class="head-icon tone-purple">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3>Midwife Clinical Care Focus ({{ trimesterName() }})</h3>
+                      <p>Clinical assessments and health counseling priorities.</p>
+                    </div>
+                  </div>
+
+                  <div class="clinical-focus-list">
+                    <div class="focus-item">
+                      <div class="focus-icon">✓</div>
+                      <div class="focus-text">
+                        <strong>Vital Signs & Pre-eclampsia Screening</strong>
+                        <p>Check Blood Pressure at every visit (&lt;140/90 mmHg) and evaluate for sudden facial/hand edema or proteinuria.</p>
+                      </div>
+                    </div>
+
+                    <div class="focus-item">
+                      <div class="focus-icon">✓</div>
+                      <div class="focus-text">
+                        <strong>Obstetric Measurements & Fetal Well-being</strong>
+                        <p>Measure fundal height in cm (McDonald's rule: height in cm correlates with gestational age after 20w) and auscultate FHR (110–160 bpm).</p>
+                      </div>
+                    </div>
+
+                    <div class="focus-item">
+                      <div class="focus-icon">✓</div>
+                      <div class="focus-text">
+                        <strong>Micronutrient Supplementation & Nutrition</strong>
+                        <p>Ensure adherence to daily Ferrous Sulfate + Folic Acid (60mg elemental iron / 400mcg folate) and Calcium Carbonate.</p>
+                      </div>
+                    </div>
+
+                    <div class="focus-item">
+                      <div class="focus-icon">✓</div>
+                      <div class="focus-text">
+                        <strong>Birth Preparedness & Danger Signs</strong>
+                        <p>Educate mother on vaginal bleeding, severe headache, epigastric pain, watery discharge (PROM), and reduced fetal kicks.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <!-- 5. Clinical Milestone Checklist -->
-              <div class="milestones-card">
+              <!-- 5. Trimester Milestones & Care Plan Tabs -->
+              <div class="journey-milestones-card">
                 <div class="milestones-header">
                   <div>
-                    <h3>Maternal Care Milestones</h3>
-                    <p class="milestones-sub">Required laboratory screenings, ultrasound scans, and vaccinations</p>
+                    <h3>Maternal Clinical Care Plan & Checklist</h3>
+                    <p>Key clinical screening, ultrasound imaging, immunization, and laboratory milestones.</p>
                   </div>
+
+                  <!-- Milestone Stage Tabs -->
                   <div class="milestone-tabs">
-                    <button type="button" class="mtab-btn" [class.active]="selectedMilestoneTab() === '1st'" (click)="selectedMilestoneTab.set('1st')">1st Trimester</button>
-                    <button type="button" class="mtab-btn" [class.active]="selectedMilestoneTab() === '2nd'" (click)="selectedMilestoneTab.set('2nd')">2nd Trimester</button>
-                    <button type="button" class="mtab-btn" [class.active]="selectedMilestoneTab() === '3rd'" (click)="selectedMilestoneTab.set('3rd')">3rd Trimester</button>
-                    <button type="button" class="mtab-btn" [class.active]="selectedMilestoneTab() === 'postpartum'" (click)="selectedMilestoneTab.set('postpartum')">Postpartum</button>
+                    <button
+                      type="button"
+                      class="m-tab"
+                      [class.active]="selectedMilestoneTab() === '1st'"
+                      (click)="selectedMilestoneTab.set('1st')"
+                    >
+                      1st Trimester (W1-13)
+                    </button>
+                    <button
+                      type="button"
+                      class="m-tab"
+                      [class.active]="selectedMilestoneTab() === '2nd'"
+                      (click)="selectedMilestoneTab.set('2nd')"
+                    >
+                      2nd Trimester (W14-27)
+                    </button>
+                    <button
+                      type="button"
+                      class="m-tab"
+                      [class.active]="selectedMilestoneTab() === '3rd'"
+                      (click)="selectedMilestoneTab.set('3rd')"
+                    >
+                      3rd Trimester (W28-40)
+                    </button>
+                    <button
+                      type="button"
+                      class="m-tab"
+                      [class.active]="selectedMilestoneTab() === 'postpartum'"
+                      (click)="selectedMilestoneTab.set('postpartum')"
+                    >
+                      Birth & Postpartum
+                    </button>
                   </div>
                 </div>
 
+                <!-- Milestones List Grid -->
                 <div class="milestones-grid">
                   @for (m of activeMilestones(); track m.title) {
-                    <div class="milestone-item" [class.completed]="m.completed">
-                      <div class="m-status-icon">
-                        @if (m.completed) {
-                          <span class="m-check">✓</span>
-                        } @else {
-                          <span class="m-circle">○</span>
-                        }
+                    <div class="milestone-card" [class.is-done]="m.completed">
+                      <div class="m-check-col">
+                        <div class="m-checkbox" [class.checked]="m.completed">
+                          @if (m.completed) {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          }
+                        </div>
                       </div>
-                      <div class="m-info">
+                      <div class="m-content-col">
                         <div class="m-title-row">
                           <strong>{{ m.title }}</strong>
-                          <span class="m-timing-badge">{{ m.timing }}</span>
+                          <span class="m-timing-tag">{{ m.timing }}</span>
                         </div>
                         <p class="m-desc">{{ m.description }}</p>
-                        <span class="m-cat-tag">{{ m.category }}</span>
+                        <div class="m-footer-row">
+                          <span class="m-category-badge">{{ m.category }}</span>
+                          @if (m.required) {
+                            <span class="m-req-pill">Standard DOH Protocol</span>
+                          }
+                        </div>
                       </div>
                     </div>
                   }

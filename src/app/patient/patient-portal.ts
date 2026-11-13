@@ -508,6 +508,88 @@ export class PatientPortal implements OnInit {
     return 'Watermelon';
   });
 
+  readonly babySize = computed(() => {
+    const w = this.gestationalWeek();
+    if (w <= 0) {
+      return {
+        name: 'Awaiting Assessment',
+        desc: 'Gestational age and fetal growth milestones will display after logging your LMP or first prenatal checkup.',
+        sizeCm: '—',
+        weightG: '—',
+      };
+    }
+    if (w <= 8) {
+      return {
+        name: 'Raspberry',
+        desc: 'Heart is beating at 150-160 bpm. Tiny webbed fingers, eyelids, and limb buds are forming.',
+        sizeCm: '1.6 cm',
+        weightG: '1 g',
+      };
+    }
+    if (w <= 12) {
+      return {
+        name: 'Lime',
+        desc: 'All vital organs are structurally formed; baby begins reflexive swallowing and thumb sucking.',
+        sizeCm: '5.4 cm',
+        weightG: '14 g',
+      };
+    }
+    if (w <= 16) {
+      return {
+        name: 'Avocado',
+        desc: 'Facial muscles practice moving, eyes react to gentle light, and tiny fingernails form.',
+        sizeCm: '11.6 cm',
+        weightG: '100 g',
+      };
+    }
+    if (w <= 20) {
+      return {
+        name: 'Banana',
+        desc: 'Halfway mark! Protective vernix caseosa coats delicate baby skin; active flutters/kicks felt by mom.',
+        sizeCm: '25.6 cm',
+        weightG: '300 g',
+      };
+    }
+    if (w <= 24) {
+      return {
+        name: 'Ear of Corn',
+        desc: 'Inner ear structures are complete; baby hears mom’s voice and familiar sounds clearly.',
+        sizeCm: '30.0 cm',
+        weightG: '600 g',
+      };
+    }
+    if (w <= 28) {
+      return {
+        name: 'Eggplant',
+        desc: 'Third trimester begins! Eyelids open; brain develops rhythmic sleep cycles and REM periods.',
+        sizeCm: '37.6 cm',
+        weightG: '1,000 g',
+      };
+    }
+    if (w <= 32) {
+      return {
+        name: 'Butternut Squash',
+        desc: 'Fat layers form under the skin for temperature regulation; practicing rhythmic breathing motions.',
+        sizeCm: '42.4 cm',
+        weightG: '1,700 g',
+      };
+    }
+    if (w <= 36) {
+      return {
+        name: 'Papaya',
+        desc: 'Lungs near full maturation; baby begins descending into the pelvic inlet (lightening).',
+        sizeCm: '47.4 cm',
+        weightG: '2,600 g',
+      };
+    }
+    return {
+      name: 'Watermelon',
+      desc: 'Full term gestation! Baby is prepared for spontaneous delivery and immediate skin-to-skin transition.',
+      sizeCm: '51.2 cm',
+      weightG: '3,300 g',
+    };
+  });
+
   readonly babyLengthWeight = computed(() => {
     const w = this.gestationalWeek();
     if (w === 0) return 'Update your LMP in Profile';
