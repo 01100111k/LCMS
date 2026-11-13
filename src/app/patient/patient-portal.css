@@ -852,14 +852,21 @@
 .kpi-icon-circle {
   width: 32px;
   height: 32px;
+  max-width: 32px;
+  max-height: 32px;
   border-radius: 8px;
   display: grid;
   place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .kpi-icon-circle svg {
-  width: 16px;
-  height: 16px;
+  width: 16px !important;
+  height: 16px !important;
+  max-width: 16px !important;
+  max-height: 16px !important;
+  flex-shrink: 0;
 }
 
 .tone-purple {
@@ -3106,18 +3113,27 @@
   flex-direction: column;
 }
 
-.profile-field-row {
+.profile-field-row,
+.profile-field-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 13px 0;
-  border-bottom: 1px solid #f8f6fc;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0eaf8;
   gap: 16px;
 }
 
-.profile-field-row:last-child {
+.profile-field-row:last-child,
+.profile-field-item:last-child {
   border-bottom: none;
   padding-bottom: 0;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #7a6d8d;
+  flex-shrink: 0;
 }
 
 .field-label-group {
@@ -3139,10 +3155,25 @@
 
 .field-value {
   font-size: 13.5px;
-  font-weight: 600;
-  color: #361759;
+  font-weight: 700;
+  color: #271442;
   text-align: right;
   word-break: break-word;
+}
+
+.field-value.highlight-val {
+  color: #6b4fa3;
+  font-weight: 800;
+}
+
+.field-value.monospace-val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  color: #4c2d73;
+  background: #f4effa;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #e7dcf5;
 }
 
 .field-empty {
@@ -4287,6 +4318,13 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.tracker-page-wrap svg,
+.kpi-card svg {
+  max-width: 24px;
+  max-height: 24px;
+  flex-shrink: 0;
 }
 
 /* 1. Tracker Hero Banner */

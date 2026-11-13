@@ -18,11 +18,11 @@
       <span class="brand-text"><strong>Lying-In Care</strong></span>
     </a>
 
-    <!-- Navigation Menu (All 10 Patient Items) -->
+    <!-- Navigation Menu (Aligned with Midwife Portal Layout) -->
     <nav class="sidebar-nav" aria-label="Patient Main Navigation">
       <!-- 1. Dashboard -->
       <a class="nav-item" [class.active]="activeTab() === 'dashboard'" (click)="switchTab('dashboard')" role="button" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
           <rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>
         </svg>
@@ -31,7 +31,7 @@
 
       <!-- 2. My Profile -->
       <a class="nav-item" [class.active]="activeTab() === 'profile'" (click)="switchTab('profile')" role="button" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
         </svg>
         <span>My Profile</span>
@@ -39,19 +39,16 @@
 
       <!-- 3. My Appointments -->
       <a class="nav-item" [class.active]="activeTab() === 'appointments'" (click)="switchTab('appointments')" role="button" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
           <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
         <span>My Appointments</span>
-        @if (pendingApptsCount() > 0) {
-          <span class="nav-badge-pill">{{ pendingApptsCount() }}</span>
-        }
       </a>
 
       <!-- 4. Pregnancy Tracker -->
       <a class="nav-item" [class.active]="activeTab() === 'tracker'" (click)="switchTab('tracker')" role="button" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
         </svg>
         <span>Pregnancy Tracker</span>
@@ -59,50 +56,33 @@
 
       <!-- 5. My Care Records -->
       <a class="nav-item" [class.active]="activeTab() === 'records'" (click)="switchTab('records')" role="button" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
           <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
         </svg>
         <span>My Care Records</span>
-        @if (totalCareRecords() > 0) {
-          <span class="nav-badge-pill badge-records">{{ totalCareRecords() }}</span>
-        }
       </a>
 
       <!-- 6. Health Library -->
       <a class="nav-item" [class.active]="activeTab() === 'guide'" (click)="switchTab('guide')" role="button" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
         </svg>
         <span>Health Library</span>
       </a>
 
-      <!-- 7. Notifications -->
-      <a class="nav-item" [class.active]="activeTab() === 'notifications'" (click)="switchTab('notifications')" role="button" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-        </svg>
-        <span>Notifications</span>
-        @if (unreadCount() > 0) {
-          <span class="nav-badge-pill badge-alert">{{ unreadCount() }}</span>
-        }
-      </a>
-
-      <!-- 8. Follow-ups -->
+      <!-- 7. Follow-ups -->
       <a class="nav-item" [class.active]="activeTab() === 'followups'" (click)="switchTab('followups')" role="button" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
         </svg>
         <span>Follow-ups</span>
-        @if (followUpsCount() > 0) {
-          <span class="nav-badge-pill badge-subtle">{{ followUpsCount() }}</span>
-        }
       </a>
 
-      <!-- 9. Contact My Midwife -->
+      <!-- 8. Contact My Midwife -->
       <a class="nav-item" [class.active]="activeTab() === 'contact'" (click)="switchTab('contact')" role="button" tabindex="0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
         <span>Contact My Midwife</span>
@@ -1016,7 +996,7 @@
                 <div class="kpi-card">
                   <div class="kpi-top">
                     <div class="kpi-icon-circle tone-purple">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                       </svg>
                     </div>
@@ -1029,7 +1009,7 @@
                 <div class="kpi-card">
                   <div class="kpi-top">
                     <div class="kpi-icon-circle tone-pink">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                       </svg>
                     </div>
@@ -1042,7 +1022,7 @@
                 <div class="kpi-card">
                   <div class="kpi-top">
                     <div class="kpi-icon-circle tone-purple">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="20" x2="12" y2="10"/>
                         <line x1="18" y1="20" x2="18" y2="4"/>
                         <line x1="6" y1="20" x2="6" y2="16"/>
@@ -1057,7 +1037,7 @@
                 <div class="kpi-card">
                   <div class="kpi-top">
                     <div class="kpi-icon-circle tone-purple">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                       </svg>
                     </div>
@@ -1073,29 +1053,33 @@
                 <div class="timeline-top-row">
                   <div>
                     <h3>Gestational Timeline & Trimester Progression</h3>
-                    <p class="timeline-subtext">Visual marker showing your current maternal care week within the 40-week term</p>
+                    <p class="timeline-sub">Visual marker showing your current maternal care week within the 40-week term</p>
                   </div>
-                  <span class="week-pill">Week {{ gestationalWeek() }} of 40</span>
+                  <span class="progress-pill">Week <strong>{{ gestationalWeek() }}</strong> of 40</span>
                 </div>
 
-                <div class="progress-bar-shell">
-                  <div class="progress-bar-fill" [style.width.%]="progressPercent()">
-                    <span class="progress-marker-dot"></span>
+                <div class="timeline-bar-wrapper">
+                  <div class="timeline-bar-track">
+                    <div class="timeline-bar-fill" [style.width.%]="progressPercent()"></div>
+                    <div class="timeline-current-pin" [style.left.%]="progressPercent()">
+                      <span class="pin-bubble">Wk {{ gestationalWeek() }}</span>
+                      <span class="pin-dot"></span>
+                    </div>
                   </div>
-                </div>
 
-                <div class="trimester-zones-bar">
-                  <div class="tri-zone zone-1" [class.current]="gestationalWeek() <= 13">
-                    <strong>1st Trimester</strong>
-                    <span>Weeks 1 – 13</span>
-                  </div>
-                  <div class="tri-zone zone-2" [class.current]="gestationalWeek() > 13 && gestationalWeek() <= 27">
-                    <strong>2nd Trimester</strong>
-                    <span>Weeks 14 – 27</span>
-                  </div>
-                  <div class="tri-zone zone-3" [class.current]="gestationalWeek() > 27">
-                    <strong>3rd Trimester</strong>
-                    <span>Weeks 28 – 40+</span>
+                  <div class="trimester-zones-bar">
+                    <div class="zone" [class.current-zone]="gestationalWeek() <= 13">
+                      <strong class="zone-title">1st Trimester</strong>
+                      <span class="zone-weeks">Weeks 1 – 13</span>
+                    </div>
+                    <div class="zone" [class.current-zone]="gestationalWeek() > 13 && gestationalWeek() <= 27">
+                      <strong class="zone-title">2nd Trimester</strong>
+                      <span class="zone-weeks">Weeks 14 – 27</span>
+                    </div>
+                    <div class="zone" [class.current-zone]="gestationalWeek() > 27">
+                      <strong class="zone-title">3rd Trimester</strong>
+                      <span class="zone-weeks">Weeks 28 – 40+</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1104,7 +1088,7 @@
               <div class="weekly-insights-card">
                 <div class="insights-head">
                   <div class="insights-icon tone-purple">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                   </div>
                   <div>
                     <h3>Baby's Development at Week {{ gestationalWeek() }}</h3>
