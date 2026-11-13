@@ -2329,7 +2329,17 @@
 .emergency-tag { background: #fee2e2; color: #991b1b; }
 .warning-tag { background: #fef3c7; color: #92400e; }
 
-.proto-icon { font-size: 20px; }
+.proto-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proto-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
 
 .proto-card h3 {
   margin: 0 0 4px;
@@ -3718,7 +3728,15 @@
 }
 
 .notes-icon {
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.notes-icon svg {
+  width: 13px;
+  height: 13px;
+  color: #7f6a9e;
+  flex-shrink: 0;
 }
 
 .appt-col-actions {
@@ -3922,8 +3940,13 @@
   background: #ebe0f8;
   display: grid;
   place-items: center;
-  font-size: 19px;
   flex-shrink: 0;
+}
+
+.provider-avatar-circle svg {
+  width: 20px;
+  height: 20px;
+  color: #562788;
 }
 
 .provider-strip-text {
@@ -5258,8 +5281,16 @@
 }
 
 .hotline-icon {
-  font-size: 22px;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hotline-icon svg {
+  width: 22px;
+  height: 22px;
+  color: #dc2626;
 }
 
 .hotline-details strong {
@@ -5638,8 +5669,12 @@
   border-radius: 12px;
   display: grid;
   place-items: center;
-  font-size: 18px;
   flex-shrink: 0;
+}
+
+.fu-icon-box svg {
+  width: 20px;
+  height: 20px;
 }
 
 .fu-pending {
@@ -5749,8 +5784,13 @@
   background: #f3effa;
   display: grid;
   place-items: center;
-  font-size: 24px;
   flex-shrink: 0;
+}
+
+.provider-avatar-circle svg {
+  width: 24px;
+  height: 24px;
+  color: #562788;
 }
 
 .provider-hero h3 {

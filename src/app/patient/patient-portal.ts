@@ -554,20 +554,6 @@ export class PatientPortal implements OnInit {
 
   readonly selectedMilestoneTab = signal<'1st' | '2nd' | '3rd' | 'postpartum'>('1st');
 
-  readonly babyFruitEmoji = computed(() => {
-    const w = this.gestationalWeek();
-    if (w <= 0) return '🌱';
-    if (w <= 8) return '🫐';
-    if (w <= 12) return '🍋';
-    if (w <= 16) return '🥑';
-    if (w <= 20) return '🍌';
-    if (w <= 24) return '🌽';
-    if (w <= 28) return '🍆';
-    if (w <= 32) return '🎃';
-    if (w <= 36) return '🍈';
-    return '🍉';
-  });
-
   readonly activeMilestones = computed(() => {
     const tab = this.selectedMilestoneTab();
     const weeks = this.gestationalWeek();
