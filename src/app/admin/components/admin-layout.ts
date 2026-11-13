@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AdminService } from '../services/admin.service';
 import { AuthService } from '../../core/auth.service';
@@ -212,6 +212,36 @@ import { NotificationsService } from '../../core/notifications.service';
               }
             </div>
 
+            <!-- Theme Toggle Button (Matches Patient Portal) -->
+            <button
+              type="button"
+              class="topbar-icon-btn theme-toggle-btn"
+              [class.active]="isDarkMode()"
+              (click)="toggleDarkMode()"
+              [attr.aria-label]="isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+              [title]="isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+            >
+              @if (isDarkMode()) {
+                <!-- Sun icon when dark mode is on -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/>
+                  <line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              } @else {
+                <!-- Moon icon when light mode is on -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              }
+            </button>
+
             <!-- User Menu Trigger -->
             <div class="user-menu-rel" (click)="$event.stopPropagation()">
               <button
@@ -234,16 +264,6 @@ import { NotificationsService } from '../../core/notifications.service';
                     <svg viewBox="0 0 24 24" fill="currentColor" class="dropdown-icon"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                     <span>Settings</span>
                   </a>
-
-                  <div class="dropdown-item dark-mode-row" (click)="toggleDarkMode()">
-                    <div class="dark-mode-left">
-                      <svg viewBox="0 0 24 24" fill="currentColor" class="dropdown-icon"><path d="M12.3 2a10 10 0 0 0-1.9 19.8 10 10 0 0 0 11.6-11.6A10.02 10.02 0 0 1 12.3 2z"/></svg>
-                      <span>Dark Mode</span>
-                    </div>
-                    <span class="dropdown-switch" [class.on]="isDarkMode()">
-                      <span class="switch-thumb"></span>
-                    </span>
-                  </div>
 
                   <button type="button" class="dropdown-item signout-item" (click)="openSignOutModal()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="dropdown-icon signout-icon"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -572,6 +592,24 @@ import { NotificationsService } from '../../core/notifications.service';
       cursor: pointer;
       position: relative;
       transition: all 0.2s;
+    }
+
+    .topbar-icon-btn:hover {
+      background: #f7f3fc;
+      color: #6b4fa3;
+      border-color: #d7cceb;
+    }
+
+    .theme-toggle-btn {
+      display: grid;
+      place-items: center;
+      color: #4b415a;
+      transition: all 0.2s ease;
+    }
+
+    .theme-toggle-btn:hover {
+      background: #f7f3fc;
+      color: #6b4fa3;
     }
 
     .topbar-icon-btn svg {
@@ -1202,7 +1240,7 @@ import { NotificationsService } from '../../core/notifications.service';
     }
   `],
 })
-export class AdminLayout {
+export class AdminLayout implements OnInit, OnDestroy {
   adminSvc = inject(AdminService);
   auth = inject(AuthService);
   private router = inject(Router);
@@ -1226,6 +1264,16 @@ export class AdminLayout {
 
   readonly notifications = this.notifSvc.adminNotifications;
   readonly unreadCount = this.notifSvc.adminUnreadCount;
+
+  ngOnInit(): void {
+    if (typeof localStorage !== 'undefined') {
+      const savedDark =
+        localStorage.getItem('lcms_admin_dark_mode') === 'true' ||
+        localStorage.getItem('lcms_dark_mode') === 'true';
+      this.isDarkMode.set(savedDark);
+      this.applyTheme(savedDark);
+    }
+  }
 
   toggleNotifications(): void {
     const next = !this.notificationsOpen();
@@ -1264,6 +1312,23 @@ export class AdminLayout {
   toggleDarkMode(): void {
     const next = !this.isDarkMode();
     this.isDarkMode.set(next);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lcms_admin_dark_mode', String(next));
+      localStorage.setItem('lcms_dark_mode', String(next));
+    }
+    this.applyTheme(next);
+  }
+
+  private applyTheme(dark: boolean): void {
+    if (typeof document !== 'undefined') {
+      if (dark) {
+        document.body.classList.add('dark-mode');
+        document.documentElement.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.documentElement.classList.remove('dark-mode');
+      }
+    }
   }
 
   openSignOutModal(): void {
@@ -1277,7 +1342,20 @@ export class AdminLayout {
 
   confirmSignOut(): void {
     this.showSignOutModal.set(false);
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark-mode', 'dark-theme');
+      document.documentElement.removeAttribute('data-theme');
+    }
     this.auth.logout();
+  }
+
+  ngOnDestroy(): void {
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark-mode', 'dark-theme');
+      document.documentElement.removeAttribute('data-theme');
+    }
   }
 }
 

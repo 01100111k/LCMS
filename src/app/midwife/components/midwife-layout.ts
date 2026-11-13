@@ -204,6 +204,36 @@ import { NotificationsService } from '../../core/notifications.service';
               }
             </div>
 
+            <!-- Theme Toggle Button (Matches Patient Portal) -->
+            <button
+              type="button"
+              class="icon-round-btn theme-toggle-btn"
+              [class.active]="isDarkMode()"
+              (click)="toggleDarkMode()"
+              [attr.aria-label]="isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+              [title]="isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+            >
+              @if (isDarkMode()) {
+                <!-- Sun icon when dark mode is on -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/>
+                  <line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              } @else {
+                <!-- Moon icon when light mode is on -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              }
+            </button>
+
             <!-- User Menu Container & Dropdown Popover (Matches Screenshot) -->
             <div class="user-menu-wrapper" (click)="$event.stopPropagation()">
               <button
@@ -236,20 +266,7 @@ import { NotificationsService } from '../../core/notifications.service';
                     <span class="dropdown-label">Settings</span>
                   </a>
 
-                  <!-- 3. Dark Mode -->
-                  <div class="dropdown-item dark-mode-row" (click)="toggleDarkMode()">
-                    <div class="dark-mode-left">
-                      <svg viewBox="0 0 24 24" fill="currentColor" class="dropdown-icon" aria-hidden="true">
-                        <path d="M12.3 2a10 10 0 0 0-1.9 19.8 10 10 0 0 0 11.6-11.6A10.02 10.02 0 0 1 12.3 2z"/>
-                      </svg>
-                      <span class="dropdown-label">Dark Mode</span>
-                    </div>
-                    <span class="dropdown-switch" [class.on]="isDarkMode()">
-                      <span class="switch-thumb"></span>
-                    </span>
-                  </div>
-
-                  <!-- 4. Sign out -->
+                  <!-- 3. Sign out -->
                   <button type="button" class="dropdown-item signout-item" (click)="onSignOutClicked()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="dropdown-icon signout-icon" aria-hidden="true">
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -558,6 +575,18 @@ import { NotificationsService } from '../../core/notifications.service';
       place-items: center;
       cursor: pointer;
       transition: all 0.2s;
+    }
+
+    .theme-toggle-btn {
+      display: grid;
+      place-items: center;
+      color: #4b415a;
+      transition: all 0.2s ease;
+    }
+
+    .theme-toggle-btn:hover {
+      background: #f7f3fc;
+      color: #6b4fa3;
     }
 
     .icon-round-btn:hover {

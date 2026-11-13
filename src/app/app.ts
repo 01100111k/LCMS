@@ -17,7 +17,7 @@ export class App {
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
         const url = e.urlAfterRedirects || e.url || '';
-        const isPortal = url.startsWith('/midwife') || url.startsWith('/patient');
+        const isPortal = url.startsWith('/midwife') || url.startsWith('/patient') || url.startsWith('/admin');
         if (!isPortal && typeof document !== 'undefined') {
           document.body.classList.remove('dark-mode');
           document.documentElement.classList.remove('dark-mode', 'dark-theme');
