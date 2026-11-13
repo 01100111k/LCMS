@@ -979,105 +979,133 @@
         <!-- ======================================================== -->
         @if (activeTab() === 'tracker') {
           <div class="tracker-page-wrap">
-            <!-- 1. Page Header (Matches Image 6 & Midwife dir-head) -->
-            <div class="dir-head">
-              <div>
-                <h1>Pregnancy Tracker</h1>
-                <p class="dir-sub">Monitor gestational milestones, fetal size comparisons, and clinical care recommendations</p>
-              </div>
-              <button type="button" class="btn-subtle-outline" (click)="openProfileModal()">
-                Update LMP / EDD
-              </button>
-            </div>
-
             @if (gestationalWeek() > 0) {
-              <!-- 2. Four Pregnancy Highlight KPI Cards (Matches Midwife kpi-grid) -->
-              <div class="kpi-grid" style="margin-bottom: 20px;">
-                <div class="kpi-card">
-                  <div class="kpi-top">
-                    <div class="kpi-icon-circle tone-purple">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                      </svg>
-                    </div>
-                    <span class="kpi-trend trend-green">{{ trimesterName() }}</span>
+              <!-- ============ PATIENT SPOTLIGHT HERO CARD (Matches Image 2) ============ -->
+              <div class="patient-spotlight-card">
+                <div class="spotlight-left">
+                  <div class="patient-avatar-circle">
+                    {{ getInitials(profile()?.fullName || 'Patient') }}
                   </div>
-                  <div class="kpi-value">{{ gestationalWeek() }} Weeks</div>
-                  <div class="kpi-label">Gestational Age</div>
+                  <div class="patient-hero-info">
+                    <div class="name-status-row">
+                      <h2>{{ profile()?.fullName || 'Patient' }}</h2>
+                      <span class="status-badge status-active">Active</span>
+                      <span class="risk-badge" [ngClass]="profile()?.riskLevel === 'High risk' ? 'risk-high' : 'risk-low'">
+                        {{ profile()?.riskLevel || 'Low Risk' }}
+                      </span>
+                    </div>
+                    <div class="meta-inline-pills">
+                      <span>Contact: <strong>{{ profile()?.contactNumber || '—' }}</strong></span>
+                      <span class="dot-separator">•</span>
+                      <span>Email: <strong>{{ profile()?.email || '—' }}</strong></span>
+                      <span class="dot-separator">•</span>
+                      <span>Blood Type: <strong>{{ profile()?.bloodType || 'Unknown' }}</strong></span>
+                      <span class="dot-separator">•</span>
+                      <span>Obstetric Score: <strong>{{ profile()?.gravidaPara || 'G1P0' }}</strong></span>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="kpi-card">
-                  <div class="kpi-top">
-                    <div class="kpi-icon-circle tone-pink">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
-                    </div>
-                    <span class="kpi-trend trend-green">{{ daysRemaining() ? daysRemaining() + ' days left' : 'Term' }}</span>
-                  </div>
-                  <div class="kpi-value" style="font-size: 19px;">{{ eddDisplay() }}</div>
-                  <div class="kpi-label">Estimated Due Date</div>
-                </div>
-
-                <div class="kpi-card">
-                  <div class="kpi-top">
-                    <div class="kpi-icon-circle tone-purple">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="20" x2="12" y2="10"/>
-                        <line x1="18" y1="20" x2="18" y2="4"/>
-                        <line x1="6" y1="20" x2="6" y2="16"/>
-                      </svg>
-                    </div>
-                    <span class="kpi-trend trend-green">{{ babyLengthWeight() }}</span>
-                  </div>
-                  <div class="kpi-value" style="font-size: 19px;">{{ babyFruitSize() }}</div>
-                  <div class="kpi-label">Baby Growth Scale</div>
-                </div>
-
-                <div class="kpi-card">
-                  <div class="kpi-top">
-                    <div class="kpi-icon-circle tone-purple">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                      </svg>
-                    </div>
-                    <span class="kpi-trend trend-green">Week {{ gestationalWeek() }} / 40</span>
-                  </div>
-                  <div class="kpi-value">{{ progressPercent() }}%</div>
-                  <div class="kpi-label">Term Progression</div>
+                <div class="spotlight-actions">
+                  <button type="button" class="btn-spotlight-action primary" (click)="openBookingModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    Schedule Visit
+                  </button>
+                  <button type="button" class="btn-spotlight-action secondary" (click)="switchTab('records')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    View Records
+                  </button>
+                  <button type="button" class="btn-spotlight-action outline" (click)="openProfileModal()">
+                    Update LMP / EDD
+                  </button>
                 </div>
               </div>
 
-              <!-- 3. Visual 40-Week Timeline Progress Track -->
+              <!-- ============ 4 PREGNANCY HIGHLIGHT CARDS (Matches Image 2) ============ -->
+              <div class="kpi-cards-grid">
+                <div class="kpi-glass-card">
+                  <div class="kpi-icon-pill tone-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <div class="kpi-meta">
+                    <span class="kpi-label">Gestational Age</span>
+                    <strong class="kpi-value">{{ gestationalWeek() }} Weeks</strong>
+                    <small class="kpi-hint">{{ trimesterName() }}</small>
+                  </div>
+                </div>
+
+                <div class="kpi-glass-card">
+                  <div class="kpi-icon-pill tone-pink">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  <div class="kpi-meta">
+                    <span class="kpi-label">Estimated Due Date</span>
+                    <strong class="kpi-value">{{ eddDisplay() }}</strong>
+                    <small class="kpi-hint">
+                      @if (daysRemaining() > 0) {
+                        {{ daysRemaining() }} days remaining
+                      } @else {
+                        Due date reached / Term
+                      }
+                    </small>
+                  </div>
+                </div>
+
+                <div class="kpi-glass-card">
+                  <div class="kpi-icon-pill tone-teal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                  </div>
+                  <div class="kpi-meta">
+                    <span class="kpi-label">Latest Blood Pressure</span>
+                    <strong class="kpi-value">{{ latestBp() || '—' }}</strong>
+                    <small class="kpi-hint tone-success">{{ latestBp() ? 'Normotensive Range' : 'No vitals logged yet' }}</small>
+                  </div>
+                </div>
+
+                <div class="kpi-glass-card">
+                  <div class="kpi-icon-pill tone-blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  </div>
+                  <div class="kpi-meta">
+                    <span class="kpi-label">Clinical Checkups Logged</span>
+                    <strong class="kpi-value">{{ visitsList().length }} Visits</strong>
+                    <small class="kpi-hint">{{ allAppts().length }} Appointments scheduled</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ============ 40-WEEK TIMELINE VISUAL PROGRESS TRACK (Matches Image 2) ============ -->
               <div class="timeline-track-card">
                 <div class="timeline-top-row">
                   <div>
                     <h3>Gestational Timeline & Trimester Progression</h3>
-                    <p class="timeline-sub">Visual marker showing your current maternal care week within the 40-week term</p>
+                    <p class="timeline-sub">Visual 40-week gestational continuum tracking maternal & fetal developmental milestones.</p>
                   </div>
-                  <span class="progress-pill">Week <strong>{{ gestationalWeek() }}</strong> of 40</span>
+                  <div class="progress-pill">
+                    <strong>{{ progressPercent() }}%</strong> Completed (Week {{ gestationalWeek() }} of 40)
+                  </div>
                 </div>
 
                 <div class="timeline-bar-wrapper">
                   <div class="timeline-bar-track">
                     <div class="timeline-bar-fill" [style.width.%]="progressPercent()"></div>
                     <div class="timeline-current-pin" [style.left.%]="progressPercent()">
-                      <span class="pin-bubble">Wk {{ gestationalWeek() }}</span>
-                      <span class="pin-dot"></span>
+                      <div class="pin-bubble">Wk {{ gestationalWeek() }}</div>
+                      <div class="pin-dot"></div>
                     </div>
                   </div>
 
                   <div class="trimester-zones-bar">
-                    <div class="zone" [class.current-zone]="gestationalWeek() <= 13">
-                      <strong class="zone-title">1st Trimester</strong>
+                    <div class="zone zone-1" [class.current-zone]="gestationalWeek() <= 13">
+                      <span class="zone-title">1st Trimester</span>
                       <span class="zone-weeks">Weeks 1 – 13</span>
                     </div>
-                    <div class="zone" [class.current-zone]="gestationalWeek() > 13 && gestationalWeek() <= 27">
-                      <strong class="zone-title">2nd Trimester</strong>
+                    <div class="zone zone-2" [class.current-zone]="gestationalWeek() > 13 && gestationalWeek() <= 27">
+                      <span class="zone-title">2nd Trimester</span>
                       <span class="zone-weeks">Weeks 14 – 27</span>
                     </div>
-                    <div class="zone" [class.current-zone]="gestationalWeek() > 27">
-                      <strong class="zone-title">3rd Trimester</strong>
+                    <div class="zone zone-3" [class.current-zone]="gestationalWeek() > 27">
+                      <span class="zone-title">3rd Trimester</span>
                       <span class="zone-weeks">Weeks 28 – 40+</span>
                     </div>
                   </div>
@@ -1102,9 +1130,7 @@
 
                   <div class="baby-growth-box">
                     <div class="baby-fruit-circle">
-                      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#be185d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
+                      <span class="fruit-emoji">{{ babySize().icon }}</span>
                     </div>
                     <div class="baby-growth-details">
                       <span class="fruit-label">Approximate Size Comparison</span>
@@ -1457,45 +1483,31 @@
               <div class="proto-card proto-einc" (click)="openQuickLibraryProto('einc')" role="button" tabindex="0">
                 <div class="proto-head">
                   <span class="proto-tag">DOH Clinical Protocol</span>
-                  <span class="proto-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                    </svg>
-                  </span>
+                  <span class="proto-icon">👶</span>
                 </div>
                 <h3>Essential Intrapartum & Newborn Care (EINC)</h3>
                 <p>The 4 core time-bound steps proven to reduce neonatal mortality and hypothermia.</p>
-                <span class="btn-read-proto">View 4-Step Standard &rarr;</span>
+                <span class="btn-read-proto">View 4-Step Standard →</span>
               </div>
 
               <div class="proto-card proto-pph" (click)="openQuickLibraryProto('pph')" role="button" tabindex="0">
                 <div class="proto-head">
                   <span class="proto-tag emergency-tag">Emergency Action</span>
-                  <span class="proto-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                    </svg>
-                  </span>
+                  <span class="proto-icon">🚨</span>
                 </div>
                 <h3>Postpartum Hemorrhage (PPH) Management</h3>
                 <p>Immediate uterotonic administration, uterine massage, bimanual compression & referral flow.</p>
-                <span class="btn-read-proto emergency-text">Emergency Protocol &rarr;</span>
+                <span class="btn-read-proto emergency-text">Emergency Protocol →</span>
               </div>
 
               <div class="proto-card proto-danger" (click)="openQuickLibraryProto('danger')" role="button" tabindex="0">
                 <div class="proto-head">
                   <span class="proto-tag warning-tag">Red Flag Guide</span>
-                  <span class="proto-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                      <line x1="12" y1="9" x2="12" y2="13"/>
-                      <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                  </span>
+                  <span class="proto-icon">⚠️</span>
                 </div>
                 <h3>Maternal Danger Signs & Preeclampsia</h3>
                 <p>Critical signs requiring immediate lying-in triage or hospital emergency transport.</p>
-                <span class="btn-read-proto warning-text">Screening Criteria &rarr;</span>
+                <span class="btn-read-proto warning-text">Screening Criteria →</span>
               </div>
             </div>
 
@@ -1516,7 +1528,7 @@
                   <div class="article-keypoints">
                     @for (kp of art.keyPoints.slice(0, 3); track kp) {
                       <div class="kp-item">
-                        <span class="kp-dot">&bull;</span>
+                        <span class="kp-dot">•</span>
                         <span>{{ kp }}</span>
                       </div>
                     }
@@ -2926,22 +2938,25 @@
 }
 
 <!-- ======================================================== -->
-<!-- MODAL: HEALTH LIBRARY ARTICLE PREVIEW                     -->
+<!-- MODAL: HEALTH LIBRARY ARTICLE PREVIEW (Matches Image 3)   -->
 <!-- ======================================================== -->
 @if (librarySelectedArticle(); as art) {
   <div class="modal-backdrop" (click)="closeLibraryArticleModal()">
     <div class="modal-dialog-card modal-lg" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="modal-title-row">
-          <div class="modal-icon" [ngClass]="'tone-' + art.tagColor">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <div class="modal-icon tone-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
           </div>
           <div>
             <span class="modal-cat-tag">{{ art.category }} &bull; {{ art.audience }}</span>
             <h2>{{ art.title }}</h2>
           </div>
         </div>
-        <button type="button" class="btn-close-modal" (click)="closeLibraryArticleModal()">✕</button>
+        <button type="button" class="btn-close-modal" (click)="closeLibraryArticleModal()" title="Close dialog">✕</button>
       </div>
 
       <div class="article-modal-body">
@@ -2959,12 +2974,10 @@
           <div class="article-section">
             <h3>Clinical Execution Steps</h3>
             <div class="steps-flow-list">
-              @for (step of art.fullContent.clinicalSteps; track step) {
+              @for (st of art.fullContent.clinicalSteps; track st; let idx = $index) {
                 <div class="step-flow-item">
-                  <div class="step-badge">{{ $index + 1 }}</div>
-                  <div class="step-body">
-                    <span>{{ step }}</span>
-                  </div>
+                  <div class="flow-num">{{ idx + 1 }}</div>
+                  <div class="flow-text">{{ st }}</div>
                 </div>
               }
             </div>
@@ -2973,50 +2986,29 @@
 
         @if (art.fullContent.patientCounseling && art.fullContent.patientCounseling.length > 0) {
           <div class="article-section">
-            <h3>Patient Counseling & Care Guidelines</h3>
-            <div class="steps-flow-list">
-              @for (counsel of art.fullContent.patientCounseling; track counsel) {
-                <div class="step-flow-item">
-                  <div class="step-badge tone-purple">✓</div>
-                  <div class="step-body">
-                    <span>{{ counsel }}</span>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        }
-
-        @if (art.keyPoints && art.keyPoints.length > 0) {
-          <div class="article-section">
-            <h3>Key Clinical Takeaways & Danger Flags</h3>
-            <ul class="takeaways-list">
-              @for (kp of art.keyPoints; track kp) {
-                <li><span class="bullet">✓</span> {{ kp }}</li>
+            <h3>Patient Counseling & Midwife Advice</h3>
+            <ul class="counseling-list">
+              @for (c of art.fullContent.patientCounseling; track c) {
+                <li>{{ c }}</li>
               }
             </ul>
           </div>
         }
 
         @if (art.fullContent.dohReferences) {
-          <div class="article-section">
-            <h3>Clinical References & Philippine Standards</h3>
-            <div class="ref-pills-row">
-              <span class="ref-pill">{{ art.fullContent.dohReferences }}</span>
-            </div>
+          <div class="reference-box">
+            <span class="ref-title">Regulatory & Clinical Standard Reference:</span>
+            <p>{{ art.fullContent.dohReferences }}</p>
           </div>
         }
-
-        <div class="article-disclaimer">
-          <p>
-            <strong>Medical Notice:</strong> This clinical reference is for maternal education and evidence-based guidance. For individual medical assessment, consult your attending licensed midwife or obstetrician.
-          </p>
-        </div>
       </div>
 
-      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
-        <button type="button" class="btn-subtle" (click)="printLibraryArticle()">Print Guide</button>
+      <div class="modal-footer">
         <button type="button" class="btn-cancel" (click)="closeLibraryArticleModal()">Close</button>
+        <button type="button" class="btn-print" (click)="printLibraryArticle()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print Guideline Handout
+        </button>
       </div>
     </div>
   </div>
