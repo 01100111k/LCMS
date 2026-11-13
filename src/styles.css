@@ -2600,6 +2600,84 @@ body.dark-mode .succ-val {
   color: #ffffff !important;
 }
 
+/* Modal Body Scroll Container for All Modals */
+.modal-body-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(88vh - 130px);
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.profile-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.profile-modal-form .modal-body-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+}
+
+.profile-modal-form .modal-footer {
+  flex-shrink: 0;
+  border-top: 1px solid #ebe5f5;
+  background: #fbf9fd;
+}
+
+.profile-section-subhead {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #361759;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.modal-body-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+.modal-body-scroll::-webkit-scrollbar-thumb {
+  background: #c8b7e2;
+  border-radius: 4px;
+}
+
+.modal-body-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a992d1;
+}
+
+body.dark-mode .profile-modal-form .modal-footer {
+  background: #181124 !important;
+  border-top-color: #35284d !important;
+}
+
+body.dark-mode .profile-section-subhead {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .modal-body-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+body.dark-mode .modal-body-scroll::-webkit-scrollbar-thumb {
+  background: #553e78 !important;
+}
+
+body.dark-mode .modal-body-scroll::-webkit-scrollbar-thumb:hover {
+  background: #7353a3 !important;
+}
+
 
 
 

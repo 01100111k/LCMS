@@ -2967,14 +2967,14 @@
         <button type="button" class="btn-close-modal" (click)="closeProfileModal()">✕</button>
       </div>
 
-      <div class="modal-body-scroll" style="padding: 20px 24px;">
-        @if (profileMsg()) {
-          <div class="form-alert" [ngClass]="profileOk() ? 'alert-success' : 'alert-error'">
-            {{ profileMsg() }}
-          </div>
-        }
+      <form (ngSubmit)="saveProfileChanges()" class="profile-modal-form">
+        <div class="modal-body-scroll" style="padding: 20px 24px;">
+          @if (profileMsg()) {
+            <div class="form-alert" [ngClass]="profileOk() ? 'alert-success' : 'alert-error'">
+              {{ profileMsg() }}
+            </div>
+          }
 
-        <form (ngSubmit)="saveProfileChanges()">
           <div class="form-group">
             <label>Full Legal Name *</label>
             <input type="text" [(ngModel)]="editFullName" name="editFullName" class="form-control" required />
@@ -2997,7 +2997,7 @@
           </div>
 
           <div class="form-divider" style="margin: 18px 0 12px; border-top: 1px dashed #e6def2;"></div>
-          <strong style="font-size: 12.5px; color: #361759; text-transform: uppercase; letter-spacing: 0.04em;">Emergency Contact Person</strong>
+          <strong class="profile-section-subhead">Emergency Contact Person</strong>
 
           <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
             <div class="form-group">
@@ -3016,7 +3016,7 @@
           </div>
 
           <div class="form-divider" style="margin: 18px 0 12px; border-top: 1px dashed #e6def2;"></div>
-          <strong style="font-size: 12.5px; color: #361759; text-transform: uppercase; letter-spacing: 0.04em;">Pregnancy Calculations</strong>
+          <strong class="profile-section-subhead">Pregnancy Calculations</strong>
 
           <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
             <div class="form-group">
@@ -3028,19 +3028,19 @@
               <input type="date" [(ngModel)]="editEdd" name="editEdd" class="form-control" />
             </div>
           </div>
+        </div>
 
-          <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-            <button type="button" class="btn-cancel" (click)="closeProfileModal()">Cancel</button>
-            <button type="submit" class="btn-primary-purple" [disabled]="savingProfile()">
-              @if (savingProfile()) {
-                <span>Saving Changes...</span>
-              } @else {
-                <span>Save Profile Information</span>
-              }
-            </button>
-          </div>
-        </form>
-      </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px;">
+          <button type="button" class="btn-cancel" (click)="closeProfileModal()">Cancel</button>
+          <button type="submit" class="btn-primary-purple" [disabled]="savingProfile()">
+            @if (savingProfile()) {
+              <span>Saving Changes...</span>
+            } @else {
+              <span>Save Profile Information</span>
+            }
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 }
