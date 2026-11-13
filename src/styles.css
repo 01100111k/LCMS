@@ -2969,23 +2969,66 @@ body.dark-mode .btn-confirm-signout:hover {
    ADMIN PORTAL COMPREHENSIVE DARK MODE PALETTE & CONTRAST FIXES
    ======================================================== */
 
-/* 1. Admin Dashboard: Staff Overview Rows & Avatars */
-body.dark-mode .staff-item-row {
+/* 1. Admin Dashboard: Staff Overview, Recent Registrations & Pending Rows */
+body.dark-mode .staff-item-row,
+body.dark-mode .patient-line-row,
+body.dark-mode .pending-row-item {
   background: #251a38 !important;
   border: 1px solid #3d2b58 !important;
 }
 
-body.dark-mode .staff-avatar {
+body.dark-mode .staff-avatar,
+body.dark-mode .pending-avatar-circle {
   background: #361f52 !important;
   color: #c4b5fd !important;
 }
 
-body.dark-mode .staff-info strong {
+body.dark-mode .staff-info strong,
+body.dark-mode .patient-info strong,
+body.dark-mode .pending-user-name {
   color: #ffffff !important;
 }
 
-body.dark-mode .staff-info span {
+body.dark-mode .staff-info span,
+body.dark-mode .patient-info span,
+body.dark-mode .pending-user-meta {
   color: #b7a8cf !important;
+}
+
+body.dark-mode .patient-avatar {
+  color: #ffffff !important;
+}
+
+body.dark-mode .panel-link {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .panel-link:hover {
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-sm-reject {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+
+body.dark-mode .empty-check-circle {
+  background: #2b1d3f !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .activity-mini-item .activity-desc {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .activity-mini-item .activity-time {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .activity-mini-item .activity-dot {
+  background: #a881e6 !important;
+  box-shadow: 0 0 6px rgba(168, 129, 230, 0.4) !important;
 }
 
 body.dark-mode .badge-duty {
