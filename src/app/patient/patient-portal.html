@@ -1,4 +1,4 @@
-<div class="mw-app-layout">
+<div class="mw-app-layout" [class.dark-mode]="isDarkMode()" [class.dark-theme]="isDarkMode()">
   <!-- Mobile Sidebar Backdrop -->
   @if (mobileSidebarOpen()) {
     <div class="sidebar-backdrop" (click)="closeMobileSidebar()"></div>
@@ -193,6 +193,36 @@
             </div>
           }
         </div>
+
+        <!-- Theme Toggle Button (Matches Midwife Top Bar) -->
+        <button
+          type="button"
+          class="icon-round-btn theme-toggle-btn"
+          [class.active]="isDarkMode()"
+          (click)="toggleDarkMode()"
+          [attr.aria-label]="isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+          [title]="isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        >
+          @if (isDarkMode()) {
+            <!-- Sun icon when dark mode is on -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          } @else {
+            <!-- Moon icon when light mode is on -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          }
+        </button>
 
         <!-- User Menu Container & Dropdown Popover (Matches Midwife Layout Exactly) -->
         <div class="user-menu-wrapper" (click)="$event.stopPropagation()">
@@ -1978,7 +2008,85 @@
                 </button>
               </div>
 
-              <!-- Card 3: Notification Preferences -->
+              <!-- Card 3: Display & Theme Appearance -->
+              <div class="panel-card theme-settings-panel" style="grid-column: 1 / -1;">
+                <div class="settings-card-head">
+                  <div class="head-icon-circle tone-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3>Display & Theme Appearance</h3>
+                    <p class="card-sub">Customize your visual experience across all patient portal pages</p>
+                  </div>
+                </div>
+
+                <div class="theme-switch-control-wrap" style="margin-top: 16px;">
+                  <div class="theme-options-grid">
+                    <!-- Light Mode Box -->
+                    <div
+                      class="theme-option-box"
+                      [class.active]="!isDarkMode()"
+                      (click)="setTheme(false)"
+                      role="button"
+                      tabindex="0"
+                    >
+                      <div class="theme-pill-chip light-chip">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                        </svg>
+                        <span>Light Mode</span>
+                      </div>
+                      <div class="theme-box-body">
+                        <strong>Clean Lavender & White</strong>
+                        <p>Standard day theme with crisp white panels and gentle lavender accents.</p>
+                      </div>
+                      <span class="theme-radio-circle" [class.checked]="!isDarkMode()"></span>
+                    </div>
+
+                    <!-- Dark Mode Box -->
+                    <div
+                      class="theme-option-box"
+                      [class.active]="isDarkMode()"
+                      (click)="setTheme(true)"
+                      role="button"
+                      tabindex="0"
+                    >
+                      <div class="theme-pill-chip dark-chip">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                        <span>Dark Mode</span>
+                      </div>
+                      <div class="theme-box-body">
+                        <strong>Deep Plum & Slate</strong>
+                        <p>Comfortable low-glare nighttime theme with rich dark purple tones.</p>
+                      </div>
+                      <span class="theme-radio-circle" [class.checked]="isDarkMode()"></span>
+                    </div>
+                  </div>
+
+                  <div class="theme-inline-toggle-bar">
+                    <span class="inline-toggle-text">Quick Toggle Dark Mode:</span>
+                    <button
+                      type="button"
+                      class="theme-toggle-switch-btn"
+                      [class.on]="isDarkMode()"
+                      (click)="toggleDarkMode()"
+                      aria-label="Toggle Dark Mode"
+                      role="switch"
+                      [attr.aria-checked]="isDarkMode()"
+                    >
+                      <span class="switch-slider"></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 4: Notification Preferences -->
               <div class="panel-card" style="grid-column: 1 / -1;">
                 <div class="settings-card-head">
                   <div class="head-icon-circle tone-pink">

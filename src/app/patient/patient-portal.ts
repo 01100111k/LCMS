@@ -1071,9 +1071,40 @@ export class PatientPortal implements OnInit {
 
   toggleDarkMode(): void {
     const next = !this.isDarkMode();
-    this.isDarkMode.set(next);
+    this.setTheme(next);
+  }
+
+  setTheme(dark: boolean): void {
+    this.isDarkMode.set(dark);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lcms_dark_mode', String(dark));
+    }
+    this.applyTheme(dark);
+
+    // Persist to patient Firestore doc asynchronously
+    const uid = this.auth.user()?.uid;
+    if (uid) {
+      setDoc(
+        doc(db, 'patients', uid),
+        { themePreference: dark ? 'dark' : 'light', updatedAt: serverTimestamp() },
+        { merge: true },
+      ).catch(() => {});
+    }
+  }
+
+  private applyTheme(dark: boolean): void {
     if (typeof document !== 'undefined') {
-      document.documentElement.classList.toggle('dark-theme', next);
+      if (dark) {
+        document.body.classList.add('dark-mode');
+        document.documentElement.classList.add('dark-mode');
+        document.documentElement.classList.add('dark-theme');
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.documentElement.classList.remove('dark-mode');
+        document.documentElement.classList.remove('dark-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
     }
   }
 
@@ -1143,6 +1174,11 @@ export class PatientPortal implements OnInit {
 
   // Lifecycle
   async ngOnInit(): Promise<void> {
+    if (typeof localStorage !== 'undefined') {
+      const savedDark = localStorage.getItem('lcms_dark_mode') === 'true';
+      this.isDarkMode.set(savedDark);
+      this.applyTheme(savedDark);
+    }
     await this.loadAllPatientData();
   }
 
@@ -1160,8 +1196,16 @@ export class PatientPortal implements OnInit {
       const prof = await this.patients.get(uid);
       if (prof) {
         this.profile.set(prof);
-        // Load preferences if present
         const anyProf = prof as any;
+        if (anyProf.themePreference) {
+          const isDark = anyProf.themePreference === 'dark';
+          this.isDarkMode.set(isDark);
+          this.applyTheme(isDark);
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('lcms_dark_mode', String(isDark));
+          }
+        }
+        // Load preferences if present
         if (anyProf.notificationPreferences) {
           const np = anyProf.notificationPreferences;
           if (typeof np.email === 'boolean') this.notifPrefEmail.set(np.email);
@@ -2001,7 +2045,11 @@ export class PatientPortal implements OnInit {
 
       await setDoc(
         doc(db, 'patients', uid),
-        { notificationPreferences: prefs, updatedAt: serverTimestamp() },
+        {
+          notificationPreferences: prefs,
+          themePreference: this.isDarkMode() ? 'dark' : 'light',
+          updatedAt: serverTimestamp(),
+        },
         { merge: true },
       );
 

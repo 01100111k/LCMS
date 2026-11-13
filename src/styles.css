@@ -536,6 +536,7 @@ body.dark-mode {
 }
 
 /* App layout, page containers, and top navigation */
+body.dark-mode app-patient-portal,
 body.dark-mode app-midwife-layout,
 body.dark-mode .mw-app-layout,
 body.dark-mode .mw-main-area,
