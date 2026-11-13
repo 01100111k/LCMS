@@ -2744,6 +2744,83 @@ body.dark-mode .kpi-trend.trend-purple {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
 }
 
+/* Sign Out Confirmation Modal in Dark Mode (High Contrast & Visible Text) */
+body.dark-mode .signout-modal-card {
+  background: #1e172c !important;
+  border: 1px solid #3b2d55 !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75) !important;
+}
+
+body.dark-mode .modal-brand-header {
+  color: #f5f0fc !important;
+}
+
+body.dark-mode .modal-brand-icon {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .modal-logout-badge {
+  background: #2b1d3f !important;
+  border: 1px solid #4a346e !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .signout-title {
+  color: #ffffff !important;
+}
+
+body.dark-mode .signout-desc {
+  color: #d6cbe8 !important;
+}
+
+body.dark-mode .modal-user-box {
+  background: #251c37 !important;
+  border: 1.5px solid #3d2c5a !important;
+}
+
+body.dark-mode .modal-user-avatar {
+  background: #3e1b65 !important;
+  color: #ffffff !important;
+  border: 1px solid #6b3cb3 !important;
+}
+
+body.dark-mode .modal-user-name {
+  color: #ffffff !important;
+}
+
+body.dark-mode .modal-user-email {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .modal-bullet-list,
+body.dark-mode .modal-bullet-list li {
+  color: #d6cbe8 !important;
+}
+
+body.dark-mode .btn-stay-signed-in {
+  background: #251c37 !important;
+  border: 1.5px solid #4a346e !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-stay-signed-in:hover {
+  background: #2f2244 !important;
+  border-color: #7b4ec2 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-confirm-signout {
+  background: #6b3cb3 !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(107, 60, 179, 0.45) !important;
+}
+
+body.dark-mode .btn-confirm-signout:hover {
+  background: #7c4bb9 !important;
+  transform: translateY(-1px);
+}
+
 
 
 
