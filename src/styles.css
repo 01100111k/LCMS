@@ -2018,8 +2018,8 @@ body.dark-mode .milestone-card {
 }
 
 body.dark-mode .milestone-card.is-done {
-  background: #1b2923 !important;
-  border-color: #276749 !important;
+  background: #251c37 !important;
+  border-color: #382c4f !important;
 }
 
 body.dark-mode .m-title-row strong {
@@ -2349,6 +2349,255 @@ body.dark-mode .btn-confirm-archive {
 
 body.dark-mode .btn-confirm-archive:hover:not(:disabled) {
   background: #b45309 !important;
+}
+
+/* ========================================================
+   PATIENT PORTAL TARGETED DARK MODE FIXES (NO WHITE BOXES)
+   ======================================================== */
+
+/* Dashboard: Hotline & Clinic Provider Strip (Image 1) */
+body.dark-mode .hotline-box {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .hotline-details strong {
+  color: #fbcfe8 !important;
+}
+
+body.dark-mode .hotline-details p {
+  color: #f472b6 !important;
+}
+
+body.dark-mode .hotline-number {
+  color: #fb7185 !important;
+}
+
+body.dark-mode .hotline-icon svg {
+  color: #fb7185 !important;
+}
+
+body.dark-mode .clinic-provider-strip {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .strip-label {
+  color: #a99ac1 !important;
+}
+
+body.dark-mode .strip-value {
+  color: #f5f0fc !important;
+}
+
+/* My Profile: Information Cards & Official Clinical Record (Image 2) */
+body.dark-mode .profile-card {
+  background: #1e172c !important;
+  border: 1px solid #35284d !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .profile-card-header {
+  border-bottom-color: #35284d !important;
+  border-top-color: #35284d !important;
+}
+
+body.dark-mode .profile-card-header h3 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .card-header-icon-pill {
+  background: #2b1d3f !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .card-header-icon-pill.tone-shield {
+  background: #2b1d3f !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .profile-field-row,
+body.dark-mode .profile-field-item {
+  border-bottom-color: #2d2144 !important;
+}
+
+body.dark-mode .field-label {
+  color: #a99ac1 !important;
+}
+
+body.dark-mode .field-title {
+  color: #f5f0fc !important;
+}
+
+body.dark-mode .field-value {
+  color: #f5f0fc !important;
+}
+
+body.dark-mode .field-value.highlight-val {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .field-value.monospace-val {
+  background: #281d3d !important;
+  color: #c4b5fd !important;
+  border: 1px solid #4a346e !important;
+}
+
+body.dark-mode .editable-chip {
+  background: #132e27 !important;
+  color: #34d399 !important;
+}
+
+body.dark-mode .locked-chip {
+  background: #2a1b42 !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .clinical-protection-note {
+  background: #251c37 !important;
+  border-color: #3e2c59 !important;
+  color: #c7badb !important;
+}
+
+body.dark-mode .clinical-protection-note svg {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .clinical-protection-note p {
+  color: #bfaecf !important;
+}
+
+body.dark-mode .btn-correction-link {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .profile-notice-box {
+  background: #251c37 !important;
+  border-color: #3e2c59 !important;
+  color: #c7badb !important;
+}
+
+/* Appointments, Records, Follow-ups: Filter Bars (Images 3, 5, 6) */
+body.dark-mode .appts-filter-bar {
+  background: #1e172c !important;
+  border: 1px solid #35284d !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.dark-mode .appts-filter-bar .filter-pill-btn {
+  background: #231b33 !important;
+  border-color: #3d2c5a !important;
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .appts-filter-bar .filter-pill-btn:hover {
+  background: #2e2244 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .appts-filter-bar .filter-pill-btn.active {
+  background: #3e1b65 !important;
+  border-color: #7b4ec2 !important;
+  color: #ffffff !important;
+}
+
+/* Care Records: View Summary Button (Image 5) */
+body.dark-mode .btn-view-summary {
+  background: #251c37 !important;
+  border: 1px solid #4a346e !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .btn-view-summary:hover,
+body.dark-mode .care-record-card:hover .btn-view-summary {
+  background: #5b2894 !important;
+  border-color: #7b4ec2 !important;
+  color: #ffffff !important;
+}
+
+/* Contact Midwife: Emergency Guidance Card (Image 7) */
+body.dark-mode .emergency-guidance-card {
+  background: #251c37 !important;
+  border: 1px solid #582436 !important;
+  color: #fbcfe8 !important;
+}
+
+body.dark-mode .emergency-guidance-card strong {
+  color: #fda4af !important;
+}
+
+body.dark-mode .emergency-guidance-card p {
+  color: #f472b6 !important;
+}
+
+/* Modal Form Controls, Provider Strips & Disclaimer Cards */
+body.dark-mode .booking-provider-strip {
+  background: #251c37 !important;
+  border: 1.5px solid #3d2c5a !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .provider-strip-text .provider-label {
+  color: #a99ac1 !important;
+}
+
+body.dark-mode .provider-strip-text .provider-name {
+  color: #ffffff !important;
+}
+
+body.dark-mode .provider-hours-badge {
+  background: #2b1d3f !important;
+  border: 1px solid #4a346e !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .form-control {
+  background: #231b33 !important;
+  border-color: #3e3058 !important;
+  color: #f5f0fc !important;
+}
+
+body.dark-mode .form-control:focus {
+  border-color: #9d72e2 !important;
+  box-shadow: 0 0 0 3px rgba(157, 114, 226, 0.25) !important;
+}
+
+body.dark-mode .library-disclaimer-box {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #ede7f6 !important;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+body.dark-mode .library-disclaimer-box strong {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .library-disclaimer-box p {
+  color: #b7a8cf !important;
+  margin: 0;
+}
+
+body.dark-mode .success-appt-card {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .succ-row {
+  border-bottom-color: #382c4f !important;
+}
+
+body.dark-mode .succ-lbl {
+  color: #a99ac1 !important;
+}
+
+body.dark-mode .succ-val {
+  color: #ffffff !important;
 }
 
 

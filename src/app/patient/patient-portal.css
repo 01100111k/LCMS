@@ -8570,3 +8570,394 @@
   background: #7c4bb9 !important;
   transform: translateY(-1px);
 }
+
+/* ======================================================== */
+/* 19. TARGETED DARK MODE FIXES (CARDS, STRIPS, FILTERS)    */
+/* ======================================================== */
+
+/* Dashboard: Hotline & Clinic Provider Strip (Image 1) */
+:host-context(body.dark-mode) .hotline-box,
+.dark-mode .hotline-box,
+.dark-theme .hotline-box {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #ede7f6 !important;
+}
+
+:host-context(body.dark-mode) .hotline-details strong,
+.dark-mode .hotline-details strong,
+.dark-theme .hotline-details strong {
+  color: #fbcfe8 !important;
+}
+
+:host-context(body.dark-mode) .hotline-details p,
+.dark-mode .hotline-details p,
+.dark-theme .hotline-details p {
+  color: #f472b6 !important;
+}
+
+:host-context(body.dark-mode) .hotline-number,
+.dark-mode .hotline-number,
+.dark-theme .hotline-number {
+  color: #fb7185 !important;
+}
+
+:host-context(body.dark-mode) .hotline-icon svg,
+.dark-mode .hotline-icon svg,
+.dark-theme .hotline-icon svg {
+  color: #fb7185 !important;
+}
+
+:host-context(body.dark-mode) .clinic-provider-strip,
+.dark-mode .clinic-provider-strip,
+.dark-theme .clinic-provider-strip {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #ede7f6 !important;
+}
+
+:host-context(body.dark-mode) .strip-label,
+.dark-mode .strip-label,
+.dark-theme .strip-label {
+  color: #a99ac1 !important;
+}
+
+:host-context(body.dark-mode) .strip-value,
+.dark-mode .strip-value,
+.dark-theme .strip-value {
+  color: #f5f0fc !important;
+}
+
+/* My Profile: Information Cards & Official Clinical Record (Image 2) */
+:host-context(body.dark-mode) .profile-card,
+.dark-mode .profile-card,
+.dark-theme .profile-card {
+  background: #1e172c !important;
+  border: 1px solid #35284d !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
+  color: #ede7f6 !important;
+}
+
+:host-context(body.dark-mode) .profile-card-header,
+.dark-mode .profile-card-header,
+.dark-theme .profile-card-header {
+  border-bottom-color: #35284d !important;
+  border-top-color: #35284d !important;
+}
+
+:host-context(body.dark-mode) .profile-card-header h3,
+.dark-mode .profile-card-header h3,
+.dark-theme .profile-card-header h3 {
+  color: #ffffff !important;
+}
+
+:host-context(body.dark-mode) .card-header-icon-pill,
+.dark-mode .card-header-icon-pill,
+.dark-theme .card-header-icon-pill {
+  background: #2b1d3f !important;
+  color: #c4b5fd !important;
+}
+
+:host-context(body.dark-mode) .card-header-icon-pill.tone-shield,
+.dark-mode .card-header-icon-pill.tone-shield,
+.dark-theme .card-header-icon-pill.tone-shield {
+  background: #2b1d3f !important;
+  color: #c4b5fd !important;
+}
+
+:host-context(body.dark-mode) .profile-field-row,
+.dark-mode .profile-field-row,
+.dark-theme .profile-field-row,
+:host-context(body.dark-mode) .profile-field-item,
+.dark-mode .profile-field-item,
+.dark-theme .profile-field-item {
+  border-bottom-color: #2d2144 !important;
+}
+
+:host-context(body.dark-mode) .field-label,
+.dark-mode .field-label,
+.dark-theme .field-label {
+  color: #a99ac1 !important;
+}
+
+:host-context(body.dark-mode) .field-title,
+.dark-mode .field-title,
+.dark-theme .field-title {
+  color: #f5f0fc !important;
+}
+
+:host-context(body.dark-mode) .field-value,
+.dark-mode .field-value,
+.dark-theme .field-value {
+  color: #f5f0fc !important;
+}
+
+:host-context(body.dark-mode) .field-value.highlight-val,
+.dark-mode .field-value.highlight-val,
+.dark-theme .field-value.highlight-val {
+  color: #c4b5fd !important;
+}
+
+:host-context(body.dark-mode) .field-value.monospace-val,
+.dark-mode .field-value.monospace-val,
+.dark-theme .field-value.monospace-val {
+  background: #281d3d !important;
+  color: #c4b5fd !important;
+  border: 1px solid #4a346e !important;
+}
+
+:host-context(body.dark-mode) .editable-chip,
+.dark-mode .editable-chip,
+.dark-theme .editable-chip {
+  background: #132e27 !important;
+  color: #34d399 !important;
+}
+
+:host-context(body.dark-mode) .locked-chip,
+.dark-mode .locked-chip,
+.dark-theme .locked-chip {
+  background: #2a1b42 !important;
+  color: #c4b5fd !important;
+}
+
+:host-context(body.dark-mode) .clinical-protection-note,
+.dark-mode .clinical-protection-note,
+.dark-theme .clinical-protection-note {
+  background: #251c37 !important;
+  border-color: #3e2c59 !important;
+  color: #c7badb !important;
+}
+
+:host-context(body.dark-mode) .clinical-protection-note svg,
+.dark-mode .clinical-protection-note svg,
+.dark-theme .clinical-protection-note svg {
+  color: #c4b5fd !important;
+}
+
+:host-context(body.dark-mode) .clinical-protection-note p,
+.dark-mode .clinical-protection-note p,
+.dark-theme .clinical-protection-note p {
+  color: #bfaecf !important;
+}
+
+:host-context(body.dark-mode) .btn-correction-link,
+.dark-mode .btn-correction-link,
+.dark-theme .btn-correction-link {
+  color: #c4b5fd !important;
+}
+
+:host-context(body.dark-mode) .profile-notice-box,
+.dark-mode .profile-notice-box,
+.dark-theme .profile-notice-box {
+  background: #251c37 !important;
+  border-color: #3e2c59 !important;
+  color: #c7badb !important;
+}
+
+/* Appointments, Records, Follow-ups: Filter Bars (Images 3, 5, 6) */
+:host-context(body.dark-mode) .appts-filter-bar,
+.dark-mode .appts-filter-bar,
+.dark-theme .appts-filter-bar {
+  background: #1e172c !important;
+  border: 1px solid #35284d !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3) !important;
+}
+
+:host-context(body.dark-mode) .appts-filter-bar .filter-pill-btn,
+.dark-mode .appts-filter-bar .filter-pill-btn,
+.dark-theme .appts-filter-bar .filter-pill-btn {
+  background: #231b33 !important;
+  border-color: #3d2c5a !important;
+  color: #b7a8cf !important;
+}
+
+:host-context(body.dark-mode) .appts-filter-bar .filter-pill-btn:hover,
+.dark-mode .appts-filter-bar .filter-pill-btn:hover,
+.dark-theme .appts-filter-bar .filter-pill-btn:hover {
+  background: #2e2244 !important;
+  color: #ffffff !important;
+}
+
+:host-context(body.dark-mode) .appts-filter-bar .filter-pill-btn.active,
+.dark-mode .appts-filter-bar .filter-pill-btn.active,
+.dark-theme .appts-filter-bar .filter-pill-btn.active {
+  background: #3e1b65 !important;
+  border-color: #7b4ec2 !important;
+  color: #ffffff !important;
+}
+
+/* Pregnancy Tracker: Milestone Cards Normal Dark Mode - No Green Background (Image 4) */
+:host-context(body.dark-mode) .milestone-card,
+.dark-mode .milestone-card,
+.dark-theme .milestone-card,
+:host-context(body.dark-mode) .milestone-card.is-done,
+.dark-mode .milestone-card.is-done,
+.dark-theme .milestone-card.is-done {
+  background: #251c37 !important;
+  border: 1.5px solid #382c4f !important;
+  color: #ede7f6 !important;
+}
+
+:host-context(body.dark-mode) .milestone-card:hover,
+.dark-mode .milestone-card:hover,
+.dark-theme .milestone-card:hover,
+:host-context(body.dark-mode) .milestone-card.is-done:hover,
+.dark-mode .milestone-card.is-done:hover,
+.dark-theme .milestone-card.is-done:hover {
+  border-color: #553e78 !important;
+  background: #2c2042 !important;
+}
+
+:host-context(body.dark-mode) .m-title-row strong,
+.dark-mode .m-title-row strong,
+.dark-theme .m-title-row strong {
+  color: #ffffff !important;
+}
+
+:host-context(body.dark-mode) .m-timing-tag,
+.dark-mode .m-timing-tag,
+.dark-theme .m-timing-tag {
+  background: #2d1d46 !important;
+  color: #c4b5fd !important;
+  border: 1px solid #48346c !important;
+}
+
+:host-context(body.dark-mode) .m-category-badge,
+.dark-mode .m-category-badge,
+.dark-theme .m-category-badge {
+  color: #c4b5fd !important;
+}
+
+/* Care Records: View Summary Button (Image 5) */
+:host-context(body.dark-mode) .btn-view-summary,
+.dark-mode .btn-view-summary,
+.dark-theme .btn-view-summary {
+  background: #251c37 !important;
+  border: 1px solid #4a346e !important;
+  color: #c4b5fd !important;
+}
+
+:host-context(body.dark-mode) .btn-view-summary:hover,
+.dark-mode .btn-view-summary:hover,
+.dark-theme .btn-view-summary:hover,
+:host-context(body.dark-mode) .care-record-card:hover .btn-view-summary,
+.dark-mode .care-record-card:hover .btn-view-summary,
+.dark-theme .care-record-card:hover .btn-view-summary {
+  background: #5b2894 !important;
+  border-color: #7b4ec2 !important;
+  color: #ffffff !important;
+}
+
+/* Contact Midwife: Emergency Guidance Card (Image 7) */
+:host-context(body.dark-mode) .emergency-guidance-card,
+.dark-mode .emergency-guidance-card,
+.dark-theme .emergency-guidance-card {
+  background: #251c37 !important;
+  border: 1px solid #582436 !important;
+  color: #fbcfe8 !important;
+}
+
+:host-context(body.dark-mode) .emergency-guidance-card strong,
+.dark-mode .emergency-guidance-card strong,
+.dark-theme .emergency-guidance-card strong {
+  color: #fda4af !important;
+}
+
+:host-context(body.dark-mode) .emergency-guidance-card p,
+.dark-mode .emergency-guidance-card p,
+.dark-theme .emergency-guidance-card p {
+  color: #f472b6 !important;
+}
+
+/* Modal Form Controls, Provider Strips & Disclaimer Cards */
+:host-context(body.dark-mode) .booking-provider-strip,
+.dark-mode .booking-provider-strip,
+.dark-theme .booking-provider-strip {
+  background: #251c37 !important;
+  border: 1.5px solid #3d2c5a !important;
+  color: #ede7f6 !important;
+}
+
+:host-context(body.dark-mode) .provider-strip-text .provider-label,
+.dark-mode .provider-strip-text .provider-label,
+.dark-theme .provider-strip-text .provider-label {
+  color: #a99ac1 !important;
+}
+
+:host-context(body.dark-mode) .provider-strip-text .provider-name,
+.dark-mode .provider-strip-text .provider-name,
+.dark-theme .provider-strip-text .provider-name {
+  color: #ffffff !important;
+}
+
+:host-context(body.dark-mode) .provider-hours-badge,
+.dark-mode .provider-hours-badge,
+.dark-theme .provider-hours-badge {
+  background: #2b1d3f !important;
+  border: 1px solid #4a346e !important;
+  color: #c4b5fd !important;
+}
+
+:host-context(body.dark-mode) .form-control,
+.dark-mode .form-control,
+.dark-theme .form-control {
+  background: #231b33 !important;
+  border-color: #3e3058 !important;
+  color: #f5f0fc !important;
+}
+
+:host-context(body.dark-mode) .form-control:focus,
+.dark-mode .form-control:focus,
+.dark-theme .form-control:focus {
+  border-color: #9d72e2 !important;
+  box-shadow: 0 0 0 3px rgba(157, 114, 226, 0.25) !important;
+}
+
+:host-context(body.dark-mode) .library-disclaimer-box,
+.dark-mode .library-disclaimer-box,
+.dark-theme .library-disclaimer-box {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #ede7f6 !important;
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+:host-context(body.dark-mode) .library-disclaimer-box strong,
+.dark-mode .library-disclaimer-box strong,
+.dark-theme .library-disclaimer-box strong {
+  color: #c4b5fd !important;
+}
+
+:host-context(body.dark-mode) .library-disclaimer-box p,
+.dark-mode .library-disclaimer-box p,
+.dark-theme .library-disclaimer-box p {
+  color: #b7a8cf !important;
+  margin: 0;
+}
+
+:host-context(body.dark-mode) .success-appt-card,
+.dark-mode .success-appt-card,
+.dark-theme .success-appt-card {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #ede7f6 !important;
+}
+
+:host-context(body.dark-mode) .succ-row,
+.dark-mode .succ-row,
+.dark-theme .succ-row {
+  border-bottom-color: #382c4f !important;
+}
+
+:host-context(body.dark-mode) .succ-lbl,
+.dark-mode .succ-lbl,
+.dark-theme .succ-lbl {
+  color: #a99ac1 !important;
+}
+
+:host-context(body.dark-mode) .succ-val,
+.dark-mode .succ-val,
+.dark-theme .succ-val {
+  color: #ffffff !important;
+}
