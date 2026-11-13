@@ -704,18 +704,21 @@
   margin: 0 auto;
 }
 
-/* ============ HERO BANNER ============ */
+/* ============ HERO BANNER (Matches Midwife Dashboard Exactly) ============ */
 .hero-banner {
   position: relative;
-  background: linear-gradient(135deg, #2b1446 0%, #431f6e 45%, #6a349c 100%);
-  border-radius: 16px;
-  padding: 24px 30px;
+  background:
+    linear-gradient(to right, rgba(63, 26, 110, 0.78) 0%, rgba(80, 40, 130, 0.42) 100%),
+    url('/images/dashboard-banner-bg.png') center / cover no-repeat,
+    #3f1a6e;
+  border-radius: 14px;
+  padding: 22px 28px;
   color: #ffffff;
   display: flex;
   justify-content: space-between;
   align-items: center;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(43, 20, 70, 0.18);
+  box-shadow: 0 8px 24px rgba(50, 22, 80, 0.16);
 }
 
 .hero-content {
@@ -2787,17 +2790,20 @@
   gap: 20px;
 }
 
-/* 1. Hero Profile Banner */
+/* 1. Hero Profile Banner (Matches Midwife Dashboard Theme) */
 .profile-hero-banner {
-  background: linear-gradient(135deg, #361759 0%, #4c227b 55%, #622e96 100%);
-  border-radius: 16px;
-  padding: 26px 30px;
+  background:
+    linear-gradient(to right, rgba(63, 26, 110, 0.78) 0%, rgba(80, 40, 130, 0.42) 100%),
+    url('/images/dashboard-banner-bg.png') center / cover no-repeat,
+    #3f1a6e;
+  border-radius: 14px;
+  padding: 24px 28px;
   color: #ffffff;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 24px;
-  box-shadow: 0 4px 20px rgba(54, 23, 89, 0.16);
+  box-shadow: 0 8px 24px rgba(50, 22, 80, 0.16);
   position: relative;
   overflow: hidden;
 }
