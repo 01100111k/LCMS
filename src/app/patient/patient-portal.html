@@ -2257,74 +2257,100 @@
 <!-- ======================================================== -->
 @if (showRescheduleModal(); as open) {
   <div class="modal-backdrop" (click)="closeRescheduleModal()">
-    <div class="modal-dialog-card modal-view-prenatal" (click)="$event.stopPropagation()">
+    <div class="modal-dialog-card modal-booking-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="reschedule-modal-title">
       <div class="modal-header">
         <div class="modal-title-row">
-          <div class="modal-icon tone-teal">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div class="modal-icon tone-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
           </div>
           <div>
-            <h2>Reschedule Appointment</h2>
+            <h2 id="reschedule-modal-title">Reschedule Appointment</h2>
             <p class="modal-subtitle">Pick a new date and bookable clinic time slot</p>
           </div>
         </div>
-        <button type="button" class="btn-close-modal" (click)="closeRescheduleModal()">✕</button>
+        <button type="button" class="btn-close-modal" (click)="closeRescheduleModal()" title="Close dialog" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
 
-      <div class="view-sheet-body">
+      <div class="modal-body-scroll" style="padding: 20px 24px;">
         @if (rescheduleSuccess()) {
-          <div class="form-alert alert-success">
-            ✓ Your appointment has been successfully rescheduled to {{ rescheduleDate() | date:'mediumDate' }} at {{ formatSlotTime(rescheduleTime()) }}.
+          <div class="booking-success-view" style="padding: 16px 8px;">
+            <div class="success-icon-badge">✓</div>
+            <h3>Reschedule Confirmed!</h3>
+            <p class="success-desc">
+              Your appointment has been successfully rescheduled to <strong>{{ rescheduleDate() | date:'fullDate' }}</strong> at <strong>{{ formatSlotTime(rescheduleTime()) }}</strong>.
+            </p>
+            <button type="button" class="btn-primary" (click)="closeRescheduleModal()" style="margin-top: 8px;">
+              Done & Return
+            </button>
+          </div>
+        } @else {
+          @if (rescheduleError()) {
+            <div class="form-alert alert-error" style="margin-bottom: 14px;">
+              {{ rescheduleError() }}
+            </div>
+          }
+
+          <div class="booking-form-content">
+            <div class="form-row-2col">
+              <div class="form-group">
+                <label>Select New Date <span class="req">*</span></label>
+                <input
+                  type="date"
+                  [min]="todayIso"
+                  [ngModel]="rescheduleDate()"
+                  (ngModelChange)="rescheduleDate.set($event); onRescheduleDateChange()"
+                  class="form-control"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Available Time Slot <span class="req">*</span></label>
+                <div class="input-select-wrap">
+                  <select [ngModel]="rescheduleTime()" (ngModelChange)="rescheduleTime.set($event)" class="form-control" required>
+                    @for (s of rescheduleSlots(); track s) {
+                      <option [value]="s">{{ formatSlotTime(s) }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Reason for Rescheduling <span class="optional-tag">(Optional)</span></label>
+              <input
+                type="text"
+                [ngModel]="rescheduleReason()"
+                (ngModelChange)="rescheduleReason.set($event)"
+                placeholder="e.g. Schedule adjustment, work conflict"
+                class="form-control"
+              />
+            </div>
+
+            <div class="modal-form-footer">
+              <button type="button" class="btn-cancel-modal" (click)="closeRescheduleModal()">Cancel</button>
+              <button type="button" class="btn-submit-modal" (click)="submitReschedule()" [disabled]="submittingReschedule() || rescheduleSuccess()">
+                @if (submittingReschedule()) {
+                  <span>Updating...</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Confirm Reschedule</span>
+                }
+              </button>
+            </div>
           </div>
         }
-        @if (rescheduleError()) {
-          <div class="form-alert alert-error">
-            {{ rescheduleError() }}
-          </div>
-        }
-
-        <div class="form-group">
-          <label>Select New Date *</label>
-          <input
-            type="date"
-            [min]="todayIso"
-            [ngModel]="rescheduleDate()"
-            (ngModelChange)="rescheduleDate.set($event); onRescheduleDateChange()"
-            class="form-control"
-            required
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Select Available Time Slot *</label>
-          <select [ngModel]="rescheduleTime()" (ngModelChange)="rescheduleTime.set($event)" class="form-control" required>
-            @for (s of rescheduleSlots(); track s) {
-              <option [value]="s">{{ formatSlotTime(s) }}</option>
-            }
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Reason for Rescheduling (Optional)</label>
-          <input
-            type="text"
-            [ngModel]="rescheduleReason()"
-            (ngModelChange)="rescheduleReason.set($event)"
-            placeholder="e.g. Schedule adjustment, work conflict"
-            class="form-control"
-          />
-        </div>
-
-        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
-          <button type="button" class="btn-cancel" (click)="closeRescheduleModal()">Cancel</button>
-          <button type="button" class="btn-primary-purple" (click)="submitReschedule()" [disabled]="submittingReschedule() || rescheduleSuccess()">
-            @if (submittingReschedule()) {
-              <span>Updating...</span>
-            } @else {
-              <span>Confirm Reschedule</span>
-            }
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -2502,89 +2528,159 @@
 }
 
 <!-- ======================================================== -->
-<!-- MODAL: APPOINTMENT BOOKING                               -->
+<!-- MODAL: APPOINTMENT BOOKING (Enhanced System Theme)        -->
 <!-- ======================================================== -->
 @if (showBookingModal()) {
   <div class="modal-backdrop" (click)="closeBookingModal()">
-    <div class="modal-dialog-card modal-booking-card" (click)="$event.stopPropagation()">
+    <div class="modal-dialog-card modal-booking-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="booking-modal-title">
+      <!-- Modal Header -->
       <div class="modal-header">
         <div class="modal-title-row">
-          <div class="modal-icon tone-teal">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div class="modal-icon tone-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
           </div>
           <div>
-            <h2>Request Clinic Appointment</h2>
+            <h2 id="booking-modal-title">Request Clinic Appointment</h2>
             <p class="modal-subtitle">Schedule a consultation with your attending midwife</p>
           </div>
         </div>
-        <button type="button" class="btn-close-modal" (click)="closeBookingModal()">✕</button>
+        <button type="button" class="btn-close-modal" (click)="closeBookingModal()" title="Close dialog" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
 
-      <div class="modal-body-scroll" style="padding: 20px 24px;">
-        @if (bookingSuccess()) {
-          <div class="form-alert alert-success">
-            ✓ Your appointment has been booked for {{ scheduledDate() | date:'mediumDate' }} at {{ formatSlotTime(scheduledTime()) }}.
+      <!-- Success View -->
+      @if (bookingSuccess()) {
+        <div class="booking-success-view">
+          <div class="success-icon-badge">✓</div>
+          <h3>Appointment Confirmed!</h3>
+          <p class="success-desc">
+            Your appointment has been booked for <strong>{{ scheduledDate() | date:'fullDate' }}</strong> at <strong>{{ formatSlotTime(scheduledTime()) }}</strong>.
+          </p>
+          <div class="success-appt-card">
+            <div class="succ-row">
+              <span class="succ-lbl">Visit Type</span>
+              <strong class="succ-val">{{ bookingType }}</strong>
+            </div>
+            <div class="succ-row">
+              <span class="succ-lbl">Attending Midwife</span>
+              <strong class="succ-val">{{ assignedMidwife().name }} ({{ assignedMidwife().license }})</strong>
+            </div>
+            <div class="succ-row">
+              <span class="succ-lbl">Facility Location</span>
+              <span class="succ-val">{{ assignedMidwife().clinicAddress }}</span>
+            </div>
           </div>
-        }
-        @if (bookingError()) {
-          <div class="form-alert alert-error">
-            {{ bookingError() }}
-          </div>
-        }
-
-        <form (ngSubmit)="submitBooking()">
-          <div class="form-group">
-            <label>Appointment Type *</label>
-            <select [(ngModel)]="bookingType" name="bookingType" class="form-control" required>
-              <option value="Prenatal Checkup">Prenatal Checkup</option>
-              <option value="Ultrasound / Scan Review">Ultrasound / Scan Review</option>
-              <option value="Laboratory Screening (OGTT / CBC)">Laboratory Screening (OGTT / CBC)</option>
-              <option value="Tetanus Toxoid Immunization">Tetanus Toxoid Immunization</option>
-              <option value="Postpartum Wellness Check">Postpartum Wellness Check</option>
-              <option value="Family Planning Counseling">Family Planning Counseling</option>
-              <option value="Other Consultation">Other Consultation</option>
-            </select>
-          </div>
-
-          <div class="form-group" style="margin-top: 10px;">
-            <label>Preferred Date *</label>
-            <input
-              type="date"
-              [min]="todayIso"
-              [(ngModel)]="bookingDate"
-              (change)="onBookingDateChange()"
-              name="bookingDate"
-              class="form-control"
-              required
-            />
-          </div>
-
-          <div class="form-group" style="margin-top: 10px;">
-            <label>Available Time Slot *</label>
-            <select [(ngModel)]="bookingTime" name="bookingTime" class="form-control" required>
-              @for (slot of availableSlots(); track slot) {
-                <option [value]="slot">{{ formatSlotTime(slot) }}</option>
-              }
-            </select>
+          <button type="button" class="btn-primary" (click)="closeBookingModal()">
+            Done & Return to Portal
+          </button>
+        </div>
+      } @else {
+        <!-- Form View -->
+        <div class="modal-body-scroll" style="padding: 20px 24px;">
+          <!-- Attending Midwife Info Strip -->
+          <div class="booking-provider-strip">
+            <div class="provider-avatar-circle">👩‍⚕️</div>
+            <div class="provider-strip-text">
+              <span class="provider-label">Attending Midwife</span>
+              <strong class="provider-name">{{ assignedMidwife().name }} ({{ assignedMidwife().license }})</strong>
+            </div>
+            <span class="provider-hours-badge">Mon – Sat · 8:00 AM – 5:00 PM</span>
           </div>
 
-          <div class="form-group" style="margin-top: 10px;">
-            <label>Notes / Specific Concerns (Optional)</label>
-            <textarea [(ngModel)]="bookingNotes" name="bookingNotes" rows="2" placeholder="e.g. Need laboratory referral, experiencing mild nausea" class="form-control"></textarea>
-          </div>
+          @if (bookingError()) {
+            <div class="form-alert alert-error" style="margin-bottom: 14px;">
+              {{ bookingError() }}
+            </div>
+          }
 
-          <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
-            <button type="button" class="btn-cancel" (click)="closeBookingModal()">Cancel</button>
-            <button type="submit" class="btn-primary-purple" [disabled]="submittingBooking() || bookingSuccess()">
-              @if (submittingBooking()) {
-                <span>Booking...</span>
-              } @else {
-                <span>Confirm Appointment</span>
-              }
-            </button>
-          </div>
-        </form>
-      </div>
+          <form (ngSubmit)="submitBooking()" class="booking-form-content">
+            <!-- 1. Appointment Type -->
+            <div class="form-group">
+              <label for="book-type">Appointment Type <span class="req">*</span></label>
+              <div class="input-select-wrap">
+                <select id="book-type" [(ngModel)]="bookingType" name="bookingType" class="form-control" required>
+                  <option value="Prenatal Checkup">Prenatal Checkup</option>
+                  <option value="Ultrasound / Scan Review">Ultrasound / Scan Review</option>
+                  <option value="Laboratory Screening (OGTT / CBC)">Laboratory Screening (OGTT / CBC)</option>
+                  <option value="Tetanus Toxoid Immunization">Tetanus Toxoid Immunization</option>
+                  <option value="Postpartum Wellness Check">Postpartum Wellness Check</option>
+                  <option value="Family Planning Counseling">Family Planning Counseling</option>
+                  <option value="Other Consultation">Other Consultation</option>
+                </select>
+                <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+
+            <!-- 2-Column Grid: Preferred Date & Time Slot -->
+            <div class="form-row-2col">
+              <div class="form-group">
+                <label for="book-date">Preferred Date <span class="req">*</span></label>
+                <input
+                  id="book-date"
+                  type="date"
+                  [min]="todayIso"
+                  [(ngModel)]="bookingDate"
+                  (change)="onBookingDateChange()"
+                  name="bookingDate"
+                  class="form-control"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="book-time">Available Time Slot <span class="req">*</span></label>
+                <div class="input-select-wrap">
+                  <select id="book-time" [(ngModel)]="bookingTime" name="bookingTime" class="form-control" required>
+                    @for (slot of availableSlots(); track slot) {
+                      <option [value]="slot">{{ formatSlotTime(slot) }}</option>
+                    }
+                  </select>
+                  <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Notes / Specific Concerns -->
+            <div class="form-group">
+              <label for="book-notes">Notes / Specific Concerns <span class="optional-tag">(Optional)</span></label>
+              <textarea
+                id="book-notes"
+                [(ngModel)]="bookingNotes"
+                name="bookingNotes"
+                rows="3"
+                placeholder="e.g. Need laboratory referral, experiencing mild nausea, routine trimester checkup"
+                class="form-control"
+              ></textarea>
+            </div>
+
+            <!-- Action Buttons Footer -->
+            <div class="modal-form-footer">
+              <button type="button" class="btn-cancel-modal" (click)="closeBookingModal()">
+                Cancel
+              </button>
+              <button type="submit" class="btn-submit-modal" [disabled]="submittingBooking() || bookingSuccess()">
+                @if (submittingBooking()) {
+                  <span>Booking appointment...</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Confirm Appointment</span>
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      }
     </div>
   </div>
 }

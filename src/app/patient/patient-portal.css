@@ -3875,96 +3875,343 @@
   gap: 14px;
 }
 
-/* Booking Modal Enhancements */
-.slot-btn-custom {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1.5px solid #e0d4f2;
+/* ======================================================== */
+/* REQUEST CLINIC APPOINTMENT MODAL (System Lavender Theme) */
+/* ======================================================== */
+.modal-booking-card {
+  max-width: 620px;
+  width: 92%;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(35, 12, 60, 0.28);
+  border: 1px solid #ebe5f5;
   background: #ffffff;
-  color: #361759;
-  font-size: 12.5px;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
+  overflow: hidden;
+}
+
+.modal-booking-card .modal-header {
+  padding: 18px 24px;
+  background: #faf8fd;
+  border-bottom: 1px solid #f0eaf8;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 5px;
-  transition: all 0.15s ease;
 }
 
-.slot-btn-custom:hover {
-  background: #f3effa;
-  border-color: #361759;
+.modal-booking-card .modal-subtitle {
+  font-size: 12.5px;
+  color: #7b6f8d;
+  margin: 3px 0 0 0;
 }
 
-.slot-btn-custom.active {
-  background: #361759;
-  color: #ffffff;
-  border-color: #361759;
-  box-shadow: 0 3px 8px rgba(54, 23, 89, 0.22);
-}
-
-.provider-reminder-pill {
+/* Attending Midwife Strip */
+.booking-provider-strip {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: #f4effb;
-  border-radius: 8px;
-  padding: 9px 12px;
-  font-size: 12px;
-  color: #554869;
+  gap: 12px;
+  background: #f8f4fd;
+  border: 1.5px solid #ece2f7;
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
 }
 
-.provider-reminder-pill svg {
-  width: 15px;
-  height: 15px;
-  color: #6b4fa3;
+.provider-avatar-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #ebe0f8;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
   flex-shrink: 0;
 }
 
-.booking-success-card {
+.provider-strip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.provider-strip-text .provider-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #7f6a9e;
+  letter-spacing: 0.04em;
+}
+
+.provider-strip-text .provider-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #271442;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.provider-hours-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #562788;
+  background: #eedefc;
+  border: 1px solid #dfc7f7;
+  border-radius: 999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Booking Form */
+.booking-form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.booking-form-content .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.booking-form-content .form-group label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #362152;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.booking-form-content .form-group .req {
+  color: #d12953;
+  font-weight: 700;
+}
+
+.booking-form-content .form-group .optional-tag {
+  color: #8c7e9e;
+  font-weight: 500;
+  font-size: 11.5px;
+}
+
+.booking-form-content .form-control {
+  width: 100%;
+  height: 42px;
+  border: 1.5px solid #ece4f7;
+  background: #faf7fd;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 13.5px;
+  color: #271442;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.booking-form-content .form-control:focus {
+  border-color: #6b4fa3;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(107, 79, 163, 0.14);
+}
+
+.booking-form-content textarea.form-control {
+  height: auto;
+  min-height: 80px;
+  padding: 10px 14px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.input-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-select-wrap select.form-control {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.input-select-wrap .select-chevron {
+  position: absolute;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  color: #7f6a9e;
+  pointer-events: none;
+}
+
+/* Modal Form Footer */
+.modal-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+  padding-top: 18px;
+  border-top: 1px solid #f1eaf8;
+}
+
+.btn-cancel-modal {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1.5px solid #dfd5ed;
+  background: #ffffff;
+  color: #4e3f60;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.btn-cancel-modal:hover {
+  background: #f6f2fa;
+  border-color: #c9b8e2;
+  color: #2e1647;
+}
+
+.btn-submit-modal {
+  height: 40px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: none;
+  background: #361759;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(54, 23, 89, 0.25);
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.btn-submit-modal:hover:not(:disabled) {
+  background: #472074;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(54, 23, 89, 0.32);
+}
+
+.btn-submit-modal:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-submit-modal svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Booking Success View */
+.booking-success-view {
+  padding: 36px 24px 32px;
   text-align: center;
-  padding: 24px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.success-icon-badge {
-  width: 54px;
-  height: 54px;
+.booking-success-view .success-icon-badge {
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: #e6f7f3;
-  color: #0b6b58;
+  background: #e8f7f0;
+  color: #0e835a;
+  font-size: 28px;
+  font-weight: 800;
   display: grid;
   place-items: center;
+  box-shadow: 0 4px 14px rgba(14, 131, 90, 0.18);
   margin-bottom: 4px;
 }
 
-.success-icon-badge svg {
-  width: 26px;
-  height: 26px;
-}
-
-.booking-success-card h3 {
+.booking-success-view h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   color: #271442;
 }
 
-.booking-success-card p {
+.booking-success-view .success-desc {
   margin: 0;
   font-size: 13.5px;
-  color: #4a3a60;
+  color: #584a6b;
+  max-width: 440px;
   line-height: 1.5;
 }
 
-.success-hint {
-  font-size: 12px;
-  color: #7a7189;
-  max-width: 440px;
-  line-height: 1.45;
+.success-appt-card {
+  width: 100%;
+  max-width: 460px;
+  background: #faf7fd;
+  border: 1.5px solid #ece4f7;
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  margin: 8px 0 12px;
+}
+
+.succ-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  gap: 12px;
+}
+
+.succ-lbl {
+  color: #7f6a9e;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.succ-val {
+  color: #2b1842;
+  font-weight: 700;
+  text-align: right;
+}
+
+.booking-success-view .btn-primary {
+  height: 40px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: none;
+  background: #361759;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 12px rgba(54, 23, 89, 0.25);
+}
+
+.booking-success-view .btn-primary:hover {
+  background: #472074;
+  transform: translateY(-1px);
 }
 
 @media (max-width: 900px) {
@@ -3987,6 +4234,24 @@
   .appt-col-actions {
     width: 100%;
     justify-content: flex-end;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-booking-card {
+    width: 95%;
+  }
+  .form-row-2col {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .booking-provider-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .provider-hours-badge {
+    align-self: flex-start;
   }
 }
 
