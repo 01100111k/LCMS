@@ -1194,9 +1194,21 @@ import { NotificationsService } from '../../core/notifications.service';
       background: #130a1c;
       color: #f3e8ff;
     }
+    .dark-mode .admin-sidebar {
+      background: #190e29;
+      border-right: 1px solid #2d1d46;
+    }
     .dark-mode .admin-topbar {
       background: #1b0e26;
       border-color: #2c163e;
+    }
+    .dark-mode .admin-main-wrap,
+    .dark-mode .admin-content-viewport {
+      background: #120e1b;
+      color: #ede7f6;
+    }
+    .dark-mode .admin-content-viewport::-webkit-scrollbar-thumb {
+      background: #3d2b58;
     }
     .dark-mode .page-title-crumbs h1 {
       color: #ffffff;

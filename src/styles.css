@@ -671,11 +671,12 @@ body.dark-mode .admin-app-layout,
 body.dark-mode .admin-main-wrap,
 body.dark-mode .admin-content-viewport,
 body.dark-mode .overview-wrap,
-body.dark-mode .midwives-wrap,
-body.dark-mode .patients-wrap,
-body.dark-mode .approvals-wrap,
-body.dark-mode .logs-wrap,
-body.dark-mode .archives-wrap,
+body.dark-mode .midwives-view,
+body.dark-mode .patients-view,
+body.dark-mode .pending-approvals-view,
+body.dark-mode .activity-logs-container,
+body.dark-mode .archives-view,
+body.dark-mode .account-view,
 body.dark-mode .mw-main-area,
 body.dark-mode .mw-content-body,
 body.dark-mode .dashboard-wrap,
@@ -2962,6 +2963,316 @@ body.dark-mode .btn-confirm-signout {
 body.dark-mode .btn-confirm-signout:hover {
   background: #7c4bb9 !important;
   transform: translateY(-1px);
+}
+
+/* ========================================================
+   ADMIN PORTAL COMPREHENSIVE DARK MODE PALETTE & CONTRAST FIXES
+   ======================================================== */
+
+/* 1. Admin Dashboard: Staff Overview Rows & Avatars */
+body.dark-mode .staff-item-row {
+  background: #251a38 !important;
+  border: 1px solid #3d2b58 !important;
+}
+
+body.dark-mode .staff-avatar {
+  background: #361f52 !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .staff-info strong {
+  color: #ffffff !important;
+}
+
+body.dark-mode .staff-info span {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .badge-duty {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: #4ade80 !important;
+}
+
+/* 2. Admin Activity Logs Header & Controls Card */
+body.dark-mode .header-card {
+  background: #1e172c !important;
+  border: 1px solid #332549 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28) !important;
+}
+
+body.dark-mode .header-card h2,
+body.dark-mode .header-info h2 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .header-card p,
+body.dark-mode .header-info p,
+body.dark-mode .header-card .sub-text {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .header-badge {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .archive-count-pill {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .head-stat-pill {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+/* 3. Subtabs Bar (Pending Approvals & Archives) */
+body.dark-mode .subtabs-bar {
+  border-bottom-color: #36284e !important;
+}
+
+body.dark-mode .subtab-btn {
+  color: #b7a8cf !important;
+  background: transparent !important;
+}
+
+body.dark-mode .subtab-btn:hover {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .subtab-btn.active {
+  color: #ffffff !important;
+}
+
+body.dark-mode .subtab-btn.active::after {
+  background: #a881e6 !important;
+}
+
+/* 4. Filter Pills in Activity Logs */
+body.dark-mode .filter-pill {
+  background: #251c37 !important;
+  border: 1px solid #3d2c5a !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .filter-pill:hover {
+  background: #361f52 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .filter-pill.active {
+  background: #58338e !important;
+  color: #ffffff !important;
+  border-color: #7a5ba8 !important;
+  box-shadow: 0 2px 8px rgba(88, 51, 142, 0.4) !important;
+}
+
+/* 5. Action Buttons in Tables (View, Edit, Archive, Profile, Deactivate, Purge) */
+body.dark-mode .btn-pill-action,
+body.dark-mode .btn-view,
+body.dark-mode .btn-edit-row,
+body.dark-mode .btn-archive-row {
+  background: #251c37 !important;
+  border: 1px solid #4a346e !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .btn-pill-action:hover,
+body.dark-mode .btn-view:hover,
+body.dark-mode .btn-edit-row:hover,
+body.dark-mode .btn-archive-row:hover {
+  background: #361f52 !important;
+  border-color: #7a5ba8 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-purge {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+
+body.dark-mode .btn-purge:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+  color: #ffffff !important;
+}
+
+/* 6. Table Headers & Rows in Admin Tables */
+body.dark-mode .data-table th,
+body.dark-mode .patient-table th,
+body.dark-mode .activity-table th {
+  background: #251c37 !important;
+  color: #c4b5fd !important;
+  border-bottom: 1px solid #3d2c5a !important;
+}
+
+body.dark-mode .data-table td,
+body.dark-mode .patient-table td,
+body.dark-mode .activity-table td {
+  color: #ede7f6 !important;
+  border-bottom: 1px solid #2d2042 !important;
+}
+
+body.dark-mode .data-table tr:hover td,
+body.dark-mode .patient-table tr:hover td,
+body.dark-mode .log-row:hover td {
+  background: #251a38 !important;
+}
+
+/* 7. Contact Details, Gestation, EDD & Meta Text Contrast */
+body.dark-mode .contact-col,
+body.dark-mode .contact-col span,
+body.dark-mode .contact-item,
+body.dark-mode .contact-rows,
+body.dark-mode .contact-rows span {
+  color: #d8ceeb !important;
+}
+
+body.dark-mode .contact-col svg,
+body.dark-mode .contact-item svg {
+  color: #a881e6 !important;
+}
+
+body.dark-mode .gestation-text,
+body.dark-mode .edd-text {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .client-count-pill {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .prc-badge {
+  background: #2b1d3f !important;
+  color: #c4b5fd !important;
+  border: 1px solid #4a346e !important;
+}
+
+body.dark-mode .user-email {
+  color: #b7a8cf !important;
+}
+
+body.dark-mode .activity-text {
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .timestamp-cell {
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .timestamp-cell .time-icon {
+  color: #a881e6 !important;
+}
+
+/* 8. Role Badges & Avatars in Activity Logs & Midwives */
+body.dark-mode .badge-admin {
+  background: #361f52 !important;
+  color: #d8b4fe !important;
+  border: 1px solid #5b3e94 !important;
+}
+
+body.dark-mode .badge-midwife {
+  background: #1e293b !important;
+  color: #93c5fd !important;
+  border: 1px solid #3b82f6 !important;
+}
+
+body.dark-mode .badge-patient {
+  background: #3d1522 !important;
+  color: #f472b6 !important;
+  border: 1px solid #9d174d !important;
+}
+
+body.dark-mode .badge-system {
+  background: #271f38 !important;
+  color: #c4b5fd !important;
+  border: 1px solid #4a346e !important;
+}
+
+body.dark-mode .avatar-admin {
+  background: #361f52 !important;
+  color: #d8b4fe !important;
+  border: 1px solid #5b3e94 !important;
+}
+
+body.dark-mode .avatar-midwife {
+  background: #1e293b !important;
+  color: #93c5fd !important;
+  border: 1px solid #3b82f6 !important;
+}
+
+body.dark-mode .avatar-patient {
+  background: #3d1522 !important;
+  color: #f472b6 !important;
+  border: 1px solid #9d174d !important;
+}
+
+body.dark-mode .avatar-system {
+  background: #271f38 !important;
+  color: #c4b5fd !important;
+  border: 1px solid #4a346e !important;
+}
+
+/* 9. Archives Records & Card Icons */
+body.dark-mode .record-icon {
+  background: #2b1d3f !important;
+  color: #c4b5fd !important;
+  border: 1px solid #4a346e !important;
+}
+
+/* 10. Settings / Account in Admin */
+body.dark-mode .card-box {
+  background: #1e172c !important;
+  border-color: #332549 !important;
+  color: #ede7f6 !important;
+}
+
+body.dark-mode .card-box h3 {
+  color: #ffffff !important;
+}
+
+body.dark-mode .card-box p,
+body.dark-mode .box-sub {
+  color: #b7a8cf !important;
+}
+
+/* 11. Status & Clinical Risk Badges */
+body.dark-mode .status-active {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: #4ade80 !important;
+}
+
+body.dark-mode .status-inactive {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+}
+
+body.dark-mode .status-postpartum {
+  background: #361f52 !important;
+  color: #c4b5fd !important;
+}
+
+body.dark-mode .status-completed {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60a5fa !important;
+}
+
+body.dark-mode .risk-low {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: #4ade80 !important;
+}
+
+body.dark-mode .risk-medium {
+  background: rgba(245, 158, 11, 0.2) !important;
+  color: #fbbf24 !important;
+}
+
+body.dark-mode .risk-high {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
 }
 
 
