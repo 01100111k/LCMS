@@ -139,11 +139,21 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
       }
       window.scrollTo(0, 0);
     }
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark-mode', 'dark-theme');
+      document.documentElement.removeAttribute('data-theme');
+    }
   }
 
   ngOnInit(): void {
     if (typeof window !== 'undefined') {
       window.scrollTo(0, 0);
+    }
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark-mode', 'dark-theme');
+      document.documentElement.removeAttribute('data-theme');
     }
     const initial = this.route.snapshot.data['auth'] as AuthView | undefined;
     if (initial) this.authView.set(initial);

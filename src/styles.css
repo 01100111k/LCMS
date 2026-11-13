@@ -535,6 +535,133 @@ body.dark-mode {
   color: #ede7f6 !important;
 }
 
+/* ========================================================
+   LANDING PAGE & AUTH MODALS ISOLATION (Light Mode Protection)
+   Landing page, login, signup, and registration modals must
+   ALWAYS stay strictly in their pristine light theme.
+   ======================================================== */
+body.dark-mode app-landing,
+body.dark-mode app-login,
+app-landing,
+app-login {
+  --brand-900: #271442 !important;
+  --brand-800: #361759 !important;
+  --brand-700: #5b3e94 !important;
+  --brand-600: #6b4fa3 !important;
+  --brand-500: #8d72c4 !important;
+  --brand-400: #b59ee3 !important;
+  --tint-100: #f0eaf8 !important;
+  --tint-50: #fbf9fe !important;
+  --ink: #2a2438 !important;
+  --muted: #5f5570 !important;
+  --line: #ebe5f5 !important;
+  --white: #ffffff !important;
+  color: #2a2438 !important;
+  background-color: #ffffff !important;
+}
+
+body.dark-mode app-landing h1,
+body.dark-mode app-landing h2,
+body.dark-mode app-landing h3,
+body.dark-mode app-landing h4,
+body.dark-mode app-landing strong,
+body.dark-mode app-login h1,
+body.dark-mode app-login h2,
+body.dark-mode app-login h3,
+body.dark-mode app-login h4,
+body.dark-mode app-login strong {
+  color: #271442 !important;
+}
+
+body.dark-mode app-landing p,
+body.dark-mode app-landing span,
+body.dark-mode app-landing a {
+  color: inherit !important;
+}
+
+body.dark-mode app-login p,
+body.dark-mode app-login span {
+  color: inherit !important;
+}
+
+body.dark-mode app-landing label,
+body.dark-mode app-landing small,
+body.dark-mode app-login label,
+body.dark-mode app-login small {
+  color: #5f5570 !important;
+}
+
+body.dark-mode app-login label {
+  color: #271442 !important;
+}
+
+body.dark-mode app-login .sub,
+body.dark-mode app-login .switch-text,
+body.dark-mode app-login .input-hint {
+  color: #5f5570 !important;
+}
+
+body.dark-mode app-landing input,
+body.dark-mode app-landing select,
+body.dark-mode app-landing textarea,
+body.dark-mode app-login input,
+body.dark-mode app-login select,
+body.dark-mode app-login textarea {
+  background: #fbf9fe !important;
+  border: 1.5px solid #ebe5f5 !important;
+  color: #2a2438 !important;
+}
+
+body.dark-mode app-landing input:focus,
+body.dark-mode app-login input:focus {
+  background: #ffffff !important;
+  border-color: #6b4fa3 !important;
+  color: #2a2438 !important;
+}
+
+body.dark-mode app-landing input::placeholder,
+body.dark-mode app-login input::placeholder {
+  color: #a49cb2 !important;
+}
+
+body.dark-mode app-login .dialog {
+  background: #ffffff !important;
+  color: #2a2438 !important;
+  box-shadow: 0 32px 84px rgba(39, 20, 66, 0.38) !important;
+}
+
+body.dark-mode app-login .role-card {
+  background: #ffffff !important;
+  border: 1.5px solid #ebe5f5 !important;
+  color: #2a2438 !important;
+}
+
+body.dark-mode app-login .role-card h3 {
+  color: #271442 !important;
+}
+
+body.dark-mode app-login .role-card p {
+  color: #5f5570 !important;
+}
+
+body.dark-mode app-login .btn-choose-files {
+  background: #fbf9fe !important;
+  border: 1.5px dashed #cfc2e6 !important;
+  color: #361759 !important;
+}
+
+body.dark-mode app-login .pending-info-box {
+  background: #faf8fd !important;
+  border: 1px solid #ebe5f5 !important;
+  color: #2a2438 !important;
+}
+
+body.dark-mode app-login .file-chip {
+  background: #f5f0fb !important;
+  border: 1px solid #e4daf0 !important;
+  color: #271442 !important;
+}
+
 /* App layout, page containers, and top navigation */
 body.dark-mode app-patient-portal,
 body.dark-mode app-midwife-layout,
@@ -2552,13 +2679,19 @@ body.dark-mode .provider-hours-badge {
   color: #c4b5fd !important;
 }
 
-body.dark-mode .form-control {
+body.dark-mode .mw-app-layout .form-control,
+body.dark-mode .modal-dialog-card .form-control,
+body.dark-mode .profile-modal-form .form-control,
+body.dark-mode .booking-form-content .form-control {
   background: #231b33 !important;
   border-color: #3e3058 !important;
   color: #f5f0fc !important;
 }
 
-body.dark-mode .form-control:focus {
+body.dark-mode .mw-app-layout .form-control:focus,
+body.dark-mode .modal-dialog-card .form-control:focus,
+body.dark-mode .profile-modal-form .form-control:focus,
+body.dark-mode .booking-form-content .form-control:focus {
   border-color: #9d72e2 !important;
   box-shadow: 0 0 0 3px rgba(157, 114, 226, 0.25) !important;
 }

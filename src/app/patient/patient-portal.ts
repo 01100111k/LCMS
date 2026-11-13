@@ -1,5 +1,5 @@
 import { DatePipe, NgClass } from '@angular/common';
-import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../core/auth.service';
 import { Patient, PatientsService } from '../core/patients.service';
@@ -203,7 +203,7 @@ export interface PatientInquiry {
   templateUrl: './patient-portal.html',
   styleUrl: './patient-portal.css',
 })
-export class PatientPortal implements OnInit {
+export class PatientPortal implements OnInit, OnDestroy {
   auth = inject(AuthService);
   private patients = inject(PatientsService);
   private appointments = inject(AppointmentsService);
@@ -2096,6 +2096,19 @@ export class PatientPortal implements OnInit {
 
   async confirmSignOut(): Promise<void> {
     this.closeSignOutModal();
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark-mode', 'dark-theme');
+      document.documentElement.removeAttribute('data-theme');
+    }
     await this.auth.logout();
+  }
+
+  ngOnDestroy(): void {
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark-mode', 'dark-theme');
+      document.documentElement.removeAttribute('data-theme');
+    }
   }
 }

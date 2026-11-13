@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -1150,7 +1150,7 @@ import { NotificationsService } from '../../core/notifications.service';
     }
   `,
 })
-export class MidwifeLayout implements OnInit {
+export class MidwifeLayout implements OnInit, OnDestroy {
   auth = inject(AuthService);
   private router = inject(Router);
   private notifSvc = inject(NotificationsService);
@@ -1302,6 +1302,19 @@ export class MidwifeLayout implements OnInit {
 
   async confirmSignOut(): Promise<void> {
     this.closeSignOutModal();
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark-mode', 'dark-theme');
+      document.documentElement.removeAttribute('data-theme');
+    }
     await this.auth.logout();
+  }
+
+  ngOnDestroy(): void {
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark-mode', 'dark-theme');
+      document.documentElement.removeAttribute('data-theme');
+    }
   }
 }
