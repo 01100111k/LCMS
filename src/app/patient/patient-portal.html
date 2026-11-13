@@ -256,20 +256,7 @@
                 <span class="dropdown-label">Settings</span>
               </a>
 
-              <!-- 3. Dark Mode -->
-              <div class="dropdown-item dark-mode-row" (click)="toggleDarkMode()">
-                <div class="dark-mode-left">
-                  <svg viewBox="0 0 24 24" fill="currentColor" class="dropdown-icon" aria-hidden="true">
-                    <path d="M12.3 2a10 10 0 0 0-1.9 19.8 10 10 0 0 0 11.6-11.6A10.02 10.02 0 0 1 12.3 2z"/>
-                  </svg>
-                  <span class="dropdown-label">Dark Mode</span>
-                </div>
-                <span class="dropdown-switch" [class.on]="isDarkMode()">
-                  <span class="switch-thumb"></span>
-                </span>
-              </div>
-
-              <!-- 4. Sign out -->
+              <!-- 3. Sign out -->
               <button type="button" class="dropdown-item signout-item" (click)="openSignOutModal(); closeUserMenu()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="dropdown-icon signout-icon" aria-hidden="true">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
