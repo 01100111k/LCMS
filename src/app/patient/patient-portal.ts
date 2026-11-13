@@ -1,4 +1,4 @@
-import { DatePipe, NgClass, SlicePipe } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../core/auth.service';
@@ -199,7 +199,7 @@ export interface PatientInquiry {
 
 @Component({
   selector: 'app-patient-portal',
-  imports: [DatePipe, NgClass, FormsModule, SlicePipe],
+  imports: [DatePipe, NgClass, FormsModule],
   templateUrl: './patient-portal.html',
   styleUrl: './patient-portal.css',
 })

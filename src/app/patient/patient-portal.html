@@ -148,7 +148,7 @@
           />
         </div>
 
-        <!-- Notifications Bell -->
+        <!-- Notifications (Matches Midwife Layout) -->
         <div class="notifications-wrapper" (click)="$event.stopPropagation()">
           <button
             type="button"
@@ -159,117 +159,114 @@
             title="Notifications"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
             @if (unreadCount() > 0) {
-              <span class="notification-badge">{{ unreadCount() }}</span>
+              <span class="bell-dot"></span>
             }
           </button>
 
-          <!-- Notifications Dropdown Popup -->
           @if (notificationsOpen()) {
-            <div class="notifications-dropdown" (click)="$event.stopPropagation()">
-              <div class="dropdown-header">
-                <div>
-                  <h3>Notifications</h3>
-                  <p class="dropdown-sub">{{ unreadCount() }} unread updates</p>
-                </div>
-                @if (unreadCount() > 0) {
-                  <button type="button" class="btn-text-action" (click)="markAllRead()">Mark all as read</button>
-                }
+            <div class="notifications-dropdown-card">
+              <div class="notif-header">
+                <h3 class="notif-title">Notifications</h3>
+                <button type="button" class="btn-mark-all-read" (click)="markAllRead()">Mark all read</button>
               </div>
 
-              <div class="dropdown-list">
-                @for (n of notifications().slice(0, 6); track n.id) {
-                  <div class="dropdown-item" [class.unread]="!n.read" (click)="onNotificationClick(n)" role="button" tabindex="0">
-                    <div class="notif-dot" [class.active]="!n.read"></div>
-                    <div class="notif-content">
-                      <div class="notif-title-row">
-                        <strong class="notif-title">{{ n.title }}</strong>
-                        <span class="notif-time">{{ n.time }}</span>
-                      </div>
-                      <p class="notif-msg">{{ n.message }}</p>
-                    </div>
-                  </div>
-                }
+              <div class="notif-content">
                 @if (notifications().length === 0) {
-                  <div class="dropdown-empty">
-                    <p>No notifications yet</p>
+                  <!-- Caught Up Empty State (Matches Midwife) -->
+                  <div class="notif-caught-up">
+                    <div class="caught-up-icon-wrap">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                      </svg>
+                    </div>
+                    <h4>You're all caught up</h4>
+                    <p>Activity from appointments, patient updates, and clinical notifications will appear here.</p>
+                  </div>
+                } @else {
+                  <div class="notif-list">
+                    @for (n of notifications(); track n.id) {
+                      <div class="notif-item" [class.unread]="!n.read" (click)="onNotificationClick(n)">
+                        <div class="notif-icon-circle">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                          </svg>
+                        </div>
+                        <div class="notif-item-body">
+                          <strong class="notif-item-title">{{ n.title }}</strong>
+                          <p class="notif-item-message">{{ n.message }}</p>
+                          <span class="notif-item-time">{{ n.time }}</span>
+                        </div>
+                        @if (!n.read) {
+                          <span class="notif-unread-dot"></span>
+                        }
+                      </div>
+                    }
                   </div>
                 }
-              </div>
-
-              <div class="dropdown-footer">
-                <a (click)="switchTab('notifications'); notificationsOpen.set(false)" class="view-all-link" role="button" tabindex="0">
-                  Open Notifications Center &rsaquo;
-                </a>
               </div>
             </div>
           }
         </div>
 
-        <!-- Dark Mode Toggle -->
-        <button
-          type="button"
-          class="icon-round-btn theme-toggle-btn"
-          (click)="toggleDarkMode()"
-          aria-label="Toggle theme"
-          [title]="isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
-        >
-          @if (isDarkMode()) {
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-          } @else {
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          }
-        </button>
-
-        <!-- User Profile Avatar Pill -->
+        <!-- User Menu Container & Dropdown Popover (Matches Midwife Layout Exactly) -->
         <div class="user-menu-wrapper" (click)="$event.stopPropagation()">
           <button
             type="button"
-            class="user-avatar-btn"
-            (click)="toggleUserMenu()"
-            aria-label="User account menu"
+            class="user-pill-btn"
             [class.active]="userMenuOpen()"
+            (click)="toggleUserMenu()"
+            title="Account & preferences"
+            aria-label="Toggle user menu"
+            [attr.aria-expanded]="userMenuOpen()"
           >
-            <div class="avatar-circle tone-purple-solid">{{ userInitials() }}</div>
+            <span>{{ userInitials() }}</span>
           </button>
 
-          <!-- User Menu Dropdown -->
           @if (userMenuOpen()) {
-            <div class="user-dropdown-menu" (click)="$event.stopPropagation()">
-              <div class="user-menu-head">
-                <div class="user-avatar-lg tone-purple-solid">{{ userInitials() }}</div>
-                <div class="user-menu-info">
-                  <strong class="user-menu-name">{{ patientName() }}</strong>
-                  <span class="user-menu-email">{{ patientEmail() }}</span>
-                  <span class="user-menu-badge">Patient</span>
+            <div class="user-dropdown-card">
+              <!-- 1. Account -->
+              <a (click)="switchTab('profile'); closeUserMenu()" class="dropdown-item" role="button" tabindex="0">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="dropdown-icon" aria-hidden="true">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <span class="dropdown-label">Account</span>
+              </a>
+
+              <!-- 2. Settings -->
+              <a (click)="switchTab('settings'); closeUserMenu()" class="dropdown-item" role="button" tabindex="0">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="dropdown-icon" aria-hidden="true">
+                  <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+                <span class="dropdown-label">Settings</span>
+              </a>
+
+              <!-- 3. Dark Mode -->
+              <div class="dropdown-item dark-mode-row" (click)="toggleDarkMode()">
+                <div class="dark-mode-left">
+                  <svg viewBox="0 0 24 24" fill="currentColor" class="dropdown-icon" aria-hidden="true">
+                    <path d="M12.3 2a10 10 0 0 0-1.9 19.8 10 10 0 0 0 11.6-11.6A10.02 10.02 0 0 1 12.3 2z"/>
+                  </svg>
+                  <span class="dropdown-label">Dark Mode</span>
                 </div>
+                <span class="dropdown-switch" [class.on]="isDarkMode()">
+                  <span class="switch-thumb"></span>
+                </span>
               </div>
 
-              <div class="user-menu-divider"></div>
-
-              <div class="user-menu-items">
-                <button type="button" class="user-menu-item" (click)="switchTab('profile'); closeUserMenu()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  <span>My Profile</span>
-                </button>
-                <button type="button" class="user-menu-item" (click)="switchTab('appointments'); closeUserMenu()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <span>My Appointments</span>
-                </button>
-                <button type="button" class="user-menu-item" (click)="switchTab('settings'); closeUserMenu()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                  <span>Settings</span>
-                </button>
-              </div>
-
-              <div class="user-menu-divider"></div>
-
-              <button type="button" class="user-menu-item item-logout" (click)="openSignOutModal()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                <span>Sign Out</span>
+              <!-- 4. Sign out -->
+              <button type="button" class="dropdown-item signout-item" (click)="openSignOutModal(); closeUserMenu()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="dropdown-icon signout-icon" aria-hidden="true">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span class="dropdown-label signout-label">Sign out</span>
               </button>
             </div>
           }
@@ -277,8 +274,8 @@
       </div>
     </header>
 
-    <!-- Page Body Scroll Container -->
-    <main class="mw-page-body">
+    <!-- Page Body Scroll Container (Matches Midwife mw-content-body) -->
+    <main class="mw-content-body">
       @if (loading()) {
         <!-- Polished Lavender Skeleton Loading State -->
         <div class="skeleton-page-wrap">
@@ -306,33 +303,21 @@
         </div>
       } @else {
         <!-- ======================================================== -->
-        <!-- SUBPAGE: DASHBOARD                                       -->
+        <!-- SUBPAGE: DASHBOARD (Matches Midwife Dashboard Layout)    -->
         <!-- ======================================================== -->
         @if (activeTab() === 'dashboard') {
           <div class="dashboard-wrap">
-            <!-- 1. Hero Banner (Lavender/Purple Maternal Theme) -->
+            <!-- 1. Hero Banner (Exact Midwife Layout Match) -->
             <section class="hero-banner">
               <div class="hero-content">
-                <div class="hero-tags">
-                  <span class="hero-pill-badge">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                    </svg>
-                    Maternal Patient Portal
-                  </span>
-                  <span class="hero-date">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                      <line x1="16" y1="2" x2="16" y2="6"/>
-                      <line x1="8" y1="2" x2="8" y2="6"/>
-                      <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                    {{ todayFormatted() }}
-                  </span>
-                </div>
-                <h1>{{ greeting() }}, {{ patientName() }}!</h1>
+                <p class="hero-date">{{ todayFormatted() }}</p>
+                <h1>{{ greeting() }}, {{ patientName() }}</h1>
                 <p class="hero-sub">
-                  Here is your maternal health summary, care schedule, and verified clinical records from your care team.
+                  @if (upcomingAppts().length > 0) {
+                    You have {{ upcomingAppts().length }} scheduled appointment(s) and {{ followUpsCount() }} follow-up(s) due. Here's your care overview.
+                  } @else {
+                    Welcome to your maternal care portal. Here's your pregnancy progress, visit schedule, and verified care records.
+                  }
                 </p>
               </div>
 
@@ -345,14 +330,17 @@
                 </button>
                 <button type="button" class="btn-hero-glass" (click)="switchTab('records')">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
                   </svg>
                   My Care Records
                 </button>
               </div>
             </section>
 
-            <!-- 2. Four Summary KPI Cards -->
+            <!-- 2. Four KPI Metric Cards (Matches Midwife 4-card Grid) -->
             <section class="kpi-grid">
               <!-- Card 1: Pregnancy Stage / Care Stage -->
               <div class="kpi-card" (click)="switchTab('tracker')" role="button" tabindex="0">
@@ -360,135 +348,74 @@
                   <div class="kpi-icon-circle tone-purple">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                   </div>
-                  <span class="kpi-trend trend-purple">{{ trimesterName() }}</span>
+                  @if (gestationalWeek() > 0) {
+                    <span class="kpi-trend trend-green">{{ trimesterName() }}</span>
+                  } @else {
+                    <span class="kpi-trend trend-purple">Active Care</span>
+                  }
                 </div>
                 <div class="kpi-value">
                   @if (gestationalWeek() > 0) {
-                    {{ gestationalWeek() }} <span class="val-unit">Weeks</span>
+                    Week {{ gestationalWeek() }}
                   } @else {
-                    Active Care
+                    Active
                   }
                 </div>
                 <div class="kpi-label">Pregnancy Progress</div>
-                <div class="kpi-sub">
-                  @if (gestationalWeek() > 0) {
-                    EDD: {{ eddDisplay() }}
-                  } @else {
-                    Update LMP to calculate milestones
-                  }
-                </div>
               </div>
 
               <!-- Card 2: Upcoming Appointments -->
               <div class="kpi-card" (click)="switchTab('appointments')" role="button" tabindex="0">
                 <div class="kpi-top">
-                  <div class="kpi-icon-circle tone-teal">
+                  <div class="kpi-icon-circle tone-purple">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
                   @if (upcomingAppts().length > 0) {
-                    <span class="kpi-trend trend-green">{{ upcomingAppts().length }} Active</span>
+                    <span class="kpi-trend trend-green">Scheduled</span>
                   } @else {
                     <span class="kpi-trend trend-orange">Book visit</span>
                   }
                 </div>
                 <div class="kpi-value">{{ upcomingAppts().length }}</div>
                 <div class="kpi-label">Upcoming Appointments</div>
-                <div class="kpi-sub">
-                  @if (upcomingAppts().length > 0) {
-                    Next: {{ upcomingAppts()[0].date | date:'MMM d' }} at {{ formatSlotTime(upcomingAppts()[0].time) }}
-                  } @else {
-                    Every 4 weeks recommended
-                  }
-                </div>
               </div>
 
-              <!-- Card 3: My Care Records -->
-              <div class="kpi-card" (click)="switchTab('records')" role="button" tabindex="0">
+              <!-- Card 3: Follow-ups Due -->
+              <div class="kpi-card" (click)="switchTab('followups')" role="button" tabindex="0">
                 <div class="kpi-top">
                   <div class="kpi-icon-circle tone-pink">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  @if (followUpsCount() > 0) {
+                    <span class="kpi-trend trend-orange">Attention</span>
+                  } @else {
+                    <span class="kpi-trend trend-green">On track</span>
+                  }
+                </div>
+                <div class="kpi-value">{{ followUpsCount() }}</div>
+                <div class="kpi-label">Follow-ups Due</div>
+              </div>
+
+              <!-- Card 4: Maternal Care Records -->
+              <div class="kpi-card" (click)="switchTab('records')" role="button" tabindex="0">
+                <div class="kpi-top">
+                  <div class="kpi-icon-circle tone-purple">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   </div>
                   <span class="kpi-trend trend-green">Certified</span>
                 </div>
                 <div class="kpi-value">{{ totalCareRecords() }}</div>
-                <div class="kpi-label">My Care Records</div>
-                <div class="kpi-sub">
-                  @if (totalCareRecords() > 0) {
-                    Clinical checkup history
-                  } @else {
-                    Logged by midwife at visits
-                  }
-                </div>
-              </div>
-
-              <!-- Card 4: Unread Notifications -->
-              <div class="kpi-card" (click)="switchTab('notifications')" role="button" tabindex="0">
-                <div class="kpi-top">
-                  <div class="kpi-icon-circle tone-purple">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                  </div>
-                  @if (unreadCount() > 0) {
-                    <span class="kpi-trend trend-orange">{{ unreadCount() }} new</span>
-                  } @else {
-                    <span class="kpi-trend trend-green">Caught up</span>
-                  }
-                </div>
-                <div class="kpi-value">{{ unreadCount() }}</div>
-                <div class="kpi-label">Unread Notifications</div>
-                <div class="kpi-sub">
-                  @if (unreadCount() > 0) {
-                    Click to view updates
-                  } @else {
-                    All notices reviewed
-                  }
-                </div>
+                <div class="kpi-label">Maternal Care Records</div>
               </div>
             </section>
 
-            <!-- 3. Pregnancy Continuum Journey Preview -->
-            @if (gestationalWeek() > 0) {
-              <section class="dashboard-tracker-preview">
-                <div class="preview-head-row">
-                  <div class="preview-title-wrap">
-                    <span class="preview-badge">{{ babyFruitEmoji() }} Week {{ gestationalWeek() }} of 40</span>
-                    <h3>Pregnancy Journey: {{ trimesterName() }}</h3>
-                  </div>
-                  <button type="button" class="btn-subtle" (click)="switchTab('tracker')">
-                    Full Pregnancy Tracker &rsaquo;
-                  </button>
-                </div>
-
-                <div class="dashboard-progress-track">
-                  <div class="track-fill" [style.width.%]="progressPercent()"></div>
-                </div>
-
-                <div class="preview-stats-row">
-                  <div class="pstat-item">
-                    <span>BABY GROWTH SIZE</span>
-                    <strong>{{ babyFruitSize() }}</strong>
-                    <small>{{ babyLengthWeight() }}</small>
-                  </div>
-                  <div class="pstat-item">
-                    <span>ESTIMATED DUE DATE</span>
-                    <strong>{{ eddDisplay() }}</strong>
-                    <small>{{ daysRemaining() ? daysRemaining() + ' days remaining' : 'Term date' }}</small>
-                  </div>
-                  <div class="pstat-item">
-                    <span>CARE MILESTONE</span>
-                    <strong>{{ weeklyDevelopmentNote() | slice:0:60 }}...</strong>
-                    <small>DOH Clinical Care Program</small>
-                  </div>
-                </div>
-              </section>
-            }
-
-            <!-- 4. Main Two-Column Layout -->
+            <!-- 3. Mid Section (Today's / Upcoming Appts & Follow-ups) -->
             <section class="two-col-grid">
               <!-- Left Column: Upcoming Appointments -->
               <div class="panel-card appts-panel">
                 <div class="panel-header">
                   <div>
-                    <h2>My Upcoming Appointments</h2>
+                    <h2>Today's & Upcoming Appointments</h2>
                     <p class="panel-sub">
                       @if (upcomingAppts().length > 0) {
                         {{ upcomingAppts().length }} scheduled visit(s) with your clinical care team
@@ -519,32 +446,48 @@
                     </div>
                   }
                   @if (upcomingAppts().length === 0) {
-                    <div class="appt-empty-guide">
-                      <div class="guide-icon-box">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                      </div>
-                      <div class="guide-text">
-                        <h3>No Upcoming Appointments Scheduled</h3>
-                        <p>Regular checkups help ensure a safe pregnancy and delivery. The Department of Health recommends at least 4 prenatal visits (1 in the 1st trimester, 1 in the 2nd trimester, and 2 in the 3rd trimester).</p>
-                      </div>
-                      <div>
-                        <button type="button" class="btn-primary-purple" (click)="openBookingModal()">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                          Request New Appointment
-                        </button>
-                      </div>
+                    <div class="card-empty-state">
+                      <p>No appointments scheduled.</p>
+                      <button type="button" class="btn-subtle" (click)="openBookingModal()">Book Appointment</button>
                     </div>
                   }
                 </div>
               </div>
 
-              <!-- Right Column: Recent Care Records -->
-              <div class="panel-card records-panel">
+              <!-- Right Column: Follow-ups Due -->
+              <div class="panel-card followups-panel">
                 <div class="panel-header">
-                  <div>
-                    <h2>Recent Maternal Care Records</h2>
-                    <p class="panel-sub">Official clinical examinations documented by your licensed midwife</p>
-                  </div>
+                  <h2>Follow-ups Due</h2>
+                  @if (followUpsCount() > 0) {
+                    <span class="badge-alert">{{ followUpsCount() }} due</span>
+                  }
+                </div>
+
+                <div class="followup-list">
+                  @for (f of followUpsList(); track f.id) {
+                    <div class="followup-item">
+                      <div class="followup-main">
+                        <strong class="followup-name">{{ f.patientName }}</strong>
+                        <span class="followup-task">{{ f.task }}</span>
+                      </div>
+                      <div class="followup-timing">{{ f.dueLabel }}</div>
+                    </div>
+                  }
+                  @if (followUpsList().length === 0) {
+                    <div class="card-empty-state">
+                      <p>No pending follow-ups due.</p>
+                    </div>
+                  }
+                </div>
+              </div>
+            </section>
+
+            <!-- 4. Bottom Section (Recent Care Records & Clinic Advisory) -->
+            <section class="two-col-grid">
+              <!-- Left Column: Recent Maternal Care Records -->
+              <div class="panel-card recent-panel">
+                <div class="panel-header">
+                  <h2>Recent Maternal Care Records</h2>
                   <a (click)="switchTab('records')" class="link-more" role="button" tabindex="0">All records &rsaquo;</a>
                 </div>
 
@@ -567,43 +510,14 @@
                     }
                   </div>
                 } @else {
-                  <div class="records-empty-guide">
-                    <p>No maternal care records recorded yet. Your attending midwife will log your clinical vitals, fetal heart tones, and obstetric progress during your checkups.</p>
+                  <div class="card-empty-state">
+                    <p>No maternal care records recorded yet.</p>
                   </div>
                 }
               </div>
-            </section>
 
-            <!-- 5. Bottom Two-Column: Scheduled Follow-ups & Clinic Announcements -->
-            <section class="two-col-grid" style="margin-top: 20px;">
-              <!-- Left: Follow-ups Preview -->
-              <div class="panel-card">
-                <div class="panel-header">
-                  <div>
-                    <h2>Clinical Follow-ups & Reminders</h2>
-                    <p class="panel-sub">Recommended checkups and screenings based on your care timeline</p>
-                  </div>
-                  <a (click)="switchTab('followups')" class="link-more" role="button" tabindex="0">Manage follow-ups &rsaquo;</a>
-                </div>
-
-                <div class="followup-list">
-                  @for (fu of followUpsList().slice(0, 3); track fu.id) {
-                    <div class="followup-item">
-                      <div class="followup-main">
-                        <strong class="followup-name">{{ fu.patientName }}</strong>
-                        <span class="followup-task">{{ fu.task }}</span>
-                      </div>
-                      <div class="followup-timing">{{ fu.dueLabel }}</div>
-                    </div>
-                  }
-                  @if (followUpsList().length === 0) {
-                    <div class="card-empty-state"><p>No pending follow-ups due.</p></div>
-                  }
-                </div>
-              </div>
-
-              <!-- Right: Clinic Guidelines & 24/7 Hotline -->
-              <div class="panel-card">
+              <!-- Right Column: Clinic Advisory & Urgent Care -->
+              <div class="panel-card hotline-panel">
                 <div class="panel-header">
                   <div>
                     <h2>Clinic Advisory & Urgent Care</h2>
@@ -847,78 +761,74 @@
         }
 
         <!-- ======================================================== -->
-        <!-- SUBPAGE: MY APPOINTMENTS                                 -->
+        <!-- SUBPAGE: MY APPOINTMENTS (Matches Midwife Layout)        -->
         <!-- ======================================================== -->
         @if (activeTab() === 'appointments') {
           <div class="appts-page-wrap">
-            <!-- 1. Hero Header Banner -->
-            <div class="appts-hero-banner">
-              <div class="hero-left-content">
-                <div class="hero-icon-pill">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                </div>
-                <div>
-                  <h2>My Appointments & Clinic Visits</h2>
-                  <p class="hero-subtext">Schedule and manage your prenatal checkups, laboratory screenings, and postpartum consultations.</p>
-                </div>
+            <!-- 1. Page Header (Matches Midwife page-head) -->
+            <div class="page-head">
+              <div>
+                <h1>My Appointments</h1>
+                <p class="head-sub">Schedule and manage your prenatal checkups, laboratory screenings, and postpartum consultations</p>
               </div>
-
-              <div class="hero-right-action">
-                <button type="button" class="btn-hero-book" (click)="openBookingModal()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Request Appointment
-                </button>
-              </div>
+              <button type="button" class="btn-primary" (click)="openBookingModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Request Appointment
+              </button>
             </div>
 
-            <!-- 2. Appointment Summary KPI Metrics -->
-            <div class="appts-metrics-grid">
-              <div class="metric-card metric-upcoming">
-                <div class="metric-icon-wrap upcoming-icon-tone">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                  </svg>
+            <!-- 2. Appointment Summary KPI Metrics (Matches Midwife kpi-grid) -->
+            <div class="kpi-grid" style="margin-bottom: 20px;">
+              <div class="kpi-card">
+                <div class="kpi-top">
+                  <div class="kpi-icon-circle tone-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  </div>
+                  @if (upcomingAppts().length > 0) {
+                    <span class="kpi-trend trend-green">Scheduled</span>
+                  } @else {
+                    <span class="kpi-trend trend-orange">Book visit</span>
+                  }
                 </div>
-                <div class="metric-info">
-                  <span class="metric-label">Upcoming Scheduled</span>
-                  <strong class="metric-value">{{ upcomingAppts().length }}</strong>
-                  <span class="metric-hint">
-                    {{ nextAppt() ? (nextAppt()!.date | date:'mediumDate') + ' at ' + formatSlotTime(nextAppt()!.time) : 'No pending appointments' }}
-                  </span>
-                </div>
+                <div class="kpi-value">{{ upcomingAppts().length }}</div>
+                <div class="kpi-label">Upcoming Scheduled</div>
               </div>
 
-              <div class="metric-card metric-completed">
-                <div class="metric-icon-wrap completed-icon-tone">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
-                  </svg>
+              <div class="kpi-card">
+                <div class="kpi-top">
+                  <div class="kpi-icon-circle tone-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  </div>
+                  <span class="kpi-trend trend-green">Documented</span>
                 </div>
-                <div class="metric-info">
-                  <span class="metric-label">Completed Consultations</span>
-                  <strong class="metric-value">{{ completedApptsCount() }}</strong>
-                  <span class="metric-hint">Documented in maternal care records</span>
-                </div>
+                <div class="kpi-value">{{ completedApptsCount() }}</div>
+                <div class="kpi-label">Completed Consultations</div>
               </div>
 
-              <div class="metric-card metric-schedule">
-                <div class="metric-icon-wrap schedule-icon-tone">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-                  </svg>
+              <div class="kpi-card">
+                <div class="kpi-top">
+                  <div class="kpi-icon-circle tone-pink">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  @if (followUpsCount() > 0) {
+                    <span class="kpi-trend trend-orange">Attention</span>
+                  } @else {
+                    <span class="kpi-trend trend-green">On track</span>
+                  }
                 </div>
-                <div class="metric-info">
-                  <span class="metric-label">Lying-In Clinic Hours</span>
-                  <strong class="metric-value">Mon – Sat</strong>
-                  <span class="metric-hint">08:00 AM – 05:00 PM &bull; Emergency 24/7</span>
+                <div class="kpi-value">{{ followUpsCount() }}</div>
+                <div class="kpi-label">Follow-ups Due</div>
+              </div>
+
+              <div class="kpi-card">
+                <div class="kpi-top">
+                  <div class="kpi-icon-circle tone-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  </div>
+                  <span class="kpi-trend trend-green">Assigned</span>
                 </div>
+                <div class="kpi-value" style="font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ assignedMidwife().name }}</div>
+                <div class="kpi-label">Attending Midwife</div>
               </div>
             </div>
 
@@ -1072,95 +982,75 @@
         }
 
         <!-- ======================================================== -->
-        <!-- SUBPAGE: PREGNANCY TRACKER                               -->
+        <!-- SUBPAGE: PREGNANCY TRACKER (Matches Image 6 & Midwife)    -->
         <!-- ======================================================== -->
         @if (activeTab() === 'tracker') {
           <div class="tracker-page-wrap">
-            <!-- 1. Top Hero Header Banner -->
-            <div class="tracker-hero-banner">
-              <div class="hero-left-content">
-                <div class="hero-icon-pill">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                  </svg>
-                </div>
-                <div>
-                  <h2>My Pregnancy Tracker & Journey</h2>
-                  <p class="hero-subtext">Monitor gestational milestones, fetal size comparisons, and clinical care recommendations for each trimester.</p>
-                </div>
+            <!-- 1. Page Header (Matches Image 6 & Midwife dir-head) -->
+            <div class="dir-head">
+              <div>
+                <h1>Pregnancy Tracker</h1>
+                <p class="dir-sub">Monitor gestational milestones, fetal size comparisons, and clinical care recommendations</p>
               </div>
-
-              <div class="hero-right-action">
-                <button type="button" class="btn-hero-book" (click)="openProfileModal()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                  Update LMP / EDD
-                </button>
-              </div>
-            </div>
-
-            <!-- 2. Four Pregnancy Highlight KPI Cards -->
-            <div class="tracker-metrics-grid">
-              <div class="metric-card metric-weeks">
-                <div class="metric-icon-wrap upcoming-icon-tone">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                </div>
-                <div class="metric-info">
-                  <span class="metric-label">Gestational Age</span>
-                  <strong class="metric-value">{{ gestationalWeek() ? gestationalWeek() + ' Weeks' : 'LMP Pending' }}</strong>
-                  <span class="metric-hint">{{ trimesterName() }}</span>
-                </div>
-              </div>
-
-              <div class="metric-card metric-due">
-                <div class="metric-icon-wrap blood-icon-tone">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                </div>
-                <div class="metric-info">
-                  <span class="metric-label">Estimated Due Date</span>
-                  <strong class="metric-value">{{ eddDisplay() }}</strong>
-                  <span class="metric-hint">{{ daysRemaining() ? daysRemaining() + ' days remaining' : 'Based on clinical 40w term' }}</span>
-                </div>
-              </div>
-
-              <div class="metric-card metric-baby">
-                <div class="metric-icon-wrap completed-icon-tone">
-                  <span class="metric-emoji">{{ babyFruitEmoji() }}</span>
-                </div>
-                <div class="metric-info">
-                  <span class="metric-label">Baby Growth Scale</span>
-                  <strong class="metric-value">{{ babyFruitSize() }}</strong>
-                  <span class="metric-hint">{{ babyLengthWeight() }}</span>
-                </div>
-              </div>
-
-              <div class="metric-card metric-progress">
-                <div class="metric-icon-wrap schedule-icon-tone">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                  </svg>
-                </div>
-                <div class="metric-info">
-                  <span class="metric-label">Trimester Progression</span>
-                  <strong class="metric-value">{{ progressPercent() }}% Completed</strong>
-                  <span class="metric-hint">Week {{ gestationalWeek() }} of 40</span>
-                </div>
-              </div>
+              <button type="button" class="btn-subtle-outline" (click)="openProfileModal()">
+                Update LMP / EDD
+              </button>
             </div>
 
             @if (gestationalWeek() > 0) {
+              <!-- 2. Four Pregnancy Highlight KPI Cards (Matches Midwife kpi-grid) -->
+              <div class="kpi-grid" style="margin-bottom: 20px;">
+                <div class="kpi-card">
+                  <div class="kpi-top">
+                    <div class="kpi-icon-circle tone-purple">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                    </div>
+                    <span class="kpi-trend trend-green">{{ trimesterName() }}</span>
+                  </div>
+                  <div class="kpi-value">{{ gestationalWeek() }} Weeks</div>
+                  <div class="kpi-label">Gestational Age</div>
+                </div>
+
+                <div class="kpi-card">
+                  <div class="kpi-top">
+                    <div class="kpi-icon-circle tone-pink">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                    </div>
+                    <span class="kpi-trend trend-green">{{ daysRemaining() ? daysRemaining() + ' days left' : 'Term' }}</span>
+                  </div>
+                  <div class="kpi-value" style="font-size: 19px;">{{ eddDisplay() }}</div>
+                  <div class="kpi-label">Estimated Due Date</div>
+                </div>
+
+                <div class="kpi-card">
+                  <div class="kpi-top">
+                    <div class="kpi-icon-circle tone-purple">
+                      <span style="font-size: 16px;">{{ babyFruitEmoji() }}</span>
+                    </div>
+                    <span class="kpi-trend trend-green">{{ babyLengthWeight() }}</span>
+                  </div>
+                  <div class="kpi-value" style="font-size: 19px;">{{ babyFruitSize() }}</div>
+                  <div class="kpi-label">Baby Growth Scale</div>
+                </div>
+
+                <div class="kpi-card">
+                  <div class="kpi-top">
+                    <div class="kpi-icon-circle tone-purple">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                      </svg>
+                    </div>
+                    <span class="kpi-trend trend-green">Week {{ gestationalWeek() }} / 40</span>
+                  </div>
+                  <div class="kpi-value">{{ progressPercent() }}%</div>
+                  <div class="kpi-label">Term Progression</div>
+                </div>
+              </div>
+
               <!-- 3. Visual 40-Week Timeline Progress Track -->
               <div class="timeline-track-card">
                 <div class="timeline-top-row">
@@ -1245,27 +1135,11 @@
                 </div>
               </div>
             } @else {
-              <!-- Setup Invitation Card (When LMP/EDD is not recorded) -->
-              <div class="tracker-setup-card">
-                <div class="setup-icon-circle">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                    <circle cx="12" cy="15" r="2"/>
-                  </svg>
-                </div>
-                <h3>Set Up Your Pregnancy Tracking</h3>
-                <p class="setup-desc">
-                  Enter your <strong>Last Menstrual Period (LMP)</strong> or <strong>Expected Due Date (EDD)</strong> in your profile to activate your interactive 40-week timeline, weekly baby size comparisons, and clinical milestone checklist.
-                </p>
-                <button type="button" class="btn-primary-purple" (click)="openProfileModal()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                  Record LMP in Profile
+              <!-- Empty State Card (Exact Match to Image 6) -->
+              <div class="panel-card empty-tracker-box">
+                <p class="empty-tracker-prompt">Please enter your LMP or EDD in your profile to view weekly developmental insights.</p>
+                <button type="button" class="btn-subtle" (click)="openProfileModal()">
+                  Update LMP in Profile
                 </button>
               </div>
             }
@@ -1288,31 +1162,20 @@
         }
 
         <!-- ======================================================== -->
-        <!-- SUBPAGE: MY CARE RECORDS                                 -->
+        <!-- SUBPAGE: MY CARE RECORDS (Matches Midwife Layout)        -->
         <!-- ======================================================== -->
         @if (activeTab() === 'records') {
           <div class="records-page-wrap">
-            <!-- Hero Banner -->
-            <div class="appts-hero-banner">
-              <div class="hero-left-content">
-                <div class="hero-icon-pill">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-                  </svg>
-                </div>
-                <div>
-                  <h2>My Maternal Care Records</h2>
-                  <p class="hero-subtext">Official clinical prenatal checkups, delivery summaries, and postpartum wellness evaluations certified by your licensed midwife.</p>
-                </div>
+            <!-- 1. Page Header (Matches Midwife dir-head) -->
+            <div class="dir-head">
+              <div>
+                <h1>My Maternal Care Records</h1>
+                <p class="dir-sub">Official clinical prenatal checkups, delivery summaries, and postpartum evaluations certified by your licensed midwife</p>
               </div>
-
-              <div class="hero-right-action">
-                <button type="button" class="btn-hero-book" (click)="openBookingModal()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Book Clinical Visit
-                </button>
-              </div>
+              <button type="button" class="btn-primary" (click)="openBookingModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Book Clinical Visit
+              </button>
             </div>
 
             <!-- Filter Tabs -->
@@ -1551,16 +1414,16 @@
         }
 
         <!-- ======================================================== -->
-        <!-- SUBPAGE: NOTIFICATIONS                                   -->
+        <!-- SUBPAGE: NOTIFICATIONS (Matches Midwife Layout)          -->
         <!-- ======================================================== -->
         @if (activeTab() === 'notifications') {
           <div class="notifications-page-wrap">
-            <div class="subpage-header">
+            <div class="dir-head">
               <div>
-                <h2>Notifications Center</h2>
-                <p class="panel-sub">Appointment confirmations, clinical updates, and clinic announcements</p>
+                <h1>Notifications</h1>
+                <p class="dir-sub">Appointment confirmations, clinical updates, and clinic announcements</p>
               </div>
-              <button type="button" class="btn-subtle" (click)="markAllRead()">Mark all as read</button>
+              <button type="button" class="btn-subtle-outline" (click)="markAllRead()">Mark all as read</button>
             </div>
 
             <!-- Filter Tabs -->
@@ -1639,29 +1502,20 @@
         }
 
         <!-- ======================================================== -->
-        <!-- SUBPAGE: FOLLOW-UPS                                      -->
+        <!-- SUBPAGE: FOLLOW-UPS (Matches Midwife Layout)             -->
         <!-- ======================================================== -->
         @if (activeTab() === 'followups') {
           <div class="followups-page-wrap">
-            <div class="appts-hero-banner">
-              <div class="hero-left-content">
-                <div class="hero-icon-pill">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                </div>
-                <div>
-                  <h2>Clinical Follow-ups & Schedules</h2>
-                  <p class="hero-subtext">Stay on top of upcoming medical checkups, laboratory revisits, and postpartum wellness evaluations.</p>
-                </div>
+            <!-- 1. Page Header (Matches Midwife dir-head) -->
+            <div class="dir-head">
+              <div>
+                <h1>Clinical Follow-ups & Schedules</h1>
+                <p class="dir-sub">Stay on top of upcoming medical checkups, laboratory revisits, and postpartum wellness evaluations</p>
               </div>
-
-              <div class="hero-right-action">
-                <button type="button" class="btn-hero-book" (click)="openBookingModal()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Book Follow-up
-                </button>
-              </div>
+              <button type="button" class="btn-primary" (click)="openBookingModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Book Follow-up
+              </button>
             </div>
 
             <!-- Filter Tabs -->
@@ -1748,14 +1602,14 @@
         }
 
         <!-- ======================================================== -->
-        <!-- SUBPAGE: CONTACT MY MIDWIFE                              -->
+        <!-- SUBPAGE: CONTACT MY MIDWIFE (Matches Midwife Layout)     -->
         <!-- ======================================================== -->
         @if (activeTab() === 'contact') {
           <div class="contact-page-wrap">
-            <div class="subpage-header">
+            <div class="dir-head">
               <div>
-                <h2>Contact My Midwife & Clinic</h2>
-                <p class="panel-sub">Communicate directly with your assigned maternal healthcare provider</p>
+                <h1>Contact My Midwife & Clinic</h1>
+                <p class="dir-sub">Communicate directly with your assigned maternal healthcare provider and clinic care team</p>
               </div>
             </div>
 
@@ -1904,14 +1758,14 @@
         }
 
         <!-- ======================================================== -->
-        <!-- SUBPAGE: SETTINGS                                        -->
+        <!-- SUBPAGE: SETTINGS (Matches Midwife Layout)               -->
         <!-- ======================================================== -->
         @if (activeTab() === 'settings') {
           <div class="settings-page-wrap">
-            <div class="subpage-header">
+            <div class="dir-head">
               <div>
-                <h2>Account & Portal Settings</h2>
-                <p class="panel-sub">Manage your security credentials, notification preferences, and session</p>
+                <h1>Account & Portal Settings</h1>
+                <p class="dir-sub">Manage your security credentials, notification preferences, and session</p>
               </div>
             </div>
 
@@ -2930,30 +2784,66 @@
 }
 
 <!-- ======================================================== -->
-<!-- MODAL: SIGN OUT CONFIRMATION                             -->
+<!-- MODAL: SIGN OUT CONFIRMATION (Exact Midwife Layout)       -->
 <!-- ======================================================== -->
 @if (showSignOutModal()) {
-  <div class="modal-backdrop" (click)="closeSignOutModal()">
-    <div class="modal-dialog-card modal-confirm-card" (click)="$event.stopPropagation()">
-      <div class="confirm-modal-header">
-        <div class="confirm-icon-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  <div class="signout-modal-backdrop" (click)="closeSignOutModal()">
+    <div class="signout-modal-card" (click)="$event.stopPropagation()">
+      <!-- Brand Header -->
+      <div class="modal-brand-header">
+        <svg viewBox="0 0 48 48" class="modal-brand-icon" aria-hidden="true">
+          <path d="M24 42S5 30.5 5 17.5A9.5 9.5 0 0 1 24 12.5 9.5 9.5 0 0 1 43 17.5C43 30.5 24 42 24 42z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M17 22c0-3.5 3-5.5 6-4.5 3 1 3.5 4.5 1.5 7s-5.5 3.5-7.5 1.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          <circle cx="26.5" cy="26" r="2" fill="currentColor"/>
+        </svg>
+        <span>Lying-In Care</span>
+      </div>
+
+      <!-- Logout Icon Badge -->
+      <div class="modal-logout-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </div>
+
+      <!-- Title & Subtitle -->
+      <h2 class="signout-title">Sign out?</h2>
+      <p class="signout-desc">
+        You are about to leave your patient session. Unsaved updates on open forms may be lost.
+      </p>
+
+      <!-- User Profile Box -->
+      <div class="modal-user-box">
+        <div class="modal-user-avatar">
+          {{ userInitials() }}
         </div>
-        <div>
-          <h2>Sign Out of Patient Portal</h2>
-          <p class="modal-subtitle">Are you sure you want to end your current session?</p>
+        <div class="modal-user-info">
+          <span class="modal-user-name">{{ patientName() }}</span>
+          <span class="modal-user-email">{{ patientEmail() }}</span>
         </div>
       </div>
 
-      <div class="modal-body" style="padding: 16px 24px;">
-        <p style="font-size: 13.5px; color: #4a3a60; line-height: 1.5; margin: 0;">
-          All your saved appointments, care records, and personal profile information will remain safely stored in your secure account.
-        </p>
-      </div>
+      <!-- Bullet Points -->
+      <ul class="modal-bullet-list">
+        <li>You will need your password to sign in again.</li>
+        <li>Your appointments, care records, and reminders remain saved securely.</li>
+      </ul>
 
-      <div class="confirm-modal-footer">
-        <button type="button" class="btn-cancel" (click)="closeSignOutModal()">Stay Signed In</button>
-        <button type="button" class="btn-danger-solid" (click)="confirmSignOut()">Sign Out</button>
+      <!-- Action Buttons (Vertical Stack) -->
+      <div class="signout-btn-stack">
+        <button type="button" class="btn-stay-signed-in" (click)="closeSignOutModal()">
+          Stay signed in
+        </button>
+        <button type="button" class="btn-confirm-signout" (click)="confirmSignOut()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>Sign out</span>
+        </button>
       </div>
     </div>
   </div>
