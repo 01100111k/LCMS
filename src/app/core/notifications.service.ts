@@ -247,8 +247,10 @@ export class NotificationsService {
 
           // 3. Patient notifications
           const patientList = allDbNotifs.filter((n) => {
-            if (n.targetUserId && n.targetUserId === currentUid) return true;
-            return n.targetRole === 'patient';
+            if (n.targetUserId) {
+              return n.targetUserId === currentUid;
+            }
+            return n.targetRole === 'patient' || n.targetRole === 'all';
           });
           if (patientList.length > 0) {
             this.patientNotifications.set(patientList);

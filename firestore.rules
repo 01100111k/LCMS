@@ -306,5 +306,29 @@ service cloud.firestore {
     match /queue_tickets/{ticketId} {
       allow read, write: if isAuthenticated();
     }
+
+    // 11. Patient inquiries, communication & profile requests to midwives
+    match /inquiries/{inquiryId} {
+      allow read: if isAdmin() ||
+        (isAuthenticated() && (
+          resource.data.patientId == request.auth.uid ||
+          resource.data.midwifeId == request.auth.uid ||
+          resource.data.targetUserId == request.auth.uid
+        ));
+
+      allow create: if isAuthenticated() && (
+        request.resource.data.patientId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid
+      );
+
+      allow update: if isAdmin() ||
+        (isAuthenticated() && (
+          resource.data.patientId == request.auth.uid ||
+          resource.data.midwifeId == request.auth.uid
+        ));
+
+      allow delete: if isAdmin() ||
+        (isAuthenticated() && resource.data.patientId == request.auth.uid);
+    }
   }
 }
