@@ -337,6 +337,79 @@
               </div>
             </section>
 
+            <!-- ========================================================
+                 LIVE OUTPATIENT QUEUE STATUS TRACKER (Requirement 18)
+                 ======================================================== -->
+            @if (activeQueueTicket(); as ticket) {
+              <section class="live-queue-banner" [class.is-calling]="ticket.status === 'serving' || ticket.status === 'called'">
+                <div class="queue-banner-left">
+                  <div class="queue-ticket-badge">
+                    <span class="queue-badge-sub">YOUR TICKET</span>
+                    <strong class="queue-ticket-num">{{ ticket.ticketNumber }}</strong>
+                  </div>
+
+                  <div class="queue-status-info">
+                    <div class="queue-status-header">
+                      @if (ticket.status === 'serving' || ticket.status === 'called') {
+                        <span class="live-calling-indicator">
+                          <span class="pulse-dot"></span>
+                          NOW CALLING / PLEASE PROCEED
+                        </span>
+                      } @else if (ticket.status === 'completed') {
+                        <span class="live-completed-indicator">
+                          ✓ CONSULTATION COMPLETED
+                        </span>
+                      } @else if (ticket.status === 'skipped') {
+                        <span class="live-hold-indicator">
+                          ON HOLD · PLEASE WAIT
+                        </span>
+                      } @else {
+                        <span class="live-waiting-indicator">
+                          <span class="pulse-dot waiting-dot"></span>
+                          WAITING IN CLINIC LOUNGE
+                        </span>
+                      }
+                      <span class="queue-station-pill">{{ ticket.station || 'Consultation Room 1' }}</span>
+                    </div>
+
+                    <h3 class="queue-banner-headline">
+                      @if (ticket.status === 'serving' || ticket.status === 'called') {
+                        Please proceed to {{ ticket.station || 'Consultation Room 1' }} with {{ assignedMidwife().name }}
+                      } @else if (ticket.status === 'completed') {
+                        Your consultation has concluded today. Care records are available below.
+                      } @else if (ticket.status === 'skipped') {
+                        Your ticket was placed on hold. Please wait for further instructions from your midwife.
+                      } @else {
+                        @if (queuePosition()) {
+                          You are <strong>#{{ queuePosition() }} in line</strong> for consultation.
+                        } @else {
+                          Your ticket is active in the waiting lounge.
+                        }
+                      }
+                    </h3>
+
+                    <div class="queue-meta-row">
+                      <span class="meta-item"><strong>Visit:</strong> {{ ticket.visitType }}</span>
+                      <span class="meta-item"><strong>Checked-in:</strong> {{ ticket.checkInTime }}</span>
+                      @if (ticket.calledTime) {
+                        <span class="meta-item"><strong>Called:</strong> {{ ticket.calledTime }}</span>
+                      }
+                      @if (ticket.completedTime) {
+                        <span class="meta-item"><strong>Completed:</strong> {{ ticket.completedTime }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div class="queue-banner-right">
+                  <span class="queue-provider-badge">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Attending: {{ assignedMidwife().name }}
+                  </span>
+                </div>
+              </section>
+            }
+
             <!-- 2. Four KPI Metric Cards (Matches Midwife 4-card Grid) -->
             <section class="kpi-grid">
               <!-- Card 1: Pregnancy Stage / Care Stage -->

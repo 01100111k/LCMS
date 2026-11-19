@@ -16,11 +16,6 @@ import {
 import { auth, db } from './firebase';
 import { ActivityLogService } from './activity-log.service';
 import { AuthService } from './auth.service';
-import {
-  EXAMPLE_PRENATAL_RECORDS,
-  EXAMPLE_DELIVERY_RECORDS,
-  EXAMPLE_POSTPARTUM_RECORDS,
-} from './example-data';
 
 export interface PrenatalRecord {
   id?: string;
@@ -159,12 +154,6 @@ export class RecordsService {
     } catch {}
   }
 
-  isMidwifeDemoUser(): boolean {
-    const email = auth.currentUser?.email?.toLowerCase();
-    if (email) return email === 'midwife@gmail.com' || email === 'midwife@lyingincare.ph';
-    return false;
-  }
-
   getCurrentRole(): string {
     const r = this.auth.role();
     if (r) return r;
@@ -185,23 +174,31 @@ export class RecordsService {
         dbList = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PrenatalRecord, 'id'>) }));
       } else if (currentUid) {
         // Midwife: query records assigned to this midwife UID
-        const q = query(collection(db, 'prenatal_records'), where('assignedMidwifeId', '==', currentUid));
-        const snap = await getDocs(q);
-        dbList = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PrenatalRecord, 'id'>) }));
+        const recMap = new Map<string, PrenatalRecord>();
+        try {
+          const q1 = query(collection(db, 'prenatal_records'), where('assignedMidwifeId', '==', currentUid));
+          const snap1 = await getDocs(q1);
+          snap1.docs.forEach((d) => recMap.set(d.id, { id: d.id, ...(d.data() as Omit<PrenatalRecord, 'id'>) }));
+        } catch {}
+
+        try {
+          const q2 = query(collection(db, 'prenatal_records'), where('midwifeId', '==', currentUid));
+          const snap2 = await getDocs(q2);
+          snap2.docs.forEach((d) => {
+            if (!recMap.has(d.id)) {
+              recMap.set(d.id, { id: d.id, ...(d.data() as Omit<PrenatalRecord, 'id'>) });
+            }
+          });
+        } catch {}
+
+        dbList = Array.from(recMap.values());
       }
     } catch (e) {
       console.warn('RecordsService.listPrenatal error:', e);
       dbList = [];
     }
 
-    let combined = dbList;
-    if (this.isMidwifeDemoUser()) {
-      const existingIds = new Set(dbList.map((r) => r.id));
-      const examples = EXAMPLE_PRENATAL_RECORDS.filter((r) => !existingIds.has(r.id));
-      combined = [...dbList, ...examples];
-    }
-
-    return combined
+    return dbList
       .filter((r) => !r.isArchived && !this.archivedPrenatalIds.has(r.id!))
       .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }
@@ -263,9 +260,6 @@ export class RecordsService {
 
       return docRef.id;
     } catch (err) {
-      if (this.isMidwifeDemoUser()) {
-        return 'local-prenatal-' + Date.now();
-      }
       throw err;
     }
   }
@@ -283,9 +277,7 @@ export class RecordsService {
         activity: `Maternal care record updated (Prenatal: ${record.patientName || id})`,
       }).catch(() => undefined);
     } catch (err) {
-      if (!this.isMidwifeDemoUser()) {
-        throw err;
-      }
+      throw err;
     }
   }
 
@@ -326,23 +318,31 @@ export class RecordsService {
         dbList = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DeliveryRecord, 'id'>) }));
       } else if (currentUid) {
         // Midwife: query records assigned to this midwife UID
-        const q = query(collection(db, 'delivery_records'), where('assignedMidwifeId', '==', currentUid));
-        const snap = await getDocs(q);
-        dbList = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<DeliveryRecord, 'id'>) }));
+        const recMap = new Map<string, DeliveryRecord>();
+        try {
+          const q1 = query(collection(db, 'delivery_records'), where('assignedMidwifeId', '==', currentUid));
+          const snap1 = await getDocs(q1);
+          snap1.docs.forEach((d) => recMap.set(d.id, { id: d.id, ...(d.data() as Omit<DeliveryRecord, 'id'>) }));
+        } catch {}
+
+        try {
+          const q2 = query(collection(db, 'delivery_records'), where('midwifeId', '==', currentUid));
+          const snap2 = await getDocs(q2);
+          snap2.docs.forEach((d) => {
+            if (!recMap.has(d.id)) {
+              recMap.set(d.id, { id: d.id, ...(d.data() as Omit<DeliveryRecord, 'id'>) });
+            }
+          });
+        } catch {}
+
+        dbList = Array.from(recMap.values());
       }
     } catch (e) {
       console.warn('RecordsService.listDelivery error:', e);
       dbList = [];
     }
 
-    let combined = dbList;
-    if (this.isMidwifeDemoUser()) {
-      const existingIds = new Set(dbList.map((r) => r.id));
-      const examples = EXAMPLE_DELIVERY_RECORDS.filter((r) => !existingIds.has(r.id));
-      combined = [...dbList, ...examples];
-    }
-
-    return combined
+    return dbList
       .filter((r) => !r.isArchived && !this.archivedDeliveryIds.has(r.id!))
       .sort((a, b) => (b.deliveryDateTime || '').localeCompare(a.deliveryDateTime || ''));
   }
@@ -418,9 +418,6 @@ export class RecordsService {
 
       return docRef.id;
     } catch (err) {
-      if (this.isMidwifeDemoUser()) {
-        return 'local-delivery-' + Date.now();
-      }
       throw err;
     }
   }
@@ -438,9 +435,7 @@ export class RecordsService {
         activity: `Maternal care record updated (Delivery: ${record.patientName || id})`,
       }).catch(() => undefined);
     } catch (err) {
-      if (!this.isMidwifeDemoUser()) {
-        throw err;
-      }
+      throw err;
     }
   }
 
@@ -456,23 +451,31 @@ export class RecordsService {
         dbList = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PostpartumRecord, 'id'>) }));
       } else if (currentUid) {
         // Midwife: query records assigned to this midwife UID
-        const q = query(collection(db, 'postpartum_records'), where('assignedMidwifeId', '==', currentUid));
-        const snap = await getDocs(q);
-        dbList = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<PostpartumRecord, 'id'>) }));
+        const recMap = new Map<string, PostpartumRecord>();
+        try {
+          const q1 = query(collection(db, 'postpartum_records'), where('assignedMidwifeId', '==', currentUid));
+          const snap1 = await getDocs(q1);
+          snap1.docs.forEach((d) => recMap.set(d.id, { id: d.id, ...(d.data() as Omit<PostpartumRecord, 'id'>) }));
+        } catch {}
+
+        try {
+          const q2 = query(collection(db, 'postpartum_records'), where('midwifeId', '==', currentUid));
+          const snap2 = await getDocs(q2);
+          snap2.docs.forEach((d) => {
+            if (!recMap.has(d.id)) {
+              recMap.set(d.id, { id: d.id, ...(d.data() as Omit<PostpartumRecord, 'id'>) });
+            }
+          });
+        } catch {}
+
+        dbList = Array.from(recMap.values());
       }
     } catch (e) {
       console.warn('RecordsService.listPostpartum error:', e);
       dbList = [];
     }
 
-    let combined = dbList;
-    if (this.isMidwifeDemoUser()) {
-      const existingIds = new Set(dbList.map((r) => r.id));
-      const examples = EXAMPLE_POSTPARTUM_RECORDS.filter((r) => !existingIds.has(r.id));
-      combined = [...dbList, ...examples];
-    }
-
-    return combined
+    return dbList
       .filter((r) => !r.isArchived && !this.archivedPostpartumIds.has(r.id!))
       .sort((a, b) => (b.visitDate || '').localeCompare(a.visitDate || ''));
   }
@@ -512,9 +515,6 @@ export class RecordsService {
 
       return docRef.id;
     } catch (err) {
-      if (this.isMidwifeDemoUser()) {
-        return 'local-postpartum-' + Date.now();
-      }
       throw err;
     }
   }
@@ -532,9 +532,7 @@ export class RecordsService {
         activity: `Maternal care record updated (Postpartum: ${record.patientName || id})`,
       }).catch(() => undefined);
     } catch (err) {
-      if (!this.isMidwifeDemoUser()) {
-        throw err;
-      }
+      throw err;
     }
   }
 

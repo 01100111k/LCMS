@@ -424,6 +424,121 @@ import { AuthService } from '../../core/auth.service';
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(53, 22, 79, 0.2);
     }
+
+    /* ---------------- DARK MODE OVERRIDES ---------------- */
+    :host-context(body.dark-mode) .dir-head h2 {
+      color: #ffffff !important;
+    }
+
+    :host-context(body.dark-mode) .dir-sub,
+    :host-context(body.dark-mode) .section-desc,
+    :host-context(body.dark-mode) .note-sub,
+    :host-context(body.dark-mode) .toggle-text span {
+      color: #b7a8cf !important;
+    }
+
+    :host-context(body.dark-mode) .card-box {
+      background: #1e172c !important;
+      border-color: #332549 !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    :host-context(body.dark-mode) .card-head h3 {
+      color: #ffffff !important;
+    }
+
+    :host-context(body.dark-mode) .profile-hero {
+      background: #251c37 !important;
+      border: 1px solid #3d2c5a !important;
+    }
+
+    :host-context(body.dark-mode) .profile-avatar-large {
+      background: #58338e !important;
+      color: #ffffff !important;
+      border: 1px solid #7a5ba8 !important;
+    }
+
+    :host-context(body.dark-mode) .profile-meta h4 {
+      color: #ffffff !important;
+    }
+
+    :host-context(body.dark-mode) .profile-role {
+      color: #c4b5fd !important;
+    }
+
+    :host-context(body.dark-mode) .auth-tier-pill {
+      background: #361f52 !important;
+      color: #d8b4fe !important;
+      border: 1px solid #5b3e94 !important;
+    }
+
+    :host-context(body.dark-mode) .field-item {
+      border-bottom-color: #332549 !important;
+    }
+
+    :host-context(body.dark-mode) .field-item label,
+    :host-context(body.dark-mode) .form-group label {
+      color: #c4b5fd !important;
+    }
+
+    :host-context(body.dark-mode) .field-val {
+      color: #f5f1fc !important;
+      font-weight: 600 !important;
+    }
+
+    :host-context(body.dark-mode) .text-green {
+      color: #4ade80 !important;
+    }
+
+    :host-context(body.dark-mode) .btn-password-reset {
+      background: #251c37 !important;
+      border-color: #4a346e !important;
+      color: #ede7f6 !important;
+    }
+
+    :host-context(body.dark-mode) .btn-password-reset:hover {
+      background: #361f52 !important;
+      border-color: #7a5ba8 !important;
+      color: #ffffff !important;
+    }
+
+    :host-context(body.dark-mode) .btn-password-reset svg {
+      color: #a881e6 !important;
+    }
+
+    :host-context(body.dark-mode) .form-group input {
+      background: #251c37 !important;
+      border-color: #3d2c5a !important;
+      color: #ede7f6 !important;
+    }
+
+    :host-context(body.dark-mode) .form-group input:focus {
+      border-color: #a881e6 !important;
+      background: #2b1f3f !important;
+    }
+
+    :host-context(body.dark-mode) .toggles-list {
+      background: #251c37 !important;
+      border: 1px solid #3d2c5a !important;
+    }
+
+    :host-context(body.dark-mode) .toggle-text strong {
+      color: #ffffff !important;
+    }
+
+    :host-context(body.dark-mode) .toggle-row input[type="checkbox"] {
+      accent-color: #7c3aed !important;
+    }
+
+    :host-context(body.dark-mode) .btn-save-settings {
+      background: #58338e !important;
+      color: #ffffff !important;
+      border: 1px solid #7a5ba8 !important;
+    }
+
+    :host-context(body.dark-mode) .btn-save-settings:hover {
+      background: #6d3fa8 !important;
+    }
   `],
 })
 export class AdminAccount {

@@ -77,6 +77,7 @@ export const routes: Routes = [
       { path: 'settings', component: Settings, title: 'Settings · Lying-In Care' },
     ],
   },
+  { path: 'lobby', component: PatientQueue, data: { tvMode: true }, title: 'Waiting Lobby Display · Lying-In Care' },
   { path: 'patient', component: PatientPortal, canActivate: [roleGuard('patient')], title: 'Patient Portal · Lying-In Care' },
   { path: '**', redirectTo: '' },
 ];

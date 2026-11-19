@@ -15,7 +15,6 @@ import {
 import { auth, db, secondaryAuth } from './firebase';
 import { ActivityLogService } from './activity-log.service';
 import { AuthService } from './auth.service';
-import { EXAMPLE_PATIENTS } from './example-data';
 import { getLocalPendingRegistrations } from './local-approvals';
 
 export type PatientStatus = 'Active' | 'Postpartum' | 'Completed' | 'Inactive';
@@ -37,6 +36,7 @@ export interface ExistingPatientSearchResult {
 }
 
 export interface PatientProfile {
+  uid?: string;
   fullName: string;
   email: string;
   birthDate: string; // YYYY-MM-DD
@@ -257,31 +257,6 @@ export class PatientsService {
     }
   }
 
-  private getLocalEdits(): Record<string, Patient> {
-    try {
-      const raw = localStorage.getItem('lcms_example_patients_edits');
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  }
-
-  saveLocalEdit(id: string, updated: Patient): void {
-    try {
-      const edits = this.getLocalEdits();
-      edits[id] = updated;
-      localStorage.setItem('lcms_example_patients_edits', JSON.stringify(edits));
-    } catch {
-      // ignore
-    }
-  }
-
-  isMidwifeDemoUser(): boolean {
-    const email = auth.currentUser?.email?.toLowerCase();
-    if (email) return email === 'midwife@gmail.com' || email === 'midwife@lyingincare.ph';
-    return false;
-  }
-
   getCurrentRole(): string {
     const r = this.auth.role();
     if (r) return r;
@@ -301,7 +276,7 @@ export class PatientsService {
         const snap = await getDocs(collection(db, 'patients'));
         dbPatients = snap.docs.map((d) => this.toPatient(d.id, d.data()));
       } else if (currentUid) {
-        // Midwife: query patients assigned to this midwife's Firebase UID
+        // Midwife: query ONLY patients assigned to this midwife's Firebase Auth UID
         const patientMap = new Map<string, Patient>();
 
         try {
@@ -331,18 +306,7 @@ export class PatientsService {
       dbPatients = [];
     }
 
-    // Only the demo midwife account midwife@gmail.com sees the sample patients
-    if (this.isMidwifeDemoUser()) {
-      const localEdits = this.getLocalEdits();
-      const existingIds = new Set(dbPatients.map((p) => p.id));
-      const existingEmails = new Set(dbPatients.map((p) => p.email?.toLowerCase()).filter(Boolean));
-
-      const examples = EXAMPLE_PATIENTS.map((p) => localEdits[p.id] || p).filter(
-        (p) => !existingIds.has(p.id) && !existingEmails.has(p.email.toLowerCase()),
-      );
-      return [...dbPatients, ...examples].sort((a, b) => a.fullName.localeCompare(b.fullName));
-    }
-
+    // Never inject fallback mock data: each midwife only sees their own patients
     return dbPatients.sort((a, b) => a.fullName.localeCompare(b.fullName));
   }
 
@@ -352,9 +316,9 @@ export class PatientsService {
       if (snap.exists()) {
         const p = this.toPatient(snap.id, snap.data());
         const role = this.getCurrentRole();
-        const currentUid = auth.currentUser?.uid;
+        const currentUid = auth.currentUser?.uid || this.auth.user()?.uid;
         // If a midwife attempts to access a patient directly, ensure they own it
-        if (role === 'midwife' && currentUid && !this.isMidwifeDemoUser()) {
+        if (role === 'midwife' && currentUid) {
           const ownerMidwife = p.assignedMidwifeId || p.midwifeId || p.createdBy;
           if (ownerMidwife && ownerMidwife !== currentUid) {
             return null; // Denied: patient belongs to another midwife
@@ -364,14 +328,6 @@ export class PatientsService {
       }
     } catch {
       // ignore
-    }
-
-    const edits = this.getLocalEdits();
-    if (edits[id]) return edits[id];
-
-    if (this.isMidwifeDemoUser()) {
-      const found = EXAMPLE_PATIENTS.find((p) => p.id === id);
-      if (found) return found;
     }
 
     return null;
@@ -404,25 +360,14 @@ export class PatientsService {
         await setDoc(doc(db, 'users', id), userUpdates, { merge: true }).catch(() => {});
       }
     } catch (err) {
-      if (!this.isMidwifeDemoUser()) {
-        throw err;
-      }
-    }
-
-    const current = await this.get(id);
-    if (current) {
-      const updated: Patient = {
-        ...current,
-        ...profile,
-      };
-      this.saveLocalEdit(id, updated);
+      throw err;
     }
 
     this.activityLog.logActivity({
-      userName: profile.fullName || current?.fullName || 'Patient',
+      userName: profile.fullName || 'Patient',
       userRole: this.getCurrentRole() === 'admin' ? 'admin' : this.getCurrentRole() === 'midwife' ? 'midwife' : 'patient',
       targetRecordId: id,
-      activity: `Patient information updated for ${profile.fullName || current?.fullName || id}`,
+      activity: `Patient information updated for ${profile.fullName || id}`,
     }).catch(() => undefined);
   }
 

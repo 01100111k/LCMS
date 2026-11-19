@@ -336,6 +336,53 @@ import { parseTimestamp } from '../models/admin.models';
           </div>
         </div>
       }
+
+      <!-- Archive Patient Confirmation Modal -->
+      @if (archivingPatient(); as p) {
+        <div class="modal-backdrop" (click)="cancelArchivePatient()">
+          <div class="modal-card modal-confirm-card" (click)="$event.stopPropagation()">
+            <div class="confirm-modal-body">
+              <div class="confirm-icon-wrap icon-amber">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="confirm-icon">
+                  <polyline points="21 8 21 21 3 21 3 8"/>
+                  <rect x="1" y="3" width="22" height="5"/>
+                  <line x1="10" y1="12" x2="14" y2="12"/>
+                </svg>
+              </div>
+
+              <h3 class="confirm-title">Move to Archives?</h3>
+              <p class="confirm-desc">
+                Are you sure you want to archive <strong>{{ p.fullName }}</strong>?
+                This will move their care profile to Archives and remove them from the active patient directory. You can restore their profile at any time.
+              </p>
+
+              <div class="confirm-target-box">
+                <div class="dir-avatar" [style.background]="getAvatarColor(p.fullName)">
+                  {{ getInitials(p.fullName) }}
+                </div>
+                <div class="confirm-target-info">
+                  <strong>{{ p.fullName }}</strong>
+                  <span class="confirm-target-sub">{{ p.bloodType || 'O+' }} blood &bull; {{ p.gravidaPara || 'G1P0' }} &bull; {{ p.contactNumber }}</span>
+                </div>
+              </div>
+
+              <div class="confirm-actions">
+                <button type="button" class="btn-confirm-cancel" (click)="cancelArchivePatient()">
+                  Cancel
+                </button>
+                <button type="button" class="btn-confirm-danger" (click)="confirmArchivePatient()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                    <polyline points="21 8 21 21 3 21 3 8"/>
+                    <rect x="1" y="3" width="22" height="5"/>
+                    <line x1="10" y1="12" x2="14" y2="12"/>
+                  </svg>
+                  <span>Move to Archives</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -760,6 +807,81 @@ import { parseTimestamp } from '../models/admin.models';
       font-size: 13px;
       cursor: pointer;
     }
+
+    /* Dark Mode Overrides for Modals */
+    :host-context(body.dark-mode) .modal-card {
+      background: #1e172c !important;
+      border: 1px solid #3b2d55 !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7) !important;
+    }
+
+    :host-context(body.dark-mode) .modal-head {
+      border-bottom-color: #36284e !important;
+    }
+
+    :host-context(body.dark-mode) .modal-head h3 {
+      color: #ffffff !important;
+    }
+
+    :host-context(body.dark-mode) .patient-meta-tag {
+      color: #b7a8cf !important;
+    }
+
+    :host-context(body.dark-mode) .btn-close-modal {
+      color: #b7a8cf !important;
+    }
+
+    :host-context(body.dark-mode) .btn-close-modal:hover {
+      color: #ffffff !important;
+    }
+
+    :host-context(body.dark-mode) .detail-box label {
+      color: #c4b5fd !important;
+    }
+
+    :host-context(body.dark-mode) .detail-box p {
+      color: #f5f1fc !important;
+      font-weight: 600 !important;
+    }
+
+    :host-context(body.dark-mode) .btn-modal-close {
+      background: #251c37 !important;
+      border: 1px solid #4a346e !important;
+      color: #ede7f6 !important;
+    }
+
+    :host-context(body.dark-mode) .btn-modal-close:hover {
+      background: #361f52 !important;
+      border-color: #7a5ba8 !important;
+      color: #ffffff !important;
+    }
+
+    :host-context(body.dark-mode) .btn-modal-accept {
+      background: #58338e !important;
+      border: 1px solid #7a5ba8 !important;
+      color: #ffffff !important;
+    }
+
+    :host-context(body.dark-mode) .btn-modal-accept:hover {
+      background: #6d3fa8 !important;
+    }
+
+    :host-context(body.dark-mode) .form-group label {
+      color: #d8ceeb !important;
+    }
+
+    :host-context(body.dark-mode) .form-group input,
+    :host-context(body.dark-mode) .form-group select {
+      background: #251c37 !important;
+      border: 1px solid #3d2c5a !important;
+      color: #ede7f6 !important;
+    }
+
+    :host-context(body.dark-mode) .form-group input:focus,
+    :host-context(body.dark-mode) .form-group select:focus {
+      border-color: #a881e6 !important;
+      background: #2b1f3f !important;
+    }
   `],
 })
 export class AdminPatients {
@@ -940,10 +1062,22 @@ export class AdminPatients {
     this.editingPatient.set(null);
   }
 
+  readonly archivingPatient = signal<Patient | null>(null);
+
   archivePatient(p: Patient): void {
-    if (confirm(`Move ${p.fullName} to Archives?`)) {
+    this.archivingPatient.set(p);
+  }
+
+  confirmArchivePatient(): void {
+    const p = this.archivingPatient();
+    if (p) {
       this.adminSvc.archivePatient(p);
+      this.archivingPatient.set(null);
     }
+  }
+
+  cancelArchivePatient(): void {
+    this.archivingPatient.set(null);
   }
 }
 

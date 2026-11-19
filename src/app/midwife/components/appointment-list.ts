@@ -3,17 +3,22 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { NotificationsService } from '../../core/notifications.service';
+import { auth } from '../../core/firebase';
 import {
   Appointment,
   AppointmentsService,
   AppointmentStatus,
   APPOINTMENT_TYPES,
+  BlockedDate,
   CLINIC,
+  defaultWeeklyHours,
   formatTime,
   isPast,
   parseIso,
   slotsFor,
   todayIso,
+  WeekDaySetting,
 } from '../../core/appointments.service';
 import { Patient, PatientsService } from '../../core/patients.service';
 
@@ -23,20 +28,6 @@ interface CalendarDay {
   isCurrentMonth: boolean;
   isToday: boolean;
   appointments: Appointment[];
-}
-
-interface BlockedDate {
-  date: string;
-  reason: string;
-}
-
-interface WeekDaySetting {
-  dayName: string;
-  dayIndex: number; // 0=Sun..6=Sat
-  enabled: boolean;
-  startTime: string;
-  endTime: string;
-  slotDuration: string;
 }
 
 @Component({
@@ -105,7 +96,7 @@ interface WeekDaySetting {
           @if (viewMode() === 'month') {
             <div class="month-cells-grid">
               @for (day of calendarDays(); track day.dateIso) {
-                <div class="cal-cell" [class.other-month]="!day.isCurrentMonth" [class.is-today]="day.isToday">
+                <div class="cal-cell" [class.other-month]="!day.isCurrentMonth" [class.is-today]="day.isToday" (click)="openDayAppointmentsModal(day)">
                   <div class="cell-top-bar">
                     <span class="day-num" [class.today-badge]="day.isToday">{{ day.dayNumber }}</span>
                     @if (day.appointments.length > 0) {
@@ -113,13 +104,25 @@ interface WeekDaySetting {
                     }
                   </div>
 
-                  <!-- Appointment Chips List -->
+                  <!-- Appointment Chips List (Max 2 with +X more indicator) -->
                   <div class="cell-appts-list">
-                    @for (a of day.appointments; track a.id) {
-                      <button type="button" class="appt-chip" [ngClass]="getTypeSlug(a.type)" [class.is-cancelled]="a.status === 'cancelled'" (click)="openDetailModal(a)">
+                    @for (a of day.appointments.slice(0, 2); track a.id) {
+                      <button
+                        type="button"
+                        class="appt-chip"
+                        [ngClass]="getTypeSlug(a.type)"
+                        [class.is-cancelled]="a.status === 'cancelled'"
+                        [class.is-completed]="a.status === 'completed'"
+                        (click)="openDetailModal(a); $event.stopPropagation()"
+                      >
                         <span class="chip-dot"></span>
                         <span class="chip-time">{{ a.time }}</span>
-                        <span class="chip-name">{{ a.patientName }}</span>
+                        <span class="chip-name" [class.line-through]="a.status === 'completed'">{{ a.patientName }}</span>
+                      </button>
+                    }
+                    @if (day.appointments.length > 2) {
+                      <button type="button" class="btn-more-appts" (click)="openDayAppointmentsModal(day); $event.stopPropagation()">
+                        +{{ day.appointments.length - 2 }} more
                       </button>
                     }
                   </div>
@@ -130,7 +133,7 @@ interface WeekDaySetting {
             <!-- Week View Grid -->
             <div class="week-cells-grid">
               @for (day of weekDays(); track day.dateIso) {
-                <div class="cal-cell week-cell" [class.is-today]="day.isToday">
+                <div class="cal-cell week-cell" [class.is-today]="day.isToday" (click)="openDayAppointmentsModal(day)">
                   <div class="cell-top-bar">
                     <span class="day-num" [class.today-badge]="day.isToday">{{ day.dayNumber }}</span>
                     @if (day.appointments.length > 0) {
@@ -138,13 +141,25 @@ interface WeekDaySetting {
                     }
                   </div>
 
-                  <!-- Appointment Chips List in Week View -->
+                  <!-- Appointment Chips List in Week View (Max 3 with +X more indicator) -->
                   <div class="cell-appts-list">
-                    @for (a of day.appointments; track a.id) {
-                      <button type="button" class="appt-chip" [ngClass]="getTypeSlug(a.type)" [class.is-cancelled]="a.status === 'cancelled'" (click)="openDetailModal(a)">
+                    @for (a of day.appointments.slice(0, 3); track a.id) {
+                      <button
+                        type="button"
+                        class="appt-chip"
+                        [ngClass]="getTypeSlug(a.type)"
+                        [class.is-cancelled]="a.status === 'cancelled'"
+                        [class.is-completed]="a.status === 'completed'"
+                        (click)="openDetailModal(a); $event.stopPropagation()"
+                      >
                         <span class="chip-dot"></span>
                         <span class="chip-time">{{ a.time }}</span>
-                        <span class="chip-name">{{ a.patientName }}</span>
+                        <span class="chip-name" [class.line-through]="a.status === 'completed'">{{ a.patientName }}</span>
+                      </button>
+                    }
+                    @if (day.appointments.length > 3) {
+                      <button type="button" class="btn-more-appts" (click)="openDayAppointmentsModal(day); $event.stopPropagation()">
+                        +{{ day.appointments.length - 3 }} more
                       </button>
                     }
                   </div>
@@ -189,8 +204,8 @@ interface WeekDaySetting {
           <div class="avail-tab-content">
             <div class="sub-head-row">
               <h3>Weekly Working Hours</h3>
-              <button type="button" class="btn-save-schedule" (click)="saveWeeklySchedule()">
-                Save Schedule
+              <button type="button" class="btn-save-schedule" (click)="saveWeeklySchedule()" [disabled]="savingSchedule()">
+                {{ savingSchedule() ? 'Saving…' : 'Save Schedule' }}
               </button>
             </div>
 
@@ -277,8 +292,16 @@ interface WeekDaySetting {
 
             <!-- 4-Column Grid of 18 Slot Cards (Image 1) -->
             <div class="slots-four-col-grid">
-              @for (time of allDaySlots; track time) {
-                @if (isSlotOpen(time)) {
+              @for (time of slotsForSelectedDate(); track time) {
+                @if (isDateBlocked(selectedSlotDate())) {
+                  <div class="slot-card is-booked" style="opacity: 0.65; cursor: not-allowed;">
+                    <div class="slot-time-text">{{ time }}</div>
+                    <div class="slot-booked-desc">
+                      <span class="slot-booked-chip" style="background:#fee2e2; color:#991b1b;">Blocked</span>
+                      <span class="slot-patient-label">{{ getBlockedReason(selectedSlotDate()) }}</span>
+                    </div>
+                  </div>
+                } @else if (isSlotOpen(time)) {
                   <div class="slot-card is-open" (click)="openRequestBookingModal(time)" role="button" tabindex="0">
                     <div class="slot-time-text">{{ time }}</div>
                     <div class="slot-status-text">Open</div>
@@ -427,7 +450,7 @@ interface WeekDaySetting {
             <!-- Header: Patient Name, Date/Time subtext, Close icon -->
             <div class="detail-card-head">
               <div class="detail-head-info">
-                <h3 class="detail-patient-name">{{ a.patientName }}</h3>
+                <h3 class="detail-patient-name" [class.line-through]="a.status === 'completed'">{{ a.patientName }}</h3>
                 <p class="detail-datetime-sub">{{ a.date | date: 'EEEE, MMM d, y' }} · {{ a.time }}</p>
               </div>
               <button type="button" class="btn-detail-x" (click)="closeDetailModal()" title="Close" aria-label="Close">
@@ -492,10 +515,96 @@ interface WeekDaySetting {
               </div>
             </div>
 
-            <!-- Bottom Full-Width Close Button -->
-            <button type="button" class="btn-detail-close-solid" (click)="closeDetailModal()">
-              Close
-            </button>
+            <!-- Bottom Action Buttons: Mark Complete & Close -->
+            <div style="display:flex; gap:10px; margin-top:16px;">
+              @if (a.status !== 'completed' && a.status !== 'cancelled') {
+                <button
+                  type="button"
+                  (click)="markComplete(a)"
+                  [disabled]="actionLoading()"
+                  style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:10px 16px; background:#059669; color:#ffffff; border:none; border-radius:8px; font-weight:600; font-size:13.5px; cursor:pointer;"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px; height:16px;"><polyline points="20 6 9 17 4 12"/></svg>
+                  Mark Complete
+                </button>
+              }
+              <button type="button" class="btn-detail-close-solid" (click)="closeDetailModal()" style="flex:1;">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ========================================================
+           POP-OUT MODAL: DAY APPOINTMENTS (Clicking date or +X more)
+           ======================================================== -->
+      @if (selectedDay(); as d) {
+        <div class="modal-backdrop" (click)="closeDayAppointmentsModal()">
+          <div class="modal-card day-appts-modal-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" style="max-width: 520px;">
+            <div class="modal-head">
+              <div>
+                <h3 style="margin:0; font-size:18px; font-weight:700; color:#271442;">
+                  {{ d.dateIso | date: 'EEEE, MMMM d, y' }}
+                </h3>
+                <p class="modal-sub" style="margin:3px 0 0; color:#6b7280; font-size:13px;">
+                  {{ d.appointments.length }} appointment(s) scheduled for this day
+                </p>
+              </div>
+              <button type="button" class="btn-close-modal" (click)="closeDayAppointmentsModal()" title="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="day-modal-body" style="padding: 16px 20px; max-height: 380px; overflow-y: auto;">
+              @if (d.appointments.length === 0) {
+                <div style="text-align:center; padding: 30px 10px; color: #9ca3af;">
+                  <p style="margin:0 0 10px;">No appointments scheduled for this date.</p>
+                  <button type="button" class="btn-submit-modal" style="display:inline-flex; width:auto; padding:8px 16px; font-size:12.5px;" (click)="closeDayAppointmentsModal(); openScheduleModal()">
+                    + Schedule Appointment
+                  </button>
+                </div>
+              } @else {
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  @for (a of d.appointments; track a.id) {
+                    <div
+                      style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#faf7fd; border:1px solid #ebe5f5; border-radius:8px; cursor:pointer;"
+                      [style.background]="a.status === 'completed' ? '#f0fdf4' : (a.status === 'cancelled' ? '#f9fafb' : '#faf7fd')"
+                      (click)="closeDayAppointmentsModal(); openDetailModal(a)"
+                    >
+                      <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-weight:700; font-size:13px; color:#4a154b; min-width:55px;">{{ a.time }}</span>
+                        <div>
+                          <strong [class.line-through]="a.status === 'completed'" style="display:block; font-size:13.5px; color:#1e1b26;">{{ a.patientName }}</strong>
+                          <span style="font-size:12px; color:#6b7280;">{{ a.notes || a.type }}</span>
+                        </div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="slot-booked-chip" [ngClass]="getTypeSlug(a.type)">{{ a.type }}</span>
+                        <span class="status-badge-pill" [ngClass]="'pill-' + a.status" style="font-size:11px; padding:3px 8px;">{{ getStatusLabel(a.status) }}</span>
+                        @if (a.status !== 'completed' && a.status !== 'cancelled') {
+                          <button
+                            type="button"
+                            (click)="markComplete(a); $event.stopPropagation()"
+                            title="Mark Complete"
+                            style="display:inline-flex; align-items:center; gap:3px; padding:3px 8px; font-size:11px; font-weight:600; border-radius:6px; border:1px solid #059669; background:#ecfdf5; color:#065f46; cursor:pointer;"
+                          >
+                            ✓ Done
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="modal-footer-actions" style="padding: 12px 20px; border-top: 1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center;">
+              <button type="button" class="btn-cancel-modal" (click)="closeDayAppointmentsModal()">Close</button>
+              <button type="button" class="btn-submit-modal" style="width:auto; padding:8px 18px;" (click)="closeDayAppointmentsModal(); openScheduleModal()">
+                + New Appointment
+              </button>
+            </div>
           </div>
         </div>
       }
@@ -536,6 +645,55 @@ interface WeekDaySetting {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      }
+
+      <!-- ========================================================
+           POP-OUT MODAL: AFFECTED APPOINTMENTS CONFLICT WARNING
+           ======================================================== -->
+      @if (showConflictModal()) {
+        <div class="modal-backdrop" (click)="cancelConflictBlock()">
+          <div class="modal-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="modal-conflict-title" style="max-width: 500px;">
+            <div class="modal-head" style="border-bottom: 1px solid #fee2e2; background: #fff5f5; padding: 16px 20px; border-radius: 12px 12px 0 0;">
+              <div>
+                <div style="display:flex; align-items:center; gap:8px; color: #b91c1c; font-weight: 700; font-size: 16px;">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span id="modal-conflict-title">Appointments Scheduled on This Date</span>
+                </div>
+                <p class="modal-sub" style="margin: 4px 0 0; color: #7f1d1d; font-size: 12.5px;">
+                  There are <strong>{{ conflictingAppointments().length }}</strong> appointment(s) already scheduled on {{ pendingBlockedDate()?.date | date: 'EEEE, MMM d, y' }}.
+                </p>
+              </div>
+              <button type="button" class="btn-close-modal" (click)="cancelConflictBlock()" title="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="modal-form-content" style="padding: 18px 20px;">
+              <p style="font-size: 13px; color: #475569; margin: 0 0 12px; line-height: 1.45;">
+                Blocking this date will flag the day as Time Off. The affected patients below will receive notifications to reschedule their visits:
+              </p>
+
+              <div style="max-height: 180px; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 8px; background: #fafafa; padding: 6px 10px;">
+                @for (appt of conflictingAppointments(); track appt.id) {
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 6px; border-bottom: 1px solid #f1f5f9;">
+                    <div>
+                      <strong style="font-size: 13px; color: #1e293b; display:block;">{{ appt.patientName }}</strong>
+                      <span style="font-size: 11.5px; color: #64748b;">{{ appt.time }} · {{ appt.type }}</span>
+                    </div>
+                    <span class="slot-booked-chip" [ngClass]="getTypeSlug(appt.type)">{{ appt.type }}</span>
+                  </div>
+                }
+              </div>
+
+              <div class="modal-footer-actions" style="margin-top: 18px; display:flex; justify-content:flex-end; gap: 10px;">
+                <button type="button" class="btn-cancel-modal" (click)="cancelConflictBlock()">Keep Date Open</button>
+                <button type="button" class="btn-submit-modal" style="background:#dc2626; border-color:#dc2626;" (click)="confirmBlockWithConflicts()" [disabled]="confirmingConflictBlock()">
+                  {{ confirmingConflictBlock() ? 'Processing…' : 'Confirm Block & Notify Patients' }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       }
@@ -797,26 +955,35 @@ interface WeekDaySetting {
 
     .month-cells-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       background: #ebe5f5;
       gap: 1px;
     }
 
     .week-cells-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       background: #ebe5f5;
       gap: 1px;
     }
 
     .cal-cell {
       background: #ffffff;
-      min-height: 85px;
+      height: 104px;
+      min-height: 104px;
+      max-height: 104px;
       padding: 6px 8px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      transition: background 0.1s;
+      gap: 3px;
+      overflow: hidden;
+      box-sizing: border-box;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .cal-cell:hover {
+      background: #faf7fd;
     }
 
     .cal-cell.other-month {
@@ -825,7 +992,29 @@ interface WeekDaySetting {
     }
 
     .week-cell {
-      min-height: 120px;
+      height: 140px;
+      min-height: 140px;
+      max-height: 140px;
+    }
+
+    .btn-more-appts {
+      background: #f3e8ff;
+      color: #6b21a8;
+      border: 1px solid #e9d5ff;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.1s;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .btn-more-appts:hover {
+      background: #e9d5ff;
+      color: #581c87;
     }
 
     .cell-top-bar {
@@ -2210,8 +2399,33 @@ interface WeekDaySetting {
     }
 
     .appt-chip.is-cancelled {
-      opacity: 0.65;
-      text-decoration: line-through;
+      opacity: 0.55;
+      background: #f3f4f6 !important;
+      border: 1px dashed #d1d5db !important;
+      color: #9ca3af !important;
+      text-decoration: none !important;
+    }
+    .appt-chip.is-cancelled .chip-dot {
+      background: #9ca3af !important;
+    }
+    .appt-chip.is-cancelled .chip-time,
+    .appt-chip.is-cancelled .chip-name {
+      color: #9ca3af !important;
+      text-decoration: none !important;
+    }
+
+    .appt-chip.is-completed {
+      border-left: 3px solid #059669 !important;
+      background: #ecfdf5 !important;
+    }
+    .appt-chip.is-completed .chip-dot {
+      background: #059669 !important;
+    }
+    .line-through,
+    .appt-chip.is-completed .chip-name {
+      text-decoration: line-through !important;
+      text-decoration-color: #059669 !important;
+      text-decoration-thickness: 1.5px !important;
     }
 
     @media (max-width: 900px) {
@@ -2232,6 +2446,7 @@ export class AppointmentList implements OnInit {
   private fb = inject(NonNullableFormBuilder);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private notifSvc = inject(NotificationsService);
 
   // Authenticated Midwife Name & Initials
   readonly midwifeName = computed(() => {
@@ -2290,8 +2505,16 @@ export class AppointmentList implements OnInit {
   readonly scheduledTime = signal('');
   readonly showBlockedModal = signal(false);
 
+  // Saving schedule & Conflict Warning state
+  readonly savingSchedule = signal(false);
+  readonly showConflictModal = signal(false);
+  readonly conflictingAppointments = signal<Appointment[]>([]);
+  readonly pendingBlockedDate = signal<{ date: string; reason: string } | null>(null);
+  readonly confirmingConflictBlock = signal(false);
+
   // Selected appointment for detail / status update
   readonly selectedAppt = signal<Appointment | null>(null);
+  readonly selectedDay = signal<CalendarDay | null>(null);
   readonly actionLoading = signal(false);
   readonly statusMenuOpen = signal(false);
 
@@ -2466,28 +2689,78 @@ export class AppointmentList implements OnInit {
     return out;
   });
 
+  // All slots displayed for selected date according to working schedule
+  readonly slotsForSelectedDate = computed<string[]>(() => {
+    const selIso = this.selectedSlotDate();
+    if (!selIso) return this.allDaySlots;
+    const dayOfWeek = parseIso(selIso).getDay();
+    const setting = this.weeklyHours().find((w) => w.dayIndex === dayOfWeek);
+    if (!setting || !setting.enabled) {
+      return this.allDaySlots;
+    }
+    const generated = this.generateSlotsFromSetting(setting);
+    return generated.length > 0 ? generated : this.allDaySlots;
+  });
+
+  generateSlotsFromSetting(setting: WeekDaySetting): string[] {
+    const parseTimeStr = (t: string): number => {
+      if (!t) return 0;
+      const clean = t.trim();
+      const isPm = /pm/i.test(clean);
+      const isAm = /am/i.test(clean);
+      const parts = clean.replace(/[^\d:]/g, '').split(':').map(Number);
+      let h = parts[0] || 0;
+      const m = parts[1] || 0;
+      if (isPm && h < 12) h += 12;
+      if (isAm && h === 12) h = 0;
+      return h * 60 + m;
+    };
+    const padMinutes = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+
+    const startMinutes = parseTimeStr(setting.startTime || '08:00 AM');
+    const endMinutes = parseTimeStr(setting.endTime || '05:00 PM');
+    const duration = parseInt(setting.slotDuration || '30', 10) || 30;
+    const breakStart = setting.breakStart ? parseTimeStr(setting.breakStart) : 12 * 60;
+    const breakEnd = setting.breakEnd ? parseTimeStr(setting.breakEnd) : 13 * 60;
+
+    const slots: string[] = [];
+    for (let t = startMinutes; t + duration <= endMinutes; t += duration) {
+      if (t >= breakStart && t < breakEnd) continue;
+      slots.push(padMinutes(t));
+    }
+    return slots;
+  }
+
+  isDateBlocked(dateIso: string): boolean {
+    return this.blockedDates().some((b) => b.date === dateIso);
+  }
+
+  getBlockedReason(dateIso: string): string {
+    const item = this.blockedDates().find((b) => b.date === dateIso);
+    return item?.reason || 'Time Off';
+  }
+
   // Open slots computed for selected date
   readonly openSlotsForSelectedDate = computed(() => {
     const selIso = this.selectedSlotDate();
     if (!selIso) return [];
 
     // Check if day is blocked
-    if (this.blockedDates().some((b) => b.date === selIso)) return [];
+    if (this.isDateBlocked(selIso)) return [];
 
     const dateObj = new Date(selIso);
     const dayOfWeek = dateObj.getDay();
     const setting = this.weeklyHours().find((w) => w.dayIndex === dayOfWeek);
     if (!setting || !setting.enabled) return [];
 
-    // All standard clinic slots for this date
-    const allSlots = slotsFor(selIso);
+    const allSlots = this.generateSlotsFromSetting(setting);
     const bookedTimes = new Set(
       this.allAppointments()
         .filter((a) => a.date === selIso && a.status !== 'cancelled')
         .map((a) => a.time),
     );
 
-    return allSlots.filter((time) => !bookedTimes.has(time));
+    return (allSlots.length ? allSlots : this.allDaySlots).filter((time) => !bookedTimes.has(time));
   });
 
   // Booked appointments for selected slot date
@@ -2499,21 +2772,42 @@ export class AppointmentList implements OnInit {
   // Available slots for booking in modal
   readonly availableSlotsForBookingDate = computed(() => {
     const date = this.scheduleForm.controls.date.value || this.today;
-    const allSlots = slotsFor(date);
+    const dayOfWeek = parseIso(date).getDay();
+    const setting = this.weeklyHours().find((w) => w.dayIndex === dayOfWeek);
+    const allSlots = (setting && setting.enabled) ? this.generateSlotsFromSetting(setting) : this.allDaySlots;
     const bookedTimes = new Set(
       this.allAppointments()
         .filter((a) => a.date === date && a.status !== 'cancelled')
         .map((a) => a.time),
     );
-    return allSlots.filter((time) => !bookedTimes.has(time));
+    return (allSlots.length ? allSlots : this.allDaySlots).filter((time) => !bookedTimes.has(time));
   });
 
   async ngOnInit(): Promise<void> {
-    this.loadPersistedBlockedDates();
-    await Promise.all([this.loadAppointments(), this.loadPatients()]);
+    await Promise.all([
+      this.loadAppointments(),
+      this.loadPatients(),
+      this.loadAvailability(),
+    ]);
     const qp = this.route.snapshot.queryParams;
     if (qp['new'] === 'true' || qp['patient']) {
       this.openScheduleModal(qp['patient']);
+    }
+  }
+
+  async loadAvailability(): Promise<void> {
+    const midwifeUid = auth.currentUser?.uid || this.auth.user()?.uid;
+    if (!midwifeUid) return;
+    try {
+      const avail = await this.svc.getMidwifeAvailability(midwifeUid);
+      if (avail.weeklyHours && avail.weeklyHours.length === 7) {
+        this.weeklyHours.set(avail.weeklyHours);
+      }
+      if (avail.blockedDates) {
+        this.blockedDates.set(avail.blockedDates);
+      }
+    } catch (err) {
+      console.warn('loadAvailability error:', err);
     }
   }
 
@@ -2701,6 +2995,14 @@ export class AppointmentList implements OnInit {
     this.statusMenuOpen.set(false);
   }
 
+  openDayAppointmentsModal(day: CalendarDay): void {
+    this.selectedDay.set(day);
+  }
+
+  closeDayAppointmentsModal(): void {
+    this.selectedDay.set(null);
+  }
+
   toggleStatusMenu(): void {
     this.statusMenuOpen.update((v) => !v);
   }
@@ -2726,14 +3028,30 @@ export class AppointmentList implements OnInit {
       return;
     }
     this.actionLoading.set(true);
+    const updated: Appointment = {
+      ...a,
+      status: newStatus,
+      completedAt: newStatus === 'completed' ? new Date().toISOString() : a.completedAt,
+      cancelledAt: newStatus === 'cancelled' ? new Date().toISOString() : a.cancelledAt,
+    };
+    // Instant real-time UI update:
+    this.allAppointments.update((list) => list.map((item) => (item.id === a.id ? updated : item)));
+    this.selectedAppt.set(updated);
+    this.selectedDay.update((d) => {
+      if (!d) return null;
+      return {
+        ...d,
+        appointments: d.appointments.map((item) => (item.id === a.id ? updated : item)),
+      };
+    });
+    this.statusMenuOpen.set(false);
+
     try {
       await this.svc.setStatus(a.id, newStatus);
-      const updated: Appointment = { ...a, status: newStatus };
-      this.selectedAppt.set(updated);
-      this.statusMenuOpen.set(false);
       await this.loadAppointments();
     } catch (err: any) {
       alert(this.svc.errorMessage(err));
+      await this.loadAppointments();
     } finally {
       this.actionLoading.set(false);
     }
@@ -2807,9 +3125,24 @@ export class AppointmentList implements OnInit {
   }
 
   // Availability actions
-  saveWeeklySchedule(): void {
-    // Save schedule state
-    alert('Weekly working hours schedule saved successfully.');
+  async saveWeeklySchedule(): Promise<void> {
+    const midwifeUid = auth.currentUser?.uid || this.auth.user()?.uid;
+    if (!midwifeUid) {
+      alert('Authentication error: midwife UID not found.');
+      return;
+    }
+    this.savingSchedule.set(true);
+    try {
+      await this.svc.saveMidwifeAvailability(midwifeUid, {
+        weeklyHours: this.weeklyHours(),
+        midwifeName: this.midwifeName(),
+      });
+      alert('Weekly working hours schedule saved successfully.');
+    } catch (e: any) {
+      alert('Failed to save schedule: ' + (e?.message || e));
+    } finally {
+      this.savingSchedule.set(false);
+    }
   }
 
   // Blocked Dates & Pop-up Modal actions
@@ -2821,58 +3154,108 @@ export class AppointmentList implements OnInit {
     this.showBlockedModal.set(false);
   }
 
-  addBlockedDate(): void {
+  async addBlockedDate(): Promise<void> {
     if (!this.newBlockedDate) {
       // If no date was entered in the inline row, open the pop-out modal!
       this.openBlockedModal();
       return;
     }
-    this.saveBlockedDateEntry(this.newBlockedDate, this.newBlockedReason || 'Time off');
+    await this.requestBlockDate(this.newBlockedDate, this.newBlockedReason || 'Time off');
   }
 
-  submitBlockedModal(): void {
+  async submitBlockedModal(): Promise<void> {
     if (!this.newBlockedDate) return;
-    this.saveBlockedDateEntry(this.newBlockedDate, this.newBlockedReason || 'Time off');
+    const d = this.newBlockedDate;
+    const r = this.newBlockedReason || 'Time off';
     this.closeBlockedModal();
+    await this.requestBlockDate(d, r);
   }
 
-  saveBlockedDateEntry(date: string, reason: string): void {
-    const list = [...this.blockedDates()];
-    if (!list.some((b) => b.date === date)) {
-      list.push({ date, reason: reason || 'Time off' });
-      list.sort((a, b) => a.date.localeCompare(b.date));
-      this.blockedDates.set(list);
-      this.persistBlockedDates(list);
-    }
-    this.newBlockedDate = '';
-    this.newBlockedReason = '';
-  }
+  async requestBlockDate(date: string, reason: string): Promise<void> {
+    const midwifeUid = auth.currentUser?.uid || this.auth.user()?.uid;
+    if (!midwifeUid) return;
 
-  removeBlockedDate(date: string): void {
-    const updated = this.blockedDates().filter((b) => b.date !== date);
-    this.blockedDates.set(updated);
-    this.persistBlockedDates(updated);
-  }
-
-  private persistBlockedDates(list: BlockedDate[]): void {
+    // Check for conflicting appointments on that date
     try {
-      localStorage.setItem('lcms_blocked_dates', JSON.stringify(list));
-    } catch {
-      // ignore
+      const conflicts = await this.svc.checkExistingAppointmentsOnDate(midwifeUid, date);
+      if (conflicts.length > 0) {
+        this.pendingBlockedDate.set({ date, reason });
+        this.conflictingAppointments.set(conflicts);
+        this.showConflictModal.set(true);
+        return;
+      }
+    } catch (e) {
+      console.warn('checkExistingAppointmentsOnDate failed:', e);
     }
+
+    // No conflicts, persist directly to Firestore
+    await this.confirmSaveBlockedDate(midwifeUid, date, reason);
   }
 
-  private loadPersistedBlockedDates(): void {
+  async confirmBlockWithConflicts(): Promise<void> {
+    const pending = this.pendingBlockedDate();
+    const midwifeUid = auth.currentUser?.uid || this.auth.user()?.uid;
+    if (!pending || !midwifeUid) return;
+
+    this.confirmingConflictBlock.set(true);
     try {
-      const raw = localStorage.getItem('lcms_blocked_dates');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length) {
-          this.blockedDates.set(parsed);
+      // Notify affected patients via portal notifications
+      for (const appt of this.conflictingAppointments()) {
+        if (appt.patientId) {
+          await this.notifSvc.createNotification({
+            title: 'Appointment Notice: Clinic Date Blocked',
+            message: `Your appointment on ${appt.date} at ${formatTime(appt.time)} has been affected because the clinic/midwife is unavailable (${pending.reason}). Please reschedule your appointment in the Patient Portal.`,
+            type: 'appointment',
+            route: '/patient/portal',
+            targetUserId: appt.patientId,
+            targetRole: 'patient',
+            patientUid: appt.patientId,
+            patientName: appt.patientName,
+          });
         }
       }
-    } catch {
-      // ignore
+
+      await this.confirmSaveBlockedDate(midwifeUid, pending.date, pending.reason);
+      this.showConflictModal.set(false);
+      this.pendingBlockedDate.set(null);
+      this.conflictingAppointments.set([]);
+    } catch (err: any) {
+      alert('Failed to block date: ' + (err?.message || err));
+    } finally {
+      this.confirmingConflictBlock.set(false);
+    }
+  }
+
+  cancelConflictBlock(): void {
+    this.showConflictModal.set(false);
+    this.pendingBlockedDate.set(null);
+    this.conflictingAppointments.set([]);
+  }
+
+  private async confirmSaveBlockedDate(midwifeUid: string, date: string, reason: string): Promise<void> {
+    try {
+      await this.svc.addBlockedDate(midwifeUid, date, reason);
+      const list = [...this.blockedDates()];
+      if (!list.some((b) => b.date === date)) {
+        list.push({ date, reason });
+        list.sort((a, b) => a.date.localeCompare(b.date));
+        this.blockedDates.set(list);
+      }
+      this.newBlockedDate = '';
+      this.newBlockedReason = '';
+    } catch (err: any) {
+      alert('Failed to save blocked date: ' + (err?.message || err));
+    }
+  }
+
+  async removeBlockedDate(date: string): Promise<void> {
+    const midwifeUid = auth.currentUser?.uid || this.auth.user()?.uid;
+    if (!midwifeUid) return;
+    try {
+      await this.svc.removeBlockedDate(midwifeUid, date);
+      this.blockedDates.update((list) => list.filter((b) => b.date !== date));
+    } catch (err: any) {
+      alert('Failed to remove blocked date: ' + (err?.message || err));
     }
   }
 }

@@ -3,6 +3,8 @@ import { Component, HostListener, OnInit, computed, inject, signal } from '@angu
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ExistingPatientSearchResult, ExistingPatientStatus, Patient, PatientProfile, PatientsService, PatientStatus, RiskLevel } from '../../core/patients.service';
+import { RecordsService, PrenatalRecord, DeliveryRecord, PostpartumRecord } from '../../core/records.service';
+import { AppointmentsService, Appointment } from '../../core/appointments.service';
 import { auth } from '../../core/firebase';
 
 @Component({
@@ -86,7 +88,7 @@ import { auth } from '../../core/firebase';
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="empty-icon">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
           </svg>
-          <h3>No patients registered yet</h3>
+          <h3>No patients assigned yet.</h3>
           <p>Register your first patient to begin tracking their care journey.</p>
           <button type="button" class="btn-register" style="margin-top: 8px;" (click)="openRegisterModal()">
             Register Patient
@@ -318,6 +320,117 @@ import { auth } from '../../core/firebase';
                       <span class="info-v highlight-text">{{ patient.emergencyContactNumber || '—' }}</span>
                     </div>
                   </div>
+                </div>
+
+                <!-- Card 4: Unified Maternal Care Timeline -->
+                <div class="info-section-card full-width">
+                  <h3 class="section-heading" style="color: #4a154b;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Unified Maternal Care Timeline
+                  </h3>
+
+                  @if (loadingPatientMaternalTimeline()) {
+                    <div style="padding: 16px; text-align: center; color: #6b7280; font-size: 13px;">
+                      Loading maternal care history…
+                    </div>
+                  } @else {
+                    <div class="timeline-cycle-container" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+                      <!-- Stage 1: Prenatal Care -->
+                      <div class="timeline-stage-box" style="padding: 12px 14px; border-radius: 8px; border: 1px solid #e9d5ff; background: #faf5ff;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                          <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #9333ea;"></span>
+                            <strong style="color: #581c87; font-size: 13.5px;">1. Prenatal Care Records</strong>
+                          </div>
+                          <span style="font-size: 12px; color: #7e22ce; font-weight: 600;">{{ patientPrenatalRecords().length }} checkup(s)</span>
+                        </div>
+                        @if (patientPrenatalRecords().length > 0) {
+                          <div style="display: flex; flex-direction: column; gap: 6px;">
+                            @for (pr of patientPrenatalRecords().slice(0, 3); track pr.id) {
+                              <div style="display: flex; justify-content: space-between; font-size: 12.5px; background: #ffffff; padding: 6px 10px; border-radius: 6px; border: 1px solid #f3e8ff;">
+                                <span><strong>{{ pr.date }}</strong> ({{ pr.gestationalAge }})</span>
+                                <span style="color: #6b7280;">BP {{ pr.bp }} · FHR {{ pr.fetalHeartRateBpm }} bpm · {{ pr.riskLevel }}</span>
+                              </div>
+                            }
+                          </div>
+                        } @else {
+                          <p style="margin: 0; font-size: 12.5px; color: #6b7280;">No prenatal checkup documented yet for this patient.</p>
+                        }
+                      </div>
+
+                      <!-- Stage 2: Delivery Record -->
+                      <div class="timeline-stage-box" style="padding: 12px 14px; border-radius: 8px; border: 1px solid #fed7aa; background: #fff7ed;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                          <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ea580c;"></span>
+                            <strong style="color: #9a3412; font-size: 13.5px;">2. Delivery History</strong>
+                          </div>
+                          @if (patientDeliveryRecords().length > 0) {
+                            <span style="font-size: 12px; color: #c2410c; font-weight: 600;">Delivered</span>
+                          } @else {
+                            <span style="font-size: 12px; color: #6b7280;">Undelivered</span>
+                          }
+                        </div>
+                        @if (patientDeliveryRecords().length > 0) {
+                          @for (dr of patientDeliveryRecords(); track dr.id) {
+                            <div style="background: #ffffff; padding: 8px 10px; border-radius: 6px; border: 1px solid #ffedd5; font-size: 12.5px;">
+                              <div><strong>Delivered:</strong> {{ dr.deliveryDateTime | date: 'medium' }} ({{ dr.gestationalAgeAtDelivery }})</div>
+                              <div style="color: #6b7280; margin-top: 2px;">
+                                {{ dr.deliveryType }} · Baby {{ dr.babySex }} ({{ dr.birthWeightGrams }}g, {{ dr.birthLengthCm }}cm) · APGAR {{ dr.apgar1Min }}/{{ dr.apgar5Min }}
+                              </div>
+                            </div>
+                          }
+                        } @else {
+                          <p style="margin: 0; font-size: 12.5px; color: #6b7280;">No delivery record. Patient is currently in prenatal phase (EDD: {{ patient.edd || 'Not recorded' }}).</p>
+                        }
+                      </div>
+
+                      <!-- Stage 3: Postpartum Follow-ups -->
+                      <div class="timeline-stage-box" style="padding: 12px 14px; border-radius: 8px; border: 1px solid #bbf7d0; background: #f0fdf4;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                          <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a;"></span>
+                            <strong style="color: #166534; font-size: 13.5px;">3. Postpartum Care & Follow-up</strong>
+                          </div>
+                          <span style="font-size: 12px; color: #15803d; font-weight: 600;">{{ patientPostpartumRecords().length }} visit(s)</span>
+                        </div>
+                        @if (patientPostpartumRecords().length > 0) {
+                          <div style="display: flex; flex-direction: column; gap: 6px;">
+                            @for (pp of patientPostpartumRecords(); track pp.id) {
+                              <div style="background: #ffffff; padding: 6px 10px; border-radius: 6px; border: 1px solid #dcfce7; font-size: 12.5px;">
+                                <div><strong>{{ pp.visitStage }}</strong> on {{ pp.visitDate }}</div>
+                                <div style="color: #6b7280;">BP {{ pp.maternalBp }} · Fundus: {{ pp.fundalFirmness }} · Feeding: {{ pp.feedingMethod }}</div>
+                              </div>
+                            }
+                          </div>
+                        } @else {
+                          <p style="margin: 0; font-size: 12.5px; color: #6b7280;">No postpartum visits recorded yet.</p>
+                        }
+                      </div>
+
+                      <!-- Stage 4: Next Scheduled Appointment -->
+                      <div class="timeline-stage-box" style="padding: 12px 14px; border-radius: 8px; border: 1px solid #bfdbfe; background: #eff6ff;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                          <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></span>
+                            <strong style="color: #1e40af; font-size: 13.5px;">4. Next Scheduled Appointment</strong>
+                          </div>
+                        </div>
+                        @if (patientAppointments().length > 0) {
+                          <div style="display: flex; flex-direction: column; gap: 6px;">
+                            @for (app of patientAppointments().slice(0, 2); track app.id) {
+                              <div style="background: #ffffff; padding: 6px 10px; border-radius: 6px; border: 1px solid #dbeafe; font-size: 12.5px; display: flex; justify-content: space-between; align-items: center;">
+                                <span><strong>{{ app.date }} at {{ app.time }}</strong> · {{ app.type }}</span>
+                                <span class="badge-status" [ngClass]="'status-' + app.status">{{ app.status }}</span>
+                              </div>
+                            }
+                          </div>
+                        } @else {
+                          <p style="margin: 0; font-size: 12.5px; color: #6b7280;">No future appointments scheduled.</p>
+                        }
+                      </div>
+                    </div>
+                  }
                 </div>
               </div>
             </div>
@@ -2862,6 +2975,8 @@ import { auth } from '../../core/firebase';
 })
 export class PatientList implements OnInit {
   private patients = inject(PatientsService);
+  private recordsSvc = inject(RecordsService);
+  private appointmentsSvc = inject(AppointmentsService);
   private fb = inject(NonNullableFormBuilder);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -2875,6 +2990,11 @@ export class PatientList implements OnInit {
 
   // Selected patient for View modal
   readonly selectedPatient = signal<Patient | null>(null);
+  readonly loadingPatientMaternalTimeline = signal<boolean>(false);
+  readonly patientPrenatalRecords = signal<PrenatalRecord[]>([]);
+  readonly patientDeliveryRecords = signal<DeliveryRecord[]>([]);
+  readonly patientPostpartumRecords = signal<PostpartumRecord[]>([]);
+  readonly patientAppointments = signal<Appointment[]>([]);
 
   // Modal signals
   readonly showRegisterModal = signal(false);
@@ -3000,12 +3120,38 @@ export class PatientList implements OnInit {
     }
   }
 
-  openViewModal(p: Patient): void {
+  async openViewModal(p: Patient): Promise<void> {
     this.selectedPatient.set(p);
+    this.loadingPatientMaternalTimeline.set(true);
+    this.patientPrenatalRecords.set([]);
+    this.patientDeliveryRecords.set([]);
+    this.patientPostpartumRecords.set([]);
+    this.patientAppointments.set([]);
+
+    try {
+      const [pre, del, post, appts] = await Promise.all([
+        this.recordsSvc.listPrenatalForPatient(p.id),
+        this.recordsSvc.listDeliveryForPatient(p.id),
+        this.recordsSvc.listPostpartumForPatient(p.id),
+        this.appointmentsSvc.listForPatient(p.id),
+      ]);
+      this.patientPrenatalRecords.set(pre);
+      this.patientDeliveryRecords.set(del);
+      this.patientPostpartumRecords.set(post);
+      this.patientAppointments.set(appts.filter((a) => a.status !== 'cancelled'));
+    } catch (e) {
+      console.warn('Error loading patient maternal timeline:', e);
+    } finally {
+      this.loadingPatientMaternalTimeline.set(false);
+    }
   }
 
   closeViewModal(): void {
     this.selectedPatient.set(null);
+    this.patientPrenatalRecords.set([]);
+    this.patientDeliveryRecords.set([]);
+    this.patientPostpartumRecords.set([]);
+    this.patientAppointments.set([]);
   }
 
   openEditModal(p: Patient, fromView = false): void {

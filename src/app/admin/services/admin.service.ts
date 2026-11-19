@@ -9,7 +9,7 @@ import { ActivityLogService } from '../../core/activity-log.service';
 
 export const DEFAULT_MIDWIVES: SystemUser[] = [
   {
-    id: 'mw-1',
+    id: 'DDqlZfkw2sRKvo21mq84sa7rUfa2',
     email: 'maria.santos@gmail.com',
     displayName: 'Midwife Maria Santos, RM',
     role: 'midwife',
@@ -19,7 +19,7 @@ export const DEFAULT_MIDWIVES: SystemUser[] = [
     status: 'active',
   },
   {
-    id: 'mw-2',
+    id: 'kOMzGApSBog8Hsk7ufgT6KiFOfJ2',
     email: 'joy.cruz@gmail.com',
     displayName: 'Midwife Joy Cruz, RM',
     role: 'midwife',
@@ -29,7 +29,7 @@ export const DEFAULT_MIDWIVES: SystemUser[] = [
     status: 'active',
   },
   {
-    id: 'mw-3',
+    id: 'vlBp9Mf7Dzam0AH7bEwlsa2iTxA3',
     email: 'elena.bautista@gmail.com',
     displayName: 'Midwife Elena Bautista, RM',
     role: 'midwife',
@@ -39,7 +39,7 @@ export const DEFAULT_MIDWIVES: SystemUser[] = [
     status: 'active',
   },
   {
-    id: 'mw-4',
+    id: 'zNyGArV6tvdsR48R9OE1rxrTdaP2',
     email: 'corazon.ramos@gmail.com',
     displayName: 'Midwife Corazon Ramos, RM',
     role: 'midwife',
@@ -1662,9 +1662,8 @@ export class AdminService {
     try {
       await setDoc(doc(db, 'patients', p.id), { ...p, updatedAt: serverTimestamp() }, { merge: true });
     } catch {
-      // local
+      // ignore
     }
-    this.patientsSvc.saveLocalEdit(p.id, p);
     this.patients.update((list) => list.map((item) => (item.id === p.id ? p : item)));
     this.addActivityLog(`Updated clinical record for patient ${p.fullName}`, 'system', p.email);
     this.notify(`Patient record for ${p.fullName} updated!`);

@@ -16,11 +16,13 @@ import { ClinicNotification, NotificationsService } from '../core/notifications.
 import { ActivityLogService } from '../core/activity-log.service';
 import { HealthArticle, HEALTH_ARTICLES, HEALTH_CATEGORIES } from '../core/health-library.data';
 import {
+  Unsubscribe,
   addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -276,6 +278,24 @@ export class PatientPortal implements OnInit, OnDestroy {
   readonly cancelNotes = signal('');
   readonly submittingCancel = signal(false);
   readonly cancelError = signal('');
+
+  // Live Outpatient Queue Tracking
+  readonly activeQueueTicket = signal<{
+    id: string;
+    ticketNumber: string;
+    visitType: string;
+    priority: string;
+    status: 'waiting' | 'called' | 'serving' | 'completed' | 'skipped' | 'cancelled';
+    checkInTime: string;
+    station: string;
+    date: string;
+    appointmentId?: string | null;
+    midwifeId?: string | null;
+    calledTime?: string;
+    completedTime?: string;
+  } | null>(null);
+  readonly queuePosition = signal<number | null>(null);
+  private queueTicketUnsub: Unsubscribe | null = null;
 
   // Clinical records / visits
   readonly visitsList = signal<PrenatalVisitLog[]>([]);
@@ -1179,7 +1199,93 @@ export class PatientPortal implements OnInit, OnDestroy {
       this.isDarkMode.set(savedDark);
       this.applyTheme(savedDark);
     }
+    this.listenToMyQueueTicket();
     await this.loadAllPatientData();
+  }
+
+  ngOnDestroy(): void {
+    if (this.queueTicketUnsub) {
+      this.queueTicketUnsub();
+      this.queueTicketUnsub = null;
+    }
+  }
+
+  listenToMyQueueTicket(): void {
+    const currentUid = auth.currentUser?.uid || this.auth.user()?.uid;
+    if (!currentUid) return;
+
+    if (this.queueTicketUnsub) {
+      this.queueTicketUnsub();
+      this.queueTicketUnsub = null;
+    }
+
+    try {
+      const q = query(
+        collection(db, 'queue_tickets'),
+        where('date', '==', this.todayIso)
+      );
+
+      this.queueTicketUnsub = onSnapshot(
+        q,
+        (snap) => {
+          if (!snap.empty) {
+            const myTickets: any[] = [];
+            snap.forEach((d) => {
+              const data = d.data();
+              const isMine =
+                data['patientUid'] === currentUid ||
+                data['patientId'] === currentUid ||
+                (this.profile()?.id && (data['patientId'] === this.profile()?.id || data['patientUid'] === this.profile()?.id));
+              if (isMine && data['status'] !== 'cancelled') {
+                myTickets.push({
+                  id: d.id,
+                  ticketNumber: data['ticketNumber'] || d.id,
+                  visitType: data['visitType'] || 'Prenatal Checkup',
+                  priority: data['priority'] || 'Regular',
+                  status: data['status'] || 'waiting',
+                  checkInTime: data['checkInTime'] || '',
+                  station: data['station'] || 'Consultation Room 1',
+                  date: data['date'] || this.todayIso,
+                  appointmentId: data['appointmentId'] || null,
+                  midwifeId: data['midwifeId'] || null,
+                  calledTime: data['calledTime'] || data['servingStartTime'] || null,
+                  completedTime: data['completedTime'] || null,
+                });
+              }
+            });
+
+            if (myTickets.length > 0) {
+              const active = myTickets[myTickets.length - 1];
+              this.activeQueueTicket.set(active);
+              if (active.status === 'waiting' && active.midwifeId) {
+                const allWaiting = snap.docs
+                  .filter((d) => {
+                    const dt = d.data();
+                    return dt['midwifeId'] === active.midwifeId && (dt['status'] === 'waiting' || dt['status'] === 'skipped');
+                  })
+                  .map((d) => ({ id: d.id, ticketNumber: d.data()['ticketNumber'] || d.id }));
+                allWaiting.sort((a, b) => (a.ticketNumber || '').localeCompare(b.ticketNumber || '', undefined, { numeric: true }));
+                const idx = allWaiting.findIndex((t) => t.id === active.id);
+                this.queuePosition.set(idx >= 0 ? idx + 1 : 1);
+              } else {
+                this.queuePosition.set(null);
+              }
+            } else {
+              this.activeQueueTicket.set(null);
+              this.queuePosition.set(null);
+            }
+          } else {
+            this.activeQueueTicket.set(null);
+            this.queuePosition.set(null);
+          }
+        },
+        (err) => {
+          console.warn('listenToMyQueueTicket error:', err);
+        }
+      );
+    } catch (e) {
+      console.warn('Setup queue ticket listener failed:', e);
+    }
   }
 
   async loadAllPatientData(): Promise<void> {
@@ -1542,6 +1648,11 @@ export class PatientPortal implements OnInit, OnDestroy {
     this.viewingPostpartumRecord.set(null);
   }
 
+  getAssignedMidwifeId(): string | null {
+    const prof = this.profile();
+    return prof?.assignedMidwifeId || prof?.midwifeId || (prof as any)?.createdBy || null;
+  }
+
   // ============ APPOINTMENT BOOKING MODAL ============
   openBookingModal(preselectedType?: string, preselectedDate?: string): void {
     const tmrw = new Date();
@@ -1552,7 +1663,7 @@ export class PatientPortal implements OnInit, OnDestroy {
     this.bookingNotes = '';
     this.bookingError.set('');
     this.bookingSuccess.set(false);
-    this.computeAvailableSlots(this.bookingDate);
+    void this.computeAvailableSlots(this.bookingDate);
     this.showBookingModal.set(true);
   }
 
@@ -1561,17 +1672,38 @@ export class PatientPortal implements OnInit, OnDestroy {
   }
 
   onBookingDateChange(): void {
-    this.computeAvailableSlots(this.bookingDate);
+    void this.computeAvailableSlots(this.bookingDate);
   }
 
-  computeAvailableSlots(date: string): void {
-    const clinicSlots = slotsFor(date);
-    if (!clinicSlots.length) {
-      this.availableSlots.set(['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00']);
-      this.bookingTime = '09:00';
-      return;
+  async computeAvailableSlots(date: string): Promise<void> {
+    const mwId = this.getAssignedMidwifeId();
+    if (mwId) {
+      try {
+        const slots = await this.appointments.getAvailableSlots(mwId, date);
+        this.availableSlots.set(slots);
+        if (slots.length > 0) {
+          if (!slots.includes(this.bookingTime)) {
+            this.bookingTime = slots[0];
+          }
+          this.bookingError.set('');
+        } else {
+          this.bookingTime = '';
+          const avail = await this.appointments.getMidwifeAvailability(mwId);
+          const isBlocked = (avail.blockedDates || []).some((b) => b.date === date);
+          if (isBlocked) {
+            const reason = avail.blockedDates.find((b) => b.date === date)?.reason || 'Time Off';
+            this.bookingError.set(`The clinic is closed on this date: ${reason}. Please select another date.`);
+          } else {
+            this.bookingError.set('No available appointment slots for the selected date. Please choose another date.');
+          }
+        }
+        return;
+      } catch (e) {
+        console.warn('computeAvailableSlots remote failed, falling back:', e);
+      }
     }
 
+    const clinicSlots = slotsFor(date);
     const bookedTimes = new Set(
       this.allAppts()
         .filter((a) => a.date === date && a.status !== 'cancelled')
@@ -1669,7 +1801,7 @@ export class PatientPortal implements OnInit, OnDestroy {
     tmrw.setDate(tmrw.getDate() + 1);
     const tmrwIso = `${tmrw.getFullYear()}-${String(tmrw.getMonth() + 1).padStart(2, '0')}-${String(tmrw.getDate()).padStart(2, '0')}`;
     this.rescheduleDate.set(appt.date >= this.todayIso ? appt.date : tmrwIso);
-    this.computeRescheduleSlots(this.rescheduleDate());
+    void this.computeRescheduleSlots(this.rescheduleDate());
     this.rescheduleReason.set('');
     this.rescheduleError.set('');
     this.rescheduleSuccess.set(false);
@@ -1682,12 +1814,42 @@ export class PatientPortal implements OnInit, OnDestroy {
   }
 
   onRescheduleDateChange(): void {
-    this.computeRescheduleSlots(this.rescheduleDate());
+    void this.computeRescheduleSlots(this.rescheduleDate());
   }
 
-  computeRescheduleSlots(date: string): void {
-    const clinicSlots = slotsFor(date);
+  async computeRescheduleSlots(date: string): Promise<void> {
+    const mwId = this.getAssignedMidwifeId();
     const currentAppt = this.reschedulingAppt();
+    if (mwId) {
+      try {
+        let slots = await this.appointments.getAvailableSlots(mwId, date);
+        if (currentAppt && currentAppt.date === date && !slots.includes(currentAppt.time)) {
+          slots = [...slots, currentAppt.time].sort();
+        }
+        this.rescheduleSlots.set(slots);
+        if (slots.length > 0) {
+          if (!slots.includes(this.rescheduleTime())) {
+            this.rescheduleTime.set(slots[0]);
+          }
+          this.rescheduleError.set('');
+        } else {
+          this.rescheduleTime.set('');
+          const avail = await this.appointments.getMidwifeAvailability(mwId);
+          const isBlocked = (avail.blockedDates || []).some((b) => b.date === date);
+          if (isBlocked) {
+            const reason = avail.blockedDates.find((b) => b.date === date)?.reason || 'Time Off';
+            this.rescheduleError.set(`The clinic is closed on this date: ${reason}. Please select another date.`);
+          } else {
+            this.rescheduleError.set('No available appointment slots for the selected date. Please choose another date.');
+          }
+        }
+        return;
+      } catch (e) {
+        console.warn('computeRescheduleSlots remote failed, falling back:', e);
+      }
+    }
+
+    const clinicSlots = slotsFor(date);
     const bookedTimes = new Set(
       this.allAppts()
         .filter((a) => a.date === date && a.status !== 'cancelled' && a.id !== currentAppt?.id)

@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { onAuthStateChanged } from 'firebase/auth';
 import {
   addDoc,
   collection,
@@ -25,6 +26,11 @@ export interface ClinicNotification {
   targetUserId?: string | null;
   targetRole?: 'admin' | 'midwife' | 'patient' | 'all';
   createdAt?: any;
+  patientUid?: string;
+  patientName?: string;
+  queueTicketNumber?: string;
+  consultationRoom?: string;
+  queueRecordId?: string;
 }
 
 const DEFAULT_ADMIN_NOTIFS: ClinicNotification[] = [
@@ -186,9 +192,51 @@ export class NotificationsService {
   );
 
   private unsubscribe?: () => void;
+  private cachedNotifs: ClinicNotification[] = [];
 
   constructor() {
     this.initRealtimeListener();
+    onAuthStateChanged(auth, (user) => {
+      if (this.cachedNotifs.length > 0) {
+        this.distributeNotifications(user?.uid);
+      }
+    });
+  }
+
+  private distributeNotifications(currentUid?: string): void {
+    const uid = currentUid || auth.currentUser?.uid;
+    const allDbNotifs = this.cachedNotifs;
+
+    // 1. Admin notifications
+    const adminList = allDbNotifs.filter(
+      (n) => n.targetRole === 'admin' || n.targetRole === 'all' || !n.targetRole
+    );
+    if (adminList.length > 0) {
+      this.adminNotifications.set(adminList);
+      saveToStorage(this.adminStorageKey, adminList);
+    }
+
+    // 2. Midwife notifications
+    const midwifeList = allDbNotifs.filter((n) => {
+      if (n.targetUserId && n.targetUserId === uid) return true;
+      return n.targetRole === 'midwife' || n.targetRole === 'all';
+    });
+    if (midwifeList.length > 0) {
+      this.midwifeNotifications.set(midwifeList);
+      saveToStorage(this.midwifeStorageKey, midwifeList);
+    }
+
+    // 3. Patient notifications: strictly targeted to the logged-in patient UID if targetUserId exists
+    const patientList = allDbNotifs.filter((n) => {
+      if (n.targetUserId) {
+        return n.targetUserId === uid;
+      }
+      return n.targetRole === 'patient' || n.targetRole === 'all';
+    });
+    if (patientList.length > 0) {
+      this.patientNotifications.set(patientList);
+      saveToStorage(this.patientStorageKey, patientList);
+    }
   }
 
   initRealtimeListener(): void {
@@ -199,9 +247,6 @@ export class NotificationsService {
         notifsCol,
         (snap) => {
           if (snap.empty) return;
-          const currentUid = auth.currentUser?.uid;
-          const currentEmail = auth.currentUser?.email?.toLowerCase() || '';
-          const isAdmin = currentEmail.startsWith('admin@');
 
           const allDbNotifs: ClinicNotification[] = snap.docs.map((d) => {
             const data = d.data();
@@ -216,6 +261,11 @@ export class NotificationsService {
               targetUserId: data['targetUserId'],
               targetRole: data['targetRole'],
               createdAt: data['createdAt'],
+              patientUid: data['patientUid'],
+              patientName: data['patientName'],
+              queueTicketNumber: data['queueTicketNumber'],
+              consultationRoom: data['consultationRoom'],
+              queueRecordId: data['queueRecordId'],
             };
           });
 
@@ -226,36 +276,8 @@ export class NotificationsService {
             return timeB - timeA;
           });
 
-          // 1. Admin notifications
-          const adminList = allDbNotifs.filter(
-            (n) => n.targetRole === 'admin' || n.targetRole === 'all' || !n.targetRole
-          );
-          if (adminList.length > 0) {
-            this.adminNotifications.set(adminList);
-            saveToStorage(this.adminStorageKey, adminList);
-          }
-
-          // 2. Midwife notifications
-          const midwifeList = allDbNotifs.filter((n) => {
-            if (n.targetUserId && n.targetUserId === currentUid) return true;
-            return n.targetRole === 'midwife' || n.targetRole === 'all';
-          });
-          if (midwifeList.length > 0) {
-            this.midwifeNotifications.set(midwifeList);
-            saveToStorage(this.midwifeStorageKey, midwifeList);
-          }
-
-          // 3. Patient notifications
-          const patientList = allDbNotifs.filter((n) => {
-            if (n.targetUserId) {
-              return n.targetUserId === currentUid;
-            }
-            return n.targetRole === 'patient' || n.targetRole === 'all';
-          });
-          if (patientList.length > 0) {
-            this.patientNotifications.set(patientList);
-            saveToStorage(this.patientStorageKey, patientList);
-          }
+          this.cachedNotifs = allDbNotifs;
+          this.distributeNotifications();
         },
         () => {
           // Fallback to storage silently if offline or rules block
@@ -276,6 +298,11 @@ export class NotificationsService {
     route?: string;
     targetUserId?: string | null;
     targetRole?: 'admin' | 'midwife' | 'patient' | 'all';
+    patientUid?: string | null;
+    patientName?: string;
+    queueTicketNumber?: string;
+    consultationRoom?: string;
+    queueRecordId?: string;
   }): Promise<string> {
     try {
       const docRef = await addDoc(collection(db, 'notifications'), {

@@ -6,5 +6,4 @@ export * from './appointments.service';
 export * from './records.service';
 export * from './activity-log.service';
 export * from './notifications.service';
-export * from './example-data';
 export * from './local-approvals';

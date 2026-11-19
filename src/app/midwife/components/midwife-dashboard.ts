@@ -4,7 +4,6 @@ import { RouterLink } from '@angular/router';
 import { Appointment, AppointmentsService, formatTime, todayIso } from '../../core/appointments.service';
 import { AuthService } from '../../core/auth.service';
 import { Patient, PatientsService } from '../../core/patients.service';
-import { EXAMPLE_DASHBOARD_FOLLOWUPS } from '../../core/example-data';
 
 interface FollowUp {
   patientName: string;
@@ -929,6 +928,7 @@ export class MidwifeDashboard implements OnInit {
 
   readonly todayFormatted = computed(() => {
     return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Manila',
       weekday: 'long',
       month: 'long',
       day: 'numeric',
@@ -956,7 +956,10 @@ export class MidwifeDashboard implements OnInit {
   });
 
   readonly upcomingCount = computed(() => {
-    return this.allAppointments().filter((a) => a.status === 'scheduled').length;
+    const today = todayIso();
+    return this.allAppointments().filter(
+      (a) => (a.status === 'scheduled' || a.status === 'confirmed') && a.date >= today
+    ).length;
   });
 
   readonly activePrenatalCount = computed(() => {
@@ -968,9 +971,6 @@ export class MidwifeDashboard implements OnInit {
   });
 
   readonly followUpsList = computed<FollowUp[]>(() => {
-    if (this.patientsSvc.isMidwifeDemoUser()) {
-      return EXAMPLE_DASHBOARD_FOLLOWUPS;
-    }
     const list: FollowUp[] = [];
     const pts = this.patients();
     for (const p of pts) {
@@ -1062,6 +1062,7 @@ export class MidwifeDashboard implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
+      await this.auth.ready;
       const [todayList, allAppts, allPatients] = await Promise.all([
         this.appointmentsSvc.listForDate(todayIso()),
         this.appointmentsSvc.list(),

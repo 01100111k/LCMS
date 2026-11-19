@@ -135,6 +135,89 @@ import { ArchiveRecord } from '../models/admin.models';
           </tbody>
         </table>
       </div>
+
+      <!-- Restore Confirmation Modal -->
+      @if (restoringRecord(); as rec) {
+        <div class="modal-backdrop" (click)="cancelRestore()">
+          <div class="modal-card modal-confirm-card" (click)="$event.stopPropagation()">
+            <div class="confirm-modal-body">
+              <div class="confirm-icon-wrap icon-emerald">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="confirm-icon">
+                  <polyline points="1 4 1 10 7 10"/>
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
+              </div>
+
+              <h3 class="confirm-title">Restore from Archives?</h3>
+              <p class="confirm-desc">
+                Are you sure you want to restore <strong>{{ rec.name }}</strong> back to the active directory?
+              </p>
+
+              <div class="confirm-target-box">
+                <div class="archive-icon-circle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                </div>
+                <div class="confirm-target-info">
+                  <strong>{{ rec.name }}</strong>
+                  <span class="confirm-target-sub">{{ rec.category | uppercase }} &bull; {{ rec.identifier }}</span>
+                </div>
+              </div>
+
+              <div class="confirm-actions">
+                <button type="button" class="btn-confirm-cancel" (click)="cancelRestore()">
+                  Cancel
+                </button>
+                <button type="button" class="btn-confirm-success" (click)="executeRestore()">
+                  Restore Record
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Purge Confirmation Modal -->
+      @if (purgingRecord(); as rec) {
+        <div class="modal-backdrop" (click)="cancelPurge()">
+          <div class="modal-card modal-confirm-card" (click)="$event.stopPropagation()">
+            <div class="confirm-modal-body">
+              <div class="confirm-icon-wrap icon-rose">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="confirm-icon">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  <line x1="10" y1="11" x2="10" y2="17"/>
+                  <line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
+              </div>
+
+              <h3 class="confirm-title">Permanently Delete Record?</h3>
+              <p class="confirm-desc">
+                Are you sure you want to permanently delete the archive for <strong>{{ rec.name }}</strong>?
+                <br><span style="color:#ef4444; font-weight:600;">This action cannot be undone.</span>
+              </p>
+
+              <div class="confirm-target-box">
+                <div class="archive-icon-circle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                </div>
+                <div class="confirm-target-info">
+                  <strong>{{ rec.name }}</strong>
+                  <span class="confirm-target-sub">{{ rec.category | uppercase }} &bull; {{ rec.identifier }}</span>
+                </div>
+              </div>
+
+              <div class="confirm-actions">
+                <button type="button" class="btn-confirm-cancel" (click)="cancelPurge()">
+                  Cancel
+                </button>
+                <button type="button" class="btn-confirm-danger" (click)="executePurge()">
+                  Permanently Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -412,19 +495,42 @@ export class AdminArchives {
     });
   });
 
+  readonly restoringRecord = signal<ArchiveRecord | null>(null);
+  readonly purgingRecord = signal<ArchiveRecord | null>(null);
+
   restoreRecord(rec: ArchiveRecord): void {
-    if (confirm(`Restore record for "${rec.name}" back to the active directory?`)) {
+    this.restoringRecord.set(rec);
+  }
+
+  cancelRestore(): void {
+    this.restoringRecord.set(null);
+  }
+
+  executeRestore(): void {
+    const rec = this.restoringRecord();
+    if (rec) {
       if (rec.category === 'patient') {
         this.adminSvc.restorePatient(rec);
       } else {
         this.adminSvc.restoreUser(rec);
       }
+      this.restoringRecord.set(null);
     }
   }
 
   confirmPurge(rec: ArchiveRecord): void {
-    if (confirm(`Permanently delete archive record for "${rec.name}"? This action cannot be undone.`)) {
+    this.purgingRecord.set(rec);
+  }
+
+  cancelPurge(): void {
+    this.purgingRecord.set(null);
+  }
+
+  executePurge(): void {
+    const rec = this.purgingRecord();
+    if (rec) {
       this.adminSvc.deleteArchivePermanently(rec.id);
+      this.purgingRecord.set(null);
     }
   }
 }

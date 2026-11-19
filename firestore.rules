@@ -149,8 +149,8 @@ service cloud.firestore {
       allow create: if isAuthenticated();
 
       allow update: if isAdmin() ||
-        isOwnerPatient(resource.data, resource.data.patientId) ||
-        isOwnerMidwife(resource.data);
+        isOwnerMidwife(resource.data) ||
+        (isOwnerPatient(resource.data, resource.data.patientId) && request.resource.data.status != 'completed');
 
       allow delete: if isAdmin() ||
         isOwnerMidwife(resource.data);
@@ -158,6 +158,11 @@ service cloud.firestore {
 
     match /bookedSlots/{slotKey} {
       allow read, write: if isAuthenticated();
+    }
+
+    match /midwife_availability/{midwifeId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == midwifeId);
     }
 
     // 6. Maternal care records (prenatal, delivery, postpartum, visits, records)
@@ -302,9 +307,36 @@ service cloud.firestore {
     }
 
     // 10. Patient Queue Tickets
-    // - Daily outpatient consultation queue and triage tickets
+    // - Daily outpatient consultation queue and triage tickets (scoped strictly by midwife and patient ownership)
     match /queue_tickets/{ticketId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAdmin() ||
+        (isAuthenticated() && (
+          resource.data.midwifeId == request.auth.uid ||
+          resource.data.assignedMidwifeId == request.auth.uid ||
+          resource.data.patientUid == request.auth.uid ||
+          resource.data.patientId == request.auth.uid
+        ));
+
+      allow create: if isAdmin() || (
+        isAuthenticated() && (
+          request.resource.data.midwifeId == request.auth.uid ||
+          request.resource.data.assignedMidwifeId == request.auth.uid ||
+          request.resource.data.patientUid == request.auth.uid ||
+          request.resource.data.patientId == request.auth.uid
+        )
+      );
+
+      allow update: if isAdmin() ||
+        (isAuthenticated() && (
+          resource.data.midwifeId == request.auth.uid ||
+          resource.data.assignedMidwifeId == request.auth.uid
+        ));
+
+      allow delete: if isAdmin() ||
+        (isAuthenticated() && (
+          resource.data.midwifeId == request.auth.uid ||
+          resource.data.assignedMidwifeId == request.auth.uid
+        ));
     }
 
     // 11. Patient inquiries, communication & profile requests to midwives
